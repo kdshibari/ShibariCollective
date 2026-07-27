@@ -9,13 +9,13 @@ import useEmblaCarousel from "embla-carousel-react";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Shibari Collective — Discover Studios Worldwide" },
+      { title: "The Shibari Collective — Discover Studios Worldwide" },
       {
         name: "description",
-        content: "Browse Shibari studios by continent, country, and city. Find trusted spaces near you.",
+        content: "Browse Shibari studios by continent, country, and city. Find Shibari spaces near you.",
       },
-      { property: "og:title", content: "Shibari Collective — Discover Studios Worldwide" },
-      { property: "og:description", content: "Browse Shibari studios by continent, country, and city. Find trusted spaces near you." },
+      { property: "og:title", content: "The Shibari Collective — Discover Studios Worldwide" },
+      { property: "og:description", content: "Browse Shibari studios by continent, country, and city. Find Shibari spaces near you." },
     ],
   }),
   component: HomePage,
@@ -124,12 +124,12 @@ function HomePage() {
           <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background" />
         </div>
         <div className="relative mx-auto max-w-5xl px-4 py-20 text-center sm:px-6 sm:py-28">
-          <p className="text-xs uppercase tracking-[0.3em] text-secondary">The worldwide directory</p>
+          <p className="text-xs uppercase tracking-[0.3em] text-secondary">A Worldwide Directory</p>
           <h1 className="mt-4 font-serif text-5xl leading-tight text-foreground sm:text-6xl md:text-7xl">
-            Find your <em className="text-secondary not-italic">Shibari</em> studio.
+            Find your <em className="text-secondary not-italic">Shibari</em> Studio.
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-base text-muted-foreground sm:text-lg">
-            A curated collective of trusted studios across every continent. Rope, wood, and community — brought together.
+            A curated collective of Shibari studios across every continent. A community — brought together.
           </p>
 
           {/* Search bar */}
