@@ -1,30 +1,22 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CONTINENTS, haversine } from "@/lib/geo";
 import heroRope from "@/assets/hero-rope.jpg";
 import { Search, MapPin, Clock, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import L from "leaflet";
 
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-});
+const MapComponent = lazy(() => import("@/components/Map"));
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Shibari Collective, Discover Studios Worldwide" },
+      { title: "Shibari Collective — Discover Studios Worldwide" },
       {
         name: "description",
         content: "Browse Shibari studios by continent, country, and city. Find trusted spaces near you.",
       },
-      { property: "og:title", content: "Shibari Collective, Discover Studios Worldwide" },
+      { property: "og:title", content: "Shibari Collective — Discover Studios Worldwide" },
       { property: "og:description", content: "Browse Shibari studios by continent, country, and city. Find trusted spaces near you." },
     ],
   }),
@@ -43,14 +35,6 @@ interface Studio {
   studio_photos: { url: string; position: number }[];
 }
 
-function MapUpdater({ center }: { center: [number, number] }) {
-  const map = useMap();
-  useEffect(() => {
-    map.setView(center, map.getZoom());
-  }, [center, map]);
-  return null;
-}
-
 function HomePage() {
   const [studios, setStudios] = useState<Studio[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,8 +43,10 @@ function HomePage() {
   const [country, setCountry] = useState("");
   const [city, setCity] = useState("");
   const [userLoc, setUserLoc] = useState<{ lat: number; lng: number } | null>(null);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
     supabase
       .from("studios")
       .select("id, name, description, continent, country, city, latitude, longitude, studio_photos(url, position)")
@@ -181,32 +167,14 @@ function HomePage() {
             </p>
           </div>
         </div>
-        <div className="h-[500px] w-full overflow-hidden rounded-2xl border border-border shadow-sm z-0 relative">
-          <MapContainer
-            center={userLoc ? [userLoc.lat, userLoc.lng] : [20, 0]}
-            zoom={userLoc ? 10 : 2}
-            scrollWheelZoom={false}
-            className="h-full w-full z-0"
-          >
-            <TileLayer
-              attribution='&copy; OpenStreetMap contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            {userLoc && <MapUpdater center={[userLoc.lat, userLoc.lng]} />}
-            {filtered.map((s) => (
-              s.latitude && s.longitude ? (
-                <Marker key={s.id} position={[s.latitude, s.longitude]}>
-                  <Popup>
-                    <div className="text-sm font-medium">{s.name}</div>
-                    <div className="text-xs text-muted-foreground">{s.city}, {s.country}</div>
-                    <Link to="/studios/$id" params={{ id: s.id }} className="mt-2 block text-xs text-secondary hover:underline">
-                      View studio
-                    </Link>
-                  </Popup>
-                </Marker>
-              ) : null
-            ))}
-          </MapContainer>
+        <div className="h-[500px] w-full overflow-hidden rounded-2xl border border-border shadow-sm z-0 relative bg-muted">
+          {isClient ? (
+            <Suspense fallback={<div className="h-full w-full flex items-center justify-center text-muted-foreground">Loading map...</div>}>
+              <MapComponent userLoc={userLoc} filtered={filtered} />
+            </Suspense>
+          ) : (
+            <div className="h-full w-full flex items-center justify-center text-muted-foreground">Loading map...</div>
+          )}
         </div>
       </section>
 
