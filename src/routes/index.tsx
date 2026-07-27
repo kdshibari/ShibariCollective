@@ -133,9 +133,10 @@ function HomePage() {
             Find your <em className="text-secondary not-italic">Shibari</em> studio.
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-base text-muted-foreground sm:text-lg">
-            A curated collective of trusted studios across every continent. Rope, wood, and community brought together.
+            A curated collective of studios across every continent. 
           </p>
-
+          <p className="text-xs uppercase tracking-[0.3em] text-secondary">The rope community brought together. </p>
+        
           {/* Search bar */}
           <div className="mx-auto mt-10 max-w-3xl card-warm rounded-2xl p-2 shadow-sm">
             <div className="flex items-center gap-2 px-3">
