@@ -126,11 +126,12 @@ function HomePage() {
         <div className="relative mx-auto max-w-5xl px-4 py-20 text-center sm:px-6 sm:py-28">
           <p className="text-xs uppercase tracking-[0.3em] text-secondary">A Worldwide Directory</p>
           <h1 className="mt-4 font-serif text-5xl leading-tight text-foreground sm:text-6xl md:text-7xl">
-            Find your <em className="text-secondary not-italic">Shibari</em> Studio.
+            Find your <em className="text-secondary not-italic">Shibari</em> studio.
           </h1>
-          <p className="mx-auto mt-6 max-w-xl text-base text-muted-foreground sm:text-lg">
-            A curated collective of Shibari studios across every continent. A community — brought together.
-          </p>
+          <p className="mx-auto mt-6 max-w-xl text-base text-muted-foreground sm:text-lg"> </p>
+            A curated collective of Shibari studios across every continent. 
+          <p className="text-xs uppercase tracking-[0.3em] text-secondary">A community — brought together.</p>
+         
 
           {/* Search bar */}
           <div className="mx-auto mt-10 max-w-3xl card-warm rounded-2xl p-2 shadow-sm">
