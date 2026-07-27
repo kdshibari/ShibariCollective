@@ -1,3 +1,5 @@
 [build]
   command = "NITRO_PRESET=netlify bun run build"
   publish = ".netlify/public"
+[build.environment]
+  NITRO_PRESET = "netlify"
