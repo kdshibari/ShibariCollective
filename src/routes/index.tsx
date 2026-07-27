@@ -5,17 +5,27 @@ import { CONTINENTS, haversine } from "@/lib/geo";
 import heroRope from "@/assets/hero-rope.jpg";
 import { Search, MapPin, Clock, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+});
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "The Shibari Collective — Discover Studios Worldwide" },
+      { title: "Shibari Collective, Discover Studios Worldwide" },
       {
         name: "description",
-        content: "Browse Shibari studios by continent, country, and city. Find Shibari spaces near you.",
+        content: "Browse Shibari studios by continent, country, and city. Find trusted spaces near you.",
       },
-      { property: "og:title", content: "The Shibari Collective — Discover Studios Worldwide" },
-      { property: "og:description", content: "Browse Shibari studios by continent, country, and city. Find Shibari spaces near you." },
+      { property: "og:title", content: "Shibari Collective, Discover Studios Worldwide" },
+      { property: "og:description", content: "Browse Shibari studios by continent, country, and city. Find trusted spaces near you." },
     ],
   }),
   component: HomePage,
@@ -31,6 +41,14 @@ interface Studio {
   latitude: number | null;
   longitude: number | null;
   studio_photos: { url: string; position: number }[];
+}
+
+function MapUpdater({ center }: { center: [number, number] }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(center, map.getZoom());
+  }, [center, map]);
+  return null;
 }
 
 function HomePage() {
@@ -124,14 +142,13 @@ function HomePage() {
           <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background" />
         </div>
         <div className="relative mx-auto max-w-5xl px-4 py-20 text-center sm:px-6 sm:py-28">
-          <p className="text-xs uppercase tracking-[0.3em] text-secondary">A Worldwide Directory</p>
+          <p className="text-xs uppercase tracking-[0.3em] text-secondary">The worldwide directory</p>
           <h1 className="mt-4 font-serif text-5xl leading-tight text-foreground sm:text-6xl md:text-7xl">
             Find your <em className="text-secondary not-italic">Shibari</em> studio.
           </h1>
-          <p className="mx-auto mt-6 max-w-xl text-base text-muted-foreground sm:text-lg"> </p>
-            A curated collective of Shibari studios across every continent. 
-          <p className="text-xs uppercase tracking-[0.3em] text-secondary">A community — brought together.</p>
-         
+          <p className="mx-auto mt-6 max-w-xl text-base text-muted-foreground sm:text-lg">
+            A curated collective of trusted studios across every continent. Rope, wood, and community brought together.
+          </p>
 
           {/* Search bar */}
           <div className="mx-auto mt-10 max-w-3xl card-warm rounded-2xl p-2 shadow-sm">
@@ -151,6 +168,45 @@ function HomePage() {
             </div>
           </div>
           <div className="rope-divider mx-auto mt-12 w-40" />
+        </div>
+      </section>
+
+      {/* Interactive Map */}
+      <section className="mx-auto max-w-7xl px-4 pt-12 pb-4 sm:px-6">
+        <div className="mb-6 flex items-end justify-between">
+          <div>
+            <h2 className="font-serif text-3xl text-foreground">Global Map</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Explore studios near your location.
+            </p>
+          </div>
+        </div>
+        <div className="h-[500px] w-full overflow-hidden rounded-2xl border border-border shadow-sm z-0 relative">
+          <MapContainer
+            center={userLoc ? [userLoc.lat, userLoc.lng] : [20, 0]}
+            zoom={userLoc ? 10 : 2}
+            scrollWheelZoom={false}
+            className="h-full w-full z-0"
+          >
+            <TileLayer
+              attribution='&copy; OpenStreetMap contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            {userLoc && <MapUpdater center={[userLoc.lat, userLoc.lng]} />}
+            {filtered.map((s) => (
+              s.latitude && s.longitude ? (
+                <Marker key={s.id} position={[s.latitude, s.longitude]}>
+                  <Popup>
+                    <div className="text-sm font-medium">{s.name}</div>
+                    <div className="text-xs text-muted-foreground">{s.city}, {s.country}</div>
+                    <Link to="/studios/$id" params={{ id: s.id }} className="mt-2 block text-xs text-secondary hover:underline">
+                      View studio
+                    </Link>
+                  </Popup>
+                </Marker>
+              ) : null
+            ))}
+          </MapContainer>
         </div>
       </section>
 
@@ -291,7 +347,7 @@ function EmptyState() {
       <Clock className="mx-auto h-10 w-10 text-muted-foreground" />
       <h3 className="mt-4 font-serif text-2xl text-foreground">No studios yet</h3>
       <p className="mt-2 text-sm text-muted-foreground">
-        Be the first — submit your studio and help build the collective.
+        Be the first, submit your studio and help build the collective.
       </p>
       <Link
         to="/submit"
