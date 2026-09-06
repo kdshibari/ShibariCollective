@@ -7,6 +7,7 @@ import {
   useRouter,
   HeadContent,
   Scripts,
+  ScrollRestoration,
 } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 
@@ -113,6 +114,7 @@ function RootShell({ children }: { children: ReactNode }) {
       </head>
       <body>
         {children}
+        <ScrollRestoration />
         <Scripts />
       </body>
     </html>
@@ -198,6 +200,7 @@ function Footer() {
           </ul>
         </div>
       </div>
+      <DisclaimerSection />
       <div className="border-t border-primary-foreground/10">
         <p className="mx-auto max-w-7xl px-4 py-4 text-xs opacity-70 sm:px-6">
           Made by Shibari Collective · © {new Date().getFullYear()}
