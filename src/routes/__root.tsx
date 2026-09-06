@@ -1,3 +1,4 @@
+import { DisclaimerSection } from "@/components/DisclaimerSection";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
