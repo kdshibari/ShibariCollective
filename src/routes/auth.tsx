@@ -34,7 +34,7 @@ function AuthPage() {
 
   return (
     <div className="flex min-h-[60vh] items-center justify-center px-4">
-      <div className="card-warm w-full max-w-md rounded-2xl p-8 text-center border border-white/10 bg-background/50 backdrop-blur-md shadow-xl">
+      <div className="w-full max-w-md rounded-2xl p-8 text-center border border-border/50 bg-background/50 backdrop-blur-md shadow-xl">
         <h1 className="font-serif text-3xl text-foreground">Sign In</h1>
         <p className="mt-2 text-sm text-muted-foreground mb-6">
           Enter your email to receive a secure sign-in link. No password required.
@@ -47,7 +47,7 @@ function AuthPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
-            className="w-full rounded-md bg-background/80 border border-white/10 px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-secondary/50 text-foreground"
+            className="w-full rounded-md bg-background/80 border border-input px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-secondary/50 text-foreground"
           />
           <button
             type="submit"
