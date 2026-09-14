@@ -1,10 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { createServerClient, parseCookieHeader } from "@supabase/ssr";
-import { getWebRequest } from "@tanstack/react-start/server";
+import { getHeaders } from "@tanstack/react-start/server";
 
 export const requireSession = createServerFn({ method: "GET" }).handler(async () => {
-  const request = getWebRequest();
-  const cookies = parseCookieHeader(request.headers.get("Cookie") ?? "");
+  const headers = getHeaders();
+  // Fetch the cookie header safely, checking both capitalization cases
+  const cookies = parseCookieHeader(headers.get("cookie") || headers.get("Cookie") || "");
 
   const supabase = createServerClient(
     import.meta.env.VITE_SUPABASE_URL,
