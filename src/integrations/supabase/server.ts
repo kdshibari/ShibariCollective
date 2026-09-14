@@ -14,7 +14,7 @@ export async function createSupabaseServer() {
           return Object.keys(cookies).map((name) => ({ name, value: cookies[name] }));
         },
         setAll() {
-          // This is a read-only check phase; setting cookies happens on the client
+          // Read-only phase on server; setting cookies happens on the client
         },
       },
     }
