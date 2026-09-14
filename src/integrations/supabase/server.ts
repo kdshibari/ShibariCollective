@@ -1,10 +1,11 @@
-import { createServerFn } from "@tanstack/start";
+import { createServerFn } from "@tanstack/react-start";
 import { createServerClient, parseCookieHeader } from "@supabase/ssr";
-import { getWebRequest } from "@tanstack/start/server";
+import { getEvent, getHeader } from "vinxi/http";
 
 export const requireSession = createServerFn({ method: "GET" }).handler(async () => {
-  const request = getWebRequest();
-  const cookies = parseCookieHeader(request.headers.get("Cookie") ?? "");
+  const event = getEvent();
+  const cookieHeader = getHeader(event, "cookie") || getHeader(event, "Cookie") || "";
+  const cookies = parseCookieHeader(cookieHeader);
 
   const supabase = createServerClient(
     import.meta.env.VITE_SUPABASE_URL,
