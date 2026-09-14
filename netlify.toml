@@ -1,3 +1,6 @@
 [build]
   command = "npm run build"
-  publish = ".output/public"
+  publish = ".netlify/static"
+
+[build.environment]
+  NITRO_PRESET = "netlify"
