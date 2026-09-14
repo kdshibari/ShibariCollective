@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/start";
+import { createServerFn } from "@tanstack/react-start";
 import { createSupabaseServer } from "@/integrations/supabase/server";
 
 const requireSession = createServerFn("GET", async () => {
