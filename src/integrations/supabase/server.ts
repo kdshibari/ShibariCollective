@@ -1,5 +1,5 @@
 import { createServerClient, parseCookieHeader } from "@supabase/ssr";
-import { getWebRequest } from "@tanstack/start/server";
+import { getWebRequest } from "@tanstack/react-start";
 
 export async function createSupabaseServer() {
   const request = getWebRequest();
