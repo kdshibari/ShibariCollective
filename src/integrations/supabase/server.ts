@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { createServerClient, parseCookieHeader } from "@supabase/ssr";
 import { supabaseAdmin } from "./client.server";
 
-// 1. Session Verification
+// 1. Session Verification (Cleaned up native headers)
 export const requireSession = createServerFn({ method: "GET" }).handler(async (ctx) => {
   const cookieHeader = ctx.request.headers.get("cookie") || "";
   const cookies = parseCookieHeader(cookieHeader);
