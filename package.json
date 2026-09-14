@@ -13,6 +13,8 @@
     "build": "npx expo export --platform web"
   },
   "dependencies": {
+    "@tanstack/react-start": "^1.168.26"
+    "@tanstack/start": "latest",
     "@hookform/resolvers": "^5.2.2",
     "@lovable.dev/cloud-auth-js": "^1.1.2",
     "@radix-ui/react-accordion": "^1.2.12",
