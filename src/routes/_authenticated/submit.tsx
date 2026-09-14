@@ -1,3 +1,4 @@
+import { grantStudioOwnerRole } from "@/integrations/supabase/server";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -72,14 +73,14 @@ function SubmitPage() {
   }, []);
 
 async function becomeStudioOwner() {
-    try {
-      await grantStudioOwnerRole();
-      setRoles([...roles, "studio_owner"]);
-      toast.success("You're now a studio owner");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to elevate permissions");
-    }
+  try {
+    await grantStudioOwnerRole();
+    setRoles([...roles, "studio_owner"]);
+    toast.success("You're now a studio owner");
+  } catch (error: any) {
+    toast.error(error.message || "Failed to elevate permissions");
   }
+}
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
