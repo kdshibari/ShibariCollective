@@ -71,16 +71,14 @@ function SubmitPage() {
     });
   }, []);
 
-  async function becomeStudioOwner() {
-    const { data } = await supabase.auth.getUser();
-    if (!data.user) return;
-    const { error } = await supabase.from("user_roles").insert({ user_id: data.user.id, role: "studio_owner" });
-    if (error && !error.message.includes("duplicate")) {
-      toast.error(error.message);
-      return;
+async function becomeStudioOwner() {
+    try {
+      await grantStudioOwnerRole();
+      setRoles([...roles, "studio_owner"]);
+      toast.success("You're now a studio owner");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to elevate permissions");
     }
-    setRoles([...roles, "studio_owner"]);
-    toast.success("You're now a studio owner");
   }
 
   async function onSubmit(e: React.FormEvent) {
