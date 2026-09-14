@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { grantStudioOwnerRole } from "@/integrations/supabase/server"; // <-- ADD THIS
 import { CONTINENTS } from "@/lib/geo";
 import { Plus, X, Info } from "lucide-react";
 
