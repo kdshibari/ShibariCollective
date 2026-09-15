@@ -67,38 +67,50 @@ function HomePage() {
     );
   }, []);
 
-  const countries = useMemo(
-    () => Array.from(new Set(studios.filter((s) => !continent || s.continent === continent).map((s) => s.country))).sort(),
-    [studios, continent]
-  );
-  const cities = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          studios
-            .filter((s) => (!continent || s.continent === continent) && (!country || s.country === country))
-            .map((s) => s.city)
-        )
-      ).sort(),
-    [studios, continent, country]
-  );
+  // 1. Safe, case-insensitive extraction for Countries
+  const countries = useMemo(() => {
+    const list = studios
+      .filter((s) => !continent || s.continent?.toLowerCase() === continent.toLowerCase())
+      .map((s) => s.country)
+      .filter(Boolean); 
+    return Array.from(new Set(list)).sort();
+  }, [studios, continent]);
 
+  // 2. Safe, case-insensitive extraction for Cities
+  const cities = useMemo(() => {
+    const list = studios
+      .filter((s) => {
+        const matchCont = !continent || s.continent?.toLowerCase() === continent.toLowerCase();
+        const matchCoun = !country || s.country?.toLowerCase() === country.toLowerCase();
+        return matchCont && matchCoun;
+      })
+      .map((s) => s.city)
+      .filter(Boolean);
+    return Array.from(new Set(list)).sort();
+  }, [studios, continent, country]);
+
+  // 3. Hardened filtering logic for search queries and map
   const filtered = useMemo(() => {
     let list = studios.filter((s) => {
-      if (continent && s.continent !== continent) return false;
-      if (country && s.country !== country) return false;
-      if (city && s.city !== city) return false;
+      // Dropdown matchers
+      if (continent && s.continent?.toLowerCase() !== continent.toLowerCase()) return false;
+      if (country && s.country?.toLowerCase() !== country.toLowerCase()) return false;
+      if (city && s.city?.toLowerCase() !== city.toLowerCase()) return false;
+      
+      // Text search matcher
       if (q) {
         const t = q.toLowerCase();
-        if (
-          !s.name.toLowerCase().includes(t) &&
-          !s.city.toLowerCase().includes(t) &&
-          !s.country.toLowerCase().includes(t)
-        )
+        const n = s.name?.toLowerCase() || "";
+        const c = s.city?.toLowerCase() || "";
+        const r = s.country?.toLowerCase() || "";
+        if (!n.includes(t) && !c.includes(t) && !r.includes(t)) {
           return false;
+        }
       }
       return true;
     });
+
+    // Distance sorting
     if (userLoc) {
       list = [...list].sort((a, b) => {
         const da = a.latitude != null && a.longitude != null
@@ -135,7 +147,7 @@ function HomePage() {
           <p className="mx-auto mt-6 max-w-xl text-base text-muted-foreground sm:text-lg">
             A curated collective of studios across every continent. 
           </p>
-          <p className="text-xs uppercase tracking-[0.3em] text-secondary">The rope community brought together. </p>
+          <p className="text-xs uppercase tracking-[0.3em] text-secondary">The rope community brought together.</p>
         
           {/* Search bar */}
           <div className="mx-auto mt-10 max-w-3xl card-warm rounded-2xl p-2 shadow-sm">
@@ -149,9 +161,24 @@ function HomePage() {
               />
             </div>
             <div className="grid grid-cols-1 gap-2 border-t border-border/60 p-2 sm:grid-cols-3">
-              <FilterSelect value={continent} onChange={(v) => { setContinent(v); setCountry(""); setCity(""); }} placeholder="All continents" options={CONTINENTS as unknown as string[]} />
-              <FilterSelect value={country} onChange={(v) => { setCountry(v); setCity(""); }} placeholder="All countries" options={countries} disabled={!continent && countries.length > 20} />
-              <FilterSelect value={city} onChange={setCity} placeholder="All cities" options={cities} />
+              <FilterSelect 
+                value={continent} 
+                onChange={(v) => { setContinent(v); setCountry(""); setCity(""); }} 
+                placeholder="All continents" 
+                options={CONTINENTS as unknown as string[]} 
+              />
+              <FilterSelect 
+                value={country} 
+                onChange={(v) => { setCountry(v); setCity(""); }} 
+                placeholder="All countries" 
+                options={countries} 
+              />
+              <FilterSelect 
+                value={city} 
+                onChange={setCity} 
+                placeholder="All cities" 
+                options={cities} 
+              />
             </div>
           </div>
           <div className="rope-divider mx-auto mt-12 w-40" />
