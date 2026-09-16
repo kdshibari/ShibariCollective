@@ -1,12 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, lazy, Suspense } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { CONTINENTS, haversine } from "@/lib/geo";
+import { haversine } from "@/lib/geo";
 import heroRope from "@/assets/hero-rope.jpg";
-import { Search, MapPin, Clock, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, MapPin, Clock, ArrowRight, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
 
-const MapComponent = lazy(() => import("@/components/Map"));
+import { GoogleMap, useLoadScript, Marker, InfoWindow } from "@react-google-maps/api";
+import usePlacesAutocomplete, { getGeocode, getLatLng } from "use-places-autocomplete";
+
+const libraries: ("places")[] = ["places"];
+const mapContainerStyle = { width: "100%", height: "100%" };
+const SEARCH_RADIUS_KM = 100;
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -14,10 +19,8 @@ export const Route = createFileRoute("/")({
       { title: "Shibari Collective — Discover Studios Worldwide" },
       {
         name: "description",
-        content: "Browse Shibari studios by continent, country, and city. Find trusted spaces near you.",
+        content: "Browse Shibari studios globally. Find trusted spaces near you.",
       },
-      { property: "og:title", content: "Shibari Collective — Discover Studios Worldwide" },
-      { property: "og:description", content: "Browse Shibari studios by continent, country, and city. Find trusted spaces near you." },
     ],
   }),
   component: HomePage,
@@ -33,20 +36,21 @@ interface Studio {
   latitude: number | null;
   longitude: number | null;
   studio_photos: { url: string; position: number }[];
+  distance?: number;
 }
 
 function HomePage() {
   const [studios, setStudios] = useState<Studio[]>([]);
   const [loading, setLoading] = useState(true);
-  const [q, setQ] = useState("");
-  const [continent, setContinent] = useState("");
-  const [country, setCountry] = useState("");
-  const [city, setCity] = useState("");
   const [userLoc, setUserLoc] = useState<{ lat: number; lng: number } | null>(null);
-  const [isClient, setIsClient] = useState(false);
+  const [selectedStudio, setSelectedStudio] = useState<Studio | null>(null);
+
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string,
+    libraries,
+  });
 
   useEffect(() => {
-    setIsClient(true);
     supabase
       .from("studios")
       .select("id, name, description, continent, country, city, latitude, longitude, studio_photos(url, position)")
@@ -67,76 +71,26 @@ function HomePage() {
     );
   }, []);
 
-  // 1. Safe, case-insensitive extraction for Countries
-  const countries = useMemo(() => {
-    const list = studios
-      .filter((s) => !continent || s.continent?.toLowerCase() === continent.toLowerCase())
-      .map((s) => s.country)
-      .filter(Boolean); 
-    return Array.from(new Set(list)).sort();
-  }, [studios, continent]);
-
-  // 2. Safe, case-insensitive extraction for Cities
-  const cities = useMemo(() => {
-    const list = studios
-      .filter((s) => {
-        const matchCont = !continent || s.continent?.toLowerCase() === continent.toLowerCase();
-        const matchCoun = !country || s.country?.toLowerCase() === country.toLowerCase();
-        return matchCont && matchCoun;
-      })
-      .map((s) => s.city)
-      .filter(Boolean);
-    return Array.from(new Set(list)).sort();
-  }, [studios, continent, country]);
-
-  // 3. Hardened filtering logic for search queries and map
+  // Proximity filtering using Haversine
   const filtered = useMemo(() => {
-    let list = studios.filter((s) => {
-      // Dropdown matchers
-      if (continent && s.continent?.toLowerCase() !== continent.toLowerCase()) return false;
-      if (country && s.country?.toLowerCase() !== country.toLowerCase()) return false;
-      if (city && s.city?.toLowerCase() !== city.toLowerCase()) return false;
-      
-      // Text search matcher
-      if (q) {
-        const t = q.toLowerCase();
-        const n = s.name?.toLowerCase() || "";
-        const c = s.city?.toLowerCase() || "";
-        const r = s.country?.toLowerCase() || "";
-        if (!n.includes(t) && !c.includes(t) && !r.includes(t)) {
-          return false;
-        }
-      }
-      return true;
-    });
+    if (!userLoc) return studios; // Show all if no search location is set
 
-    // Distance sorting
-    if (userLoc) {
-      list = [...list].sort((a, b) => {
-        const da = a.latitude != null && a.longitude != null
-          ? haversine(userLoc, { lat: a.latitude, lng: a.longitude })
-          : Infinity;
-        const db = b.latitude != null && b.longitude != null
-          ? haversine(userLoc, { lat: b.latitude, lng: b.longitude })
-          : Infinity;
-        return da - db;
-      });
-    }
-    return list;
-  }, [studios, q, continent, country, city, userLoc]);
+    return studios
+      .map((s) => {
+        if (s.latitude == null || s.longitude == null) return { ...s, distance: Infinity };
+        const distance = haversine(userLoc, { lat: s.latitude, lng: s.longitude });
+        return { ...s, distance };
+      })
+      .filter((s) => s.distance! <= SEARCH_RADIUS_KM)
+      .sort((a, b) => a.distance! - b.distance!);
+  }, [studios, userLoc]);
 
   return (
     <div>
-      {/* Hero */}
+      {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0">
-          <img
-            src={heroRope}
-            alt=""
-            className="h-full w-full object-cover opacity-40"
-            width={1600}
-            height={1000}
-          />
+          <img src={heroRope} alt="" className="h-full w-full object-cover opacity-40" />
           <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background" />
         </div>
         <div className="relative mx-auto max-w-5xl px-4 py-20 text-center sm:px-6 sm:py-28">
@@ -145,41 +99,18 @@ function HomePage() {
             Find your <em className="text-secondary not-italic">Shibari</em> studio.
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-base text-muted-foreground sm:text-lg">
-            A curated collective of studios across every continent. 
+            A curated collective of studios across every continent.
           </p>
-          <p className="text-xs uppercase tracking-[0.3em] text-secondary">The rope community brought together.</p>
-        
-          {/* Search bar */}
-          <div className="mx-auto mt-10 max-w-3xl card-warm rounded-2xl p-2 shadow-sm">
-            <div className="flex items-center gap-2 px-3">
-              <Search className="h-5 w-5 text-muted-foreground" />
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Search by studio name, city, or country…"
-                className="flex-1 border-0 bg-transparent py-3 text-base outline-none placeholder:text-muted-foreground"
-              />
-            </div>
-            <div className="grid grid-cols-1 gap-2 border-t border-border/60 p-2 sm:grid-cols-3">
-              <FilterSelect 
-                value={continent} 
-                onChange={(v) => { setContinent(v); setCountry(""); setCity(""); }} 
-                placeholder="All continents" 
-                options={CONTINENTS as unknown as string[]} 
-              />
-              <FilterSelect 
-                value={country} 
-                onChange={(v) => { setCountry(v); setCity(""); }} 
-                placeholder="All countries" 
-                options={countries} 
-              />
-              <FilterSelect 
-                value={city} 
-                onChange={setCity} 
-                placeholder="All cities" 
-                options={cities} 
-              />
-            </div>
+
+          {/* Google Places Search Bar */}
+          <div className="mx-auto mt-10 max-w-2xl card-warm rounded-2xl p-2 shadow-sm">
+            {isLoaded ? (
+              <PlacesSearch onSelectLocation={(lat, lng) => setUserLoc({ lat, lng })} />
+            ) : (
+              <div className="flex items-center justify-center p-4 text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading search...
+              </div>
+            )}
           </div>
           <div className="rope-divider mx-auto mt-12 w-40" />
         </div>
@@ -196,12 +127,41 @@ function HomePage() {
           </div>
         </div>
         <div className="h-[500px] w-full overflow-hidden rounded-2xl border border-border shadow-sm z-0 relative bg-muted">
-          {isClient ? (
-            <Suspense fallback={<div className="h-full w-full flex items-center justify-center text-muted-foreground">Loading map...</div>}>
-              <MapComponent userLoc={userLoc} filtered={filtered} />
-            </Suspense>
+          {loadError ? (
+            <div className="flex h-full items-center justify-center">Error loading maps</div>
+          ) : !isLoaded ? (
+            <div className="flex h-full items-center justify-center text-muted-foreground">Loading map...</div>
           ) : (
-            <div className="h-full w-full flex items-center justify-center text-muted-foreground">Loading map...</div>
+            <GoogleMap
+              mapContainerStyle={mapContainerStyle}
+              zoom={userLoc ? 10 : 2}
+              center={userLoc ? userLoc : { lat: 20, lng: 0 }}
+              options={{ disableDefaultUI: true, zoomControl: true }}
+            >
+              {filtered.map((s) =>
+                s.latitude && s.longitude ? (
+                  <Marker
+                    key={s.id}
+                    position={{ lat: s.latitude, lng: s.longitude }}
+                    onClick={() => setSelectedStudio(s)}
+                  />
+                ) : null
+              )}
+              {selectedStudio && selectedStudio.latitude && selectedStudio.longitude && (
+                <InfoWindow
+                  position={{ lat: selectedStudio.latitude, lng: selectedStudio.longitude }}
+                  onCloseClick={() => setSelectedStudio(null)}
+                >
+                  <div className="p-1 text-black">
+                    <div className="font-semibold text-sm">{selectedStudio.name}</div>
+                    <div className="text-xs">{selectedStudio.city}, {selectedStudio.country}</div>
+                    <Link to="/studios/$id" params={{ id: selectedStudio.id }} className="mt-2 block text-xs font-medium text-blue-600 hover:underline">
+                      View studio
+                    </Link>
+                  </div>
+                </InfoWindow>
+              )}
+            </GoogleMap>
           )}
         </div>
       </section>
@@ -211,7 +171,7 @@ function HomePage() {
         <div className="mb-6 flex items-end justify-between">
           <div>
             <h2 className="font-serif text-3xl text-foreground">
-              {userLoc ? "Studios near you" : "Featured studios"}
+              {userLoc ? "Studios within 100km" : "Featured studios"}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               {filtered.length} {filtered.length === 1 ? "studio" : "studios"} listed
@@ -235,33 +195,57 @@ function HomePage() {
   );
 }
 
-function FilterSelect({
-  value,
-  onChange,
-  placeholder,
-  options,
-  disabled,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  placeholder: string;
-  options: string[];
-  disabled?: boolean;
-}) {
+// Places Autocomplete Hook Component
+function PlacesSearch({ onSelectLocation }: { onSelectLocation: (lat: number, lng: number) => void }) {
+  const {
+    ready,
+    value,
+    suggestions: { status, data },
+    setValue,
+    clearSuggestions,
+  } = usePlacesAutocomplete({
+    requestOptions: { types: ["(regions)"] },
+    debounce: 300,
+  });
+
+  const handleSelect = async (address: string) => {
+    setValue(address, false);
+    clearSuggestions();
+    try {
+      const results = await getGeocode({ address });
+      const { lat, lng } = await getLatLng(results[0]);
+      onSelectLocation(lat, lng);
+    } catch (error) {
+      console.error("Error retrieving location: ", error);
+    }
+  };
+
   return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      disabled={disabled}
-      className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-secondary disabled:opacity-50"
-    >
-      <option value="">{placeholder}</option>
-      {options.map((o) => (
-        <option key={o} value={o}>
-          {o}
-        </option>
-      ))}
-    </select>
+    <div className="relative w-full">
+      <div className="flex items-center px-3">
+        <Search className="h-5 w-5 text-muted-foreground" />
+        <input
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          disabled={!ready}
+          placeholder="Search any city, neighborhood, or country..."
+          className="flex-1 border-0 bg-transparent py-3 pl-3 pr-4 text-base outline-none placeholder:text-muted-foreground"
+        />
+      </div>
+      {status === "OK" && (
+        <ul className="absolute left-0 right-0 z-50 mt-2 rounded-xl bg-card border border-border shadow-xl overflow-hidden">
+          {data.map(({ place_id, description }) => (
+            <li
+              key={place_id}
+              onClick={() => handleSelect(description)}
+              className="cursor-pointer px-5 py-3 hover:bg-accent text-sm transition-colors border-b border-border/50 last:border-0"
+            >
+              {description}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
@@ -279,18 +263,10 @@ function StudioCarousel({ studios }: { studios: Studio[] }) {
         </div>
       </div>
       <div className="mt-6 flex items-center justify-end gap-2">
-        <button
-          onClick={() => embla?.scrollPrev()}
-          className="rounded-full border border-border bg-card p-2 hover:bg-accent"
-          aria-label="Previous"
-        >
+        <button onClick={() => embla?.scrollPrev()} className="rounded-full border border-border bg-card p-2 hover:bg-accent">
           <ChevronLeft className="h-5 w-5" />
         </button>
-        <button
-          onClick={() => embla?.scrollNext()}
-          className="rounded-full border border-border bg-card p-2 hover:bg-accent"
-          aria-label="Next"
-        >
+        <button onClick={() => embla?.scrollNext()} className="rounded-full border border-border bg-card p-2 hover:bg-accent">
           <ChevronRight className="h-5 w-5" />
         </button>
       </div>
@@ -301,19 +277,10 @@ function StudioCarousel({ studios }: { studios: Studio[] }) {
 function StudioCard({ studio }: { studio: Studio }) {
   const photo = studio.studio_photos?.sort((a, b) => a.position - b.position)[0]?.url;
   return (
-    <Link
-      to="/studios/$id"
-      params={{ id: studio.id }}
-      className="card-warm group block overflow-hidden rounded-2xl transition-shadow hover:shadow-lg"
-    >
+    <Link to="/studios/$id" params={{ id: studio.id }} className="card-warm group block overflow-hidden rounded-2xl transition-shadow hover:shadow-lg">
       <div className="aspect-[4/3] overflow-hidden bg-muted">
         {photo ? (
-          <img
-            src={photo}
-            alt={studio.name}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            loading="lazy"
-          />
+          <img src={photo} alt={studio.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
         ) : (
           <div className="flex h-full items-center justify-center text-muted-foreground">No image</div>
         )}
@@ -322,13 +289,14 @@ function StudioCard({ studio }: { studio: Studio }) {
         <h3 className="font-serif text-2xl text-foreground">{studio.name}</h3>
         <div className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
           <MapPin className="h-4 w-4" />
-          <span>
-            {studio.city}, {studio.country}
-          </span>
+          <span>{studio.city}, {studio.country}</span>
         </div>
-        {studio.description && (
-          <p className="mt-3 line-clamp-2 text-sm text-foreground/80">{studio.description}</p>
+        {studio.distance !== undefined && studio.distance !== Infinity && (
+          <div className="mt-1 text-xs text-secondary font-medium">
+            {Math.round(studio.distance)} km away
+          </div>
         )}
+        {studio.description && <p className="mt-3 line-clamp-2 text-sm text-foreground/80">{studio.description}</p>}
         <div className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-secondary">
           View studio <ArrowRight className="h-4 w-4" />
         </div>
@@ -345,10 +313,7 @@ function EmptyState() {
       <p className="mt-2 text-sm text-muted-foreground">
         Be the first, submit your studio and help build the collective.
       </p>
-      <Link
-        to="/submit"
-        className="mt-6 inline-flex items-center gap-2 rounded-md bg-secondary px-5 py-2.5 text-sm font-medium text-secondary-foreground hover:opacity-90"
-      >
+      <Link to="/submit" className="mt-6 inline-flex items-center gap-2 rounded-md bg-secondary px-5 py-2.5 text-sm font-medium text-secondary-foreground hover:opacity-90">
         Submit your studio <ArrowRight className="h-4 w-4" />
       </Link>
     </div>
