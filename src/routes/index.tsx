@@ -121,27 +121,29 @@ function HomePage() {
 
   return (
     <div>
+      {/* Hero Section */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0">
-          <img
-            src={heroRope}
-            alt=""
-            className="h-full w-full object-cover opacity-40"
+        {/* Added bg-background so the multiply blend mode has the apricot color to mix with */}
+        <div className="absolute inset-0 pointer-events-none bg-background">
+          <img 
+            src={heroRope} 
+            alt="" 
+            className="h-full w-full object-cover mix-blend-multiply opacity-50 grayscale" 
             width={1600}
             height={1000}
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background" />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/80 to-background" />
         </div>
-        <div className="relative mx-auto max-w-5xl px-4 py-20 text-center sm:px-6 sm:py-28">
+        <div className="relative z-10 mx-auto max-w-5xl px-4 py-20 text-center sm:px-6 sm:py-28">
           <p className="text-xs uppercase tracking-[0.3em] text-secondary">The worldwide directory</p>
           <h1 className="mt-4 font-serif text-5xl leading-tight text-foreground sm:text-6xl md:text-7xl">
             Find your <em className="text-secondary not-italic">Shibari</em> studio.
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-base text-muted-foreground sm:text-lg">
-            A curated collective of studios across every continent. 
+            A curated collective of studios across every continent.
           </p>
-          <p className="text-xs uppercase tracking-[0.3em] text-secondary">The rope community brought together.</p>
-        
+
+          {/* Search bar */}
           <div className="mx-auto mt-10 max-w-3xl card-warm rounded-2xl p-2 shadow-sm">
             <div className="flex items-center gap-2 px-3">
               <Search className="h-5 w-5 text-muted-foreground" />
@@ -177,6 +179,7 @@ function HomePage() {
         </div>
       </section>
 
+      {/* Interactive Map */}
       <section className="mx-auto max-w-7xl px-4 pt-12 pb-4 sm:px-6">
         <div className="mb-6 flex items-end justify-between">
           <div>
@@ -197,6 +200,7 @@ function HomePage() {
         </div>
       </section>
 
+      {/* Carousel */}
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <div className="mb-6 flex items-end justify-between">
           <div>
