@@ -35,7 +35,7 @@ function AuthPage() {
       setLoading(false);
     } else {
       setSubmitted(true);
-      toast.success("Magic link sent successfully!");
+      toast.success("Link sent successfully!");
     }
   }
 
@@ -63,7 +63,7 @@ function AuthPage() {
               </div>
               <h2 className="font-bold text-lg text-foreground">Check your inbox</h2>
               <p className="text-sm font-medium text-foreground/60">
-                We've sent a magic link to <span className="font-bold text-foreground">{email}</span>. Click it to instantly sign in.
+                We've sent a link to <span className="font-bold text-foreground">{email}</span>. Click it to instantly sign in.
               </p>
             </div>
           ) : (
@@ -90,7 +90,7 @@ function AuthPage() {
                 disabled={loading}
                 className="w-full flex justify-center items-center gap-2 rounded-full bg-secondary px-6 py-4 text-sm font-bold uppercase tracking-widest text-white shadow-lg hover:scale-[1.02] disabled:opacity-50 transition-all"
               >
-                {loading ? "Sending..." : "Send Magic Link"} <ArrowRight className="h-4 w-4" />
+                {loading ? "Sending..." : "Send Link"} <ArrowRight className="h-4 w-4" />
               </button>
             </form>
           )}
