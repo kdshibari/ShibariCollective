@@ -79,16 +79,10 @@
   html {
     font-family: var(--font-sans);
   }
-  body {
+ body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
-    /* Softened the background glow to match the new peach/espresso vibe */
-    background-image: 
-      radial-gradient(circle at 20% 10%, color-mix(in srgb, #E2725B 15%, transparent), transparent 60%),
-      radial-gradient(circle at 90% 80%, color-mix(in srgb, #4E2C23 8%, transparent), transparent 55%);
-    background-attachment: fixed;
-  }
 }
 
 @utility rope-divider {
