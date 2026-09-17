@@ -72,7 +72,7 @@ function AuthPage() {
                 </div>
                 <h2 className="font-serif text-2xl text-foreground">Check your inbox</h2>
                 <p className="text-sm font-medium text-foreground/70 leading-relaxed">
-                  We've sent a magic link to <br/><span className="font-bold text-foreground">{email}</span>
+                  We've sent a link to <br/><span className="font-bold text-foreground">{email}</span>
                 </p>
               </motion.div>
             ) : (
@@ -102,7 +102,7 @@ function AuthPage() {
                 </label>
 
                 <button type="submit" disabled={loading} className="w-full flex justify-center items-center gap-3 rounded-full bg-secondary px-6 py-4 text-sm font-bold uppercase tracking-widest text-secondary-foreground shadow-xl hover:shadow-2xl hover:scale-[1.02] disabled:opacity-50 transition-all">
-                  {loading ? "Dispatching..." : "Send Magic Link"} <ArrowRight className="h-4 w-4" />
+                  {loading ? "Dispatching..." : "Send Link"} <ArrowRight className="h-4 w-4" />
                 </button>
               </motion.form>
             )}
