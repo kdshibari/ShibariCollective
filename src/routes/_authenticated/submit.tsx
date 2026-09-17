@@ -5,21 +5,21 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { grantStudioOwnerRole } from "@/integrations/supabase/server";
 import { CONTINENTS } from "@/lib/geo";
-import { Plus, X, Info } from "lucide-react";
+import { Plus, X, Info, ChevronRight, ChevronLeft, MapPin, Camera, Clock, CheckCircle2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export const Route = createFileRoute("/_authenticated/submit")({
   head: () => ({
     meta: [
       { title: "Submit your studio — Shibari Collective" },
       { name: "description", content: "Submit your Shibari studio to be featured in the worldwide directory." },
-      { property: "og:title", content: "Submit your studio — Shibari Collective" },
-      { property: "og:description", content: "Submit your Shibari studio to be featured in the worldwide directory." },
     ],
   }),
   component: SubmitPage,
 });
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const DRAFT_KEY = "shibari-studio-draft";
 
 const schema = z.object({
   name: z.string().trim().min(2).max(120),
@@ -40,29 +40,30 @@ const schema = z.object({
 
 function SubmitPage() {
   const navigate = useNavigate();
+  const [step, setStep] = useState(1);
   const [roles, setRoles] = useState<string[]>([]);
   const [checking, setChecking] = useState(true);
   const [saving, setSaving] = useState(false);
   const [photos, setPhotos] = useState<string[]>(["", "", "", "", ""]);
   const [hours, setHours] = useState<Record<string, string>>({});
+  
   const [form, setForm] = useState({
-    name: "",
-    description: "",
-    continent: "",
-    country: "",
-    city: "",
-    address: "",
-    latitude: "",
-    longitude: "",
-    email: "",
-    phone: "",
-    website: "",
-    instagram: "",
-    facebook: "",
-    other: "",
+    name: "", description: "", continent: "", country: "", city: "", address: "",
+    latitude: "", longitude: "", email: "", phone: "", website: "", instagram: "", facebook: "", other: "",
   });
 
+  // Load drafts & check roles
   useEffect(() => {
+    const draft = localStorage.getItem(DRAFT_KEY);
+    if (draft) {
+      try {
+        const parsed = JSON.parse(draft);
+        if (parsed.form) setForm(parsed.form);
+        if (parsed.photos) setPhotos(parsed.photos);
+        if (parsed.hours) setHours(parsed.hours);
+      } catch (e) { /* ignore invalid drafts */ }
+    }
+
     supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) return;
       const { data: rs } = await supabase.from("user_roles").select("role").eq("user_id", data.user.id);
@@ -71,21 +72,27 @@ function SubmitPage() {
     });
   }, []);
 
-async function becomeStudioOwner() {
-  try {
-    await grantStudioOwnerRole();
-    setRoles([...roles, "studio_owner"]);
-    toast.success("You're now a studio owner");
-  } catch (error: any) {
-    toast.error(error.message || "Failed to elevate permissions");
-  }
-}
+  // Auto-save draft
+  useEffect(() => {
+    if (!checking) {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, photos, hours }));
+    }
+  }, [form, photos, hours, checking]);
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function becomeStudioOwner() {
+    try {
+      await grantStudioOwnerRole();
+      setRoles([...roles, "studio_owner"]);
+      toast.success("You are now a verified Studio Owner.");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to elevate permissions");
+    }
+  }
+
+  async function onSubmit() {
     const validPhotos = photos.map((p) => p.trim()).filter(Boolean);
     if (validPhotos.length < 5) {
-      toast.error("Please add at least 5 photo URLs.");
+      toast.error("Please provide at least 5 high-quality photo URLs.");
       return;
     }
     const payload = {
@@ -93,11 +100,13 @@ async function becomeStudioOwner() {
       latitude: form.latitude ? Number(form.latitude) : undefined,
       longitude: form.longitude ? Number(form.longitude) : undefined,
     };
+    
     const parsed = schema.safeParse(payload);
     if (!parsed.success) {
-      toast.error(parsed.error.errors[0]?.message ?? "Check the form");
+      toast.error(parsed.error.errors[0]?.message ?? "Please check your form entries.");
       return;
     }
+
     setSaving(true);
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) return;
@@ -130,218 +139,263 @@ async function becomeStudioOwner() {
 
     if (error || !inserted) {
       setSaving(false);
-      toast.error(error?.message ?? "Failed to create studio");
+      toast.error(error?.message ?? "Failed to create studio.");
       return;
     }
 
     const photoRows = validPhotos.map((url, position) => ({ studio_id: inserted.id, url, position }));
     const { error: pErr } = await supabase.from("studio_photos").insert(photoRows);
+    
     setSaving(false);
     if (pErr) {
       toast.error(pErr.message);
       return;
     }
-    toast.success("Studio submitted");
+
+    localStorage.removeItem(DRAFT_KEY);
+    toast.success("Studio successfully published!");
     navigate({ to: "/studios/$id", params: { id: inserted.id } });
   }
 
-  if (checking) return <div className="mx-auto max-w-3xl px-4 py-16">Loading…</div>;
+  if (checking) return <div className="flex h-screen items-center justify-center text-secondary tracking-widest uppercase text-sm font-bold animate-pulse">Initializing Secure Portal...</div>;
 
   if (!roles.includes("studio_owner") && !roles.includes("admin")) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-16">
-        <div className="card-warm rounded-2xl p-8">
-          <h1 className="font-serif text-3xl text-foreground">Become a studio owner</h1>
-          <p className="mt-2 text-muted-foreground">
-            To submit a studio you need studio owner access. It's free — one click.
+      <div className="flex min-h-[80vh] items-center justify-center px-4">
+        <div className="bg-white/30 backdrop-blur-2xl border border-white/50 rounded-[2.5rem] p-10 max-w-lg text-center shadow-[0_30px_60px_-15px_rgba(78,44,35,0.2)]">
+          <CheckCircle2 className="mx-auto h-16 w-16 text-secondary mb-6" />
+          <h1 className="font-serif text-4xl text-foreground">Claim Your Space</h1>
+          <p className="mt-4 text-foreground/70 font-medium">
+            To maintain the integrity of the collective, only verified owners can list a studio. Verification is instant and free.
           </p>
           <button
             onClick={becomeStudioOwner}
-            className="mt-6 rounded-md bg-secondary px-5 py-2.5 text-sm font-medium text-secondary-foreground hover:opacity-90"
+            className="mt-8 w-full rounded-full bg-secondary px-6 py-4 text-sm font-bold uppercase tracking-widest text-secondary-foreground shadow-lg hover:scale-[1.02] transition-transform"
           >
             I own or represent a studio
           </button>
-          <Link to="/" className="ml-3 text-sm text-muted-foreground hover:text-foreground">Cancel</Link>
+          <Link to="/" className="mt-6 inline-block text-sm font-bold uppercase tracking-widest text-foreground/50 hover:text-foreground transition-colors">Return Home</Link>
         </div>
       </div>
     );
   }
 
+  const steps = [
+    { id: 1, title: "The Basics", icon: <Info className="w-5 h-5" /> },
+    { id: 2, title: "Location", icon: <MapPin className="w-5 h-5" /> },
+    { id: 3, title: "Details", icon: <Clock className="w-5 h-5" /> },
+    { id: 4, title: "Gallery", icon: <Camera className="w-5 h-5" /> }
+  ];
+
   return (
-    <div className="mx-auto max-w-4xl px-4 py-12 sm:py-16">
-      <p className="text-xs uppercase tracking-[0.3em] text-secondary">Studio submission</p>
-      <h1 className="mt-3 font-serif text-5xl text-foreground">Submit your studio</h1>
-      <p className="mt-3 max-w-xl text-muted-foreground">
-        Share your space with the collective. All fields below are required unless marked optional.
-      </p>
-
-      <form onSubmit={onSubmit} className="mt-10 space-y-8">
-        <Section title="Basics">
-          <Input label="Studio name" value={form.name} onChange={(v) => setForm({ ...form, name: v })} required />
-          <Textarea label="Description (optional)" value={form.description} onChange={(v) => setForm({ ...form, description: v })} />
-        </Section>
-
-        <Section title="Location">
-          <div className="grid gap-4 sm:grid-cols-3">
-            <Select
-              label="Continent"
-              value={form.continent}
-              onChange={(v) => setForm({ ...form, continent: v })}
-              options={CONTINENTS as unknown as string[]}
-              required
-            />
-            <Input label="Country" value={form.country} onChange={(v) => setForm({ ...form, country: v })} required />
-            <Input label="City" value={form.city} onChange={(v) => setForm({ ...form, city: v })} required />
+    <div className="min-h-screen bg-background text-foreground pb-40 pt-12 sm:pt-20">
+      <div className="mx-auto max-w-3xl px-4">
+        
+        {/* PREMIUM HEADER & PROGRESS */}
+        <div className="text-center mb-12">
+          <p className="text-xs uppercase tracking-[0.4em] text-secondary font-bold mb-4">Studio Submission</p>
+          <h1 className="font-serif text-5xl sm:text-6xl text-foreground">Curate Your Space</h1>
+          
+          <div className="mt-12 flex justify-between relative">
+            <div className="absolute top-1/2 left-0 w-full h-1 bg-white/30 -z-10 rounded-full" />
+            <div className="absolute top-1/2 left-0 h-1 bg-secondary -z-10 rounded-full transition-all duration-500" style={{ width: `${((step - 1) / 3) * 100}%` }} />
+            
+            {steps.map((s) => (
+              <div key={s.id} className={`flex flex-col items-center gap-2 transition-all duration-500 ${step >= s.id ? 'text-secondary' : 'text-foreground/40'}`}>
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 backdrop-blur-md transition-all duration-500 ${step >= s.id ? 'bg-secondary text-white border-secondary shadow-lg scale-110' : 'bg-white/40 border-white/50'}`}>
+                  {s.icon}
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-widest hidden sm:block">{s.title}</span>
+              </div>
+            ))}
           </div>
-          <Input label="Street address (optional)" value={form.address} onChange={(v) => setForm({ ...form, address: v })} />
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Input label="Latitude (optional)" value={form.latitude} onChange={(v) => setForm({ ...form, latitude: v })} type="number" step="any" />
-            <Input label="Longitude (optional)" value={form.longitude} onChange={(v) => setForm({ ...form, longitude: v })} type="number" step="any" />
-          </div>
-          <p className="flex items-start gap-2 text-xs text-muted-foreground">
-            <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            Coordinates help us show your studio to nearby practitioners. You can copy them from Google Maps (right-click a location).
-          </p>
-        </Section>
+        </div>
 
-        <Section title="Photos" hint="Minimum 5 photo URLs — paste image links (JPG/PNG).">
-          <div className="space-y-2">
-            {photos.map((p, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <input
-                  type="url"
-                  placeholder={`Photo URL #${i + 1}`}
-                  value={p}
-                  onChange={(e) => {
-                    const c = [...photos];
-                    c[i] = e.target.value;
-                    setPhotos(c);
-                  }}
-                  className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-secondary"
-                />
-                {photos.length > 5 && (
+        {/* ANIMATED WIZARD FORMS */}
+        <div className="bg-white/40 backdrop-blur-3xl border border-white/60 rounded-[2.5rem] p-6 sm:p-10 shadow-[0_30px_60px_-15px_rgba(78,44,35,0.15)] min-h-[500px]">
+          <AnimatePresence mode="wait">
+            
+            {step === 1 && (
+              <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+                <h2 className="font-serif text-3xl text-foreground mb-8">Let's start with the basics</h2>
+                <Input label="Official Studio Name" value={form.name} onChange={(v) => setForm({ ...form, name: v })} placeholder="e.g. The Rope Den" required />
+                <Textarea label="Studio Description (Optional but recommended)" value={form.description} onChange={(v) => setForm({ ...form, description: v })} placeholder="Describe the atmosphere, equipment, and ethos of your space..." />
+              </motion.div>
+            )}
+
+            {step === 2 && (
+              <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+                <h2 className="font-serif text-3xl text-foreground mb-2">Where are you located?</h2>
+                <p className="text-sm text-foreground/60 font-medium mb-8">Coordinates are required to appear on the global proximity map.</p>
+                <div className="grid gap-6 sm:grid-cols-2">
+                  <Select label="Continent" value={form.continent} onChange={(v) => setForm({ ...form, continent: v })} options={CONTINENTS as unknown as string[]} required />
+                  <Input label="Country" value={form.country} onChange={(v) => setForm({ ...form, country: v })} placeholder="e.g. Germany" required />
+                </div>
+                <Input label="City" value={form.city} onChange={(v) => setForm({ ...form, city: v })} placeholder="e.g. Berlin" required />
+                <Input label="Street Address (Optional)" value={form.address} onChange={(v) => setForm({ ...form, address: v })} placeholder="Keep blank if private" />
+                <div className="grid gap-6 sm:grid-cols-2 p-4 bg-white/30 rounded-2xl border border-white/50">
+                  <Input label="Latitude" value={form.latitude} onChange={(v) => setForm({ ...form, latitude: v })} type="number" step="any" placeholder="e.g. 52.5200" />
+                  <Input label="Longitude" value={form.longitude} onChange={(v) => setForm({ ...form, longitude: v })} type="number" step="any" placeholder="e.g. 13.4050" />
+                </div>
+              </motion.div>
+            )}
+
+            {step === 3 && (
+              <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
+                <h2 className="font-serif text-3xl text-foreground mb-8">Operating Hours & Contact</h2>
+                
+                <div className="space-y-4">
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-secondary">Weekly Schedule</h3>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {DAYS.map((d) => (
+                      <div key={d} className="flex items-center gap-3 bg-white/30 p-2 rounded-xl border border-white/50">
+                        <label className="w-24 text-xs font-bold text-foreground/70 pl-2">{d.substring(0,3)}</label>
+                        <input
+                          placeholder="10:00 - 22:00"
+                          value={hours[d] ?? ""}
+                          onChange={(e) => setHours({ ...hours, [d]: e.target.value })}
+                          className="flex-1 bg-transparent border-0 text-sm outline-none font-medium placeholder:text-foreground/30 focus:ring-0"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-6 border-t border-white/40">
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-secondary">Digital Presence</h3>
+                  <div className="grid gap-6 sm:grid-cols-2">
+                    <Input label="Public Email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} type="email" placeholder="hello@studio.com" />
+                    <Input label="Phone Number" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} placeholder="+1 234 567 890" />
+                    <Input label="Website" value={form.website} onChange={(v) => setForm({ ...form, website: v })} type="url" placeholder="https://..." />
+                    <Input label="Instagram" value={form.instagram} onChange={(v) => setForm({ ...form, instagram: v })} placeholder="@studio" />
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {step === 4 && (
+              <motion.div key="step4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+                <h2 className="font-serif text-3xl text-foreground mb-2">Build Your Gallery</h2>
+                <p className="text-sm text-foreground/60 font-medium mb-8">Paste direct image URLs (JPG/PNG). Minimum 5 photos required to ensure quality directory standards.</p>
+                
+                <div className="space-y-3">
+                  {photos.map((p, i) => (
+                    <div key={i} className="flex items-center gap-3 bg-white/30 p-2 rounded-2xl border border-white/50 focus-within:bg-white/60 focus-within:border-white/80 transition-all">
+                      <div className="w-8 h-8 rounded-full bg-white/50 flex items-center justify-center text-xs font-bold text-foreground/50 shrink-0">{i + 1}</div>
+                      <input
+                        type="url"
+                        placeholder="https://example.com/photo.jpg"
+                        value={p}
+                        onChange={(e) => {
+                          const c = [...photos];
+                          c[i] = e.target.value;
+                          setPhotos(c);
+                        }}
+                        className="flex-1 bg-transparent border-0 text-sm outline-none font-medium placeholder:text-foreground/30 focus:ring-0 py-2"
+                      />
+                      {photos.length > 5 && (
+                        <button
+                          type="button"
+                          onClick={() => setPhotos(photos.filter((_, j) => j !== i))}
+                          className="w-10 h-10 rounded-xl bg-white/50 flex items-center justify-center text-foreground/50 hover:bg-rose-400 hover:text-white transition-colors"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
                   <button
                     type="button"
-                    onClick={() => setPhotos(photos.filter((_, j) => j !== i))}
-                    className="rounded-md border border-border p-2 text-muted-foreground hover:bg-accent"
-                    aria-label="Remove"
+                    onClick={() => setPhotos([...photos, ""])}
+                    className="mt-4 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-secondary hover:text-foreground transition-colors"
                   >
-                    <X className="h-4 w-4" />
+                    <Plus className="h-4 w-4" /> Add Another Image
                   </button>
-                )}
-              </div>
-            ))}
+                </div>
+              </motion.div>
+            )}
+
+          </AnimatePresence>
+        </div>
+
+        {/* STICKY BOTTOM ACTION BAR */}
+        <div className="fixed bottom-6 left-4 right-4 sm:left-auto sm:right-auto sm:w-full sm:max-w-3xl z-50">
+          <div className="bg-white/80 backdrop-blur-3xl border border-white/60 shadow-[0_20px_40px_-10px_rgba(78,44,35,0.3)] rounded-full p-3 flex items-center justify-between">
             <button
-              type="button"
-              onClick={() => setPhotos([...photos, ""])}
-              className="inline-flex items-center gap-1 text-sm text-secondary hover:underline"
+              onClick={() => setStep(step - 1)}
+              disabled={step === 1 || saving}
+              className="flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold uppercase tracking-widest text-foreground/60 hover:bg-white/50 disabled:opacity-30 transition-all"
             >
-              <Plus className="h-4 w-4" /> Add another photo
+              <ChevronLeft className="w-4 h-4" /> Back
             </button>
-          </div>
-        </Section>
 
-        <Section title="Operating hours">
-          <div className="grid gap-2 sm:grid-cols-2">
-            {DAYS.map((d) => (
-              <div key={d} className="flex items-center gap-2">
-                <label className="w-24 text-sm text-muted-foreground">{d}</label>
-                <input
-                  placeholder="e.g. 10:00 – 22:00 or Closed"
-                  value={hours[d] ?? ""}
-                  onChange={(e) => setHours({ ...hours, [d]: e.target.value })}
-                  className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-secondary"
-                />
-              </div>
-            ))}
+            {step < 4 ? (
+              <button
+                onClick={() => setStep(step + 1)}
+                className="flex items-center gap-2 px-8 py-3 rounded-full bg-foreground text-background text-sm font-bold uppercase tracking-widest shadow-lg hover:scale-105 transition-all"
+              >
+                Next Step <ChevronRight className="w-4 h-4" />
+              </button>
+            ) : (
+              <button
+                onClick={onSubmit}
+                disabled={saving}
+                className="flex items-center gap-2 px-8 py-3 rounded-full bg-secondary text-white text-sm font-bold uppercase tracking-widest shadow-lg hover:scale-105 disabled:opacity-50 transition-all"
+              >
+                {saving ? "Publishing..." : "Publish Studio"} <CheckCircle2 className="w-4 h-4" />
+              </button>
+            )}
           </div>
-        </Section>
+        </div>
 
-        <Section title="Contact & socials">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Input label="Email (optional)" value={form.email} onChange={(v) => setForm({ ...form, email: v })} type="email" />
-            <Input label="Phone (optional)" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
-          </div>
-          <Input label="Website (optional)" value={form.website} onChange={(v) => setForm({ ...form, website: v })} type="url" />
-          <div className="grid gap-4 sm:grid-cols-3">
-            <Input label="Instagram URL" value={form.instagram} onChange={(v) => setForm({ ...form, instagram: v })} />
-            <Input label="Facebook URL" value={form.facebook} onChange={(v) => setForm({ ...form, facebook: v })} />
-            <Input label="Other link" value={form.other} onChange={(v) => setForm({ ...form, other: v })} />
-          </div>
-        </Section>
-
-        <button
-          type="submit"
-          disabled={saving}
-          className="w-full rounded-md bg-secondary px-6 py-3 text-sm font-medium text-secondary-foreground hover:opacity-90 disabled:opacity-60 sm:w-auto"
-        >
-          {saving ? "Publishing…" : "Submit studio"}
-        </button>
-      </form>
+      </div>
     </div>
   );
 }
 
-function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
+// PREMIUM COMPONENTS
+function Input({ label, value, onChange, type = "text", required, step, placeholder }: any) {
   return (
-    <section className="card-warm rounded-2xl p-6 sm:p-8">
-      <h2 className="font-serif text-2xl text-foreground">{title}</h2>
-      {hint && <p className="mt-1 text-sm text-muted-foreground">{hint}</p>}
-      <div className="mt-5 space-y-4">{children}</div>
-    </section>
-  );
-}
-
-function Input({
-  label, value, onChange, type = "text", required, step,
-}: {
-  label: string; value: string; onChange: (v: string) => void; type?: string; required?: boolean; step?: string;
-}) {
-  return (
-    <label className="block">
-      <span className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</span>
+    <label className="block group">
+      <span className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-foreground/60 group-focus-within:text-secondary transition-colors">
+        {label} {required && <span className="text-secondary">*</span>}
+      </span>
       <input
-        type={type}
-        step={step}
-        required={required}
-        value={value}
+        type={type} step={step} required={required} value={value} placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-secondary"
+        className="w-full rounded-2xl border border-white/40 bg-white/40 backdrop-blur-sm px-5 py-4 text-sm font-medium outline-none focus:border-white/80 focus:bg-white/70 transition-all shadow-sm placeholder:text-foreground/30"
       />
     </label>
   );
 }
 
-function Textarea({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function Textarea({ label, value, onChange, placeholder }: any) {
   return (
-    <label className="block">
-      <span className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</span>
+    <label className="block group">
+      <span className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-foreground/60 group-focus-within:text-secondary transition-colors">{label}</span>
       <textarea
-        rows={4}
-        value={value}
+        rows={5} value={value} placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-secondary"
+        className="w-full rounded-2xl border border-white/40 bg-white/40 backdrop-blur-sm px-5 py-4 text-sm font-medium outline-none focus:border-white/80 focus:bg-white/70 transition-all shadow-sm placeholder:text-foreground/30 resize-none"
       />
     </label>
   );
 }
 
-function Select({
-  label, value, onChange, options, required,
-}: {
-  label: string; value: string; onChange: (v: string) => void; options: string[]; required?: boolean;
-}) {
+function Select({ label, value, onChange, options, required }: any) {
   return (
-    <label className="block">
-      <span className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</span>
+    <label className="block group">
+      <span className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-foreground/60 group-focus-within:text-secondary transition-colors">
+        {label} {required && <span className="text-secondary">*</span>}
+      </span>
       <select
-        required={required}
-        value={value}
+        required={required} value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-secondary"
+        className="w-full rounded-2xl border border-white/40 bg-white/40 backdrop-blur-sm px-5 py-4 text-sm font-medium outline-none focus:border-white/80 focus:bg-white/70 transition-all shadow-sm appearance-none cursor-pointer"
+        style={{ backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234E2C23' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1.25rem center', backgroundSize: '1em' }}
       >
-        <option value="">Select…</option>
-        {options.map((o) => <option key={o} value={o}>{o}</option>)}
+        <option value="" disabled>Select...</option>
+        {options.map((o: string) => <option key={o} value={o}>{o}</option>)}
       </select>
     </label>
   );
