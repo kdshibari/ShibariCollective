@@ -29,9 +29,16 @@ function DashboardPage() {
       const urlParams = new URLSearchParams(window.location.search);
       const intent = urlParams.get('intent');
       
+      // SANITIZATION FIX: Instantly strip the intent parameter from the URL history
+      // This prevents the "Back" button from trapping the user in a redirect loop.
+      if (intent) {
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+      
       if (intent === 'owner' && !isVerifiedOwner) {
          // Auto-redirect them to the claim portal if they chose "Studio" but don't have the role
-         navigate({ to: "/submit" });
+         navigate({ to: "/submit", replace: true });
+         return; // Stop execution here so we don't flash the dashboard
       }
 
       setIsOwner(!!isVerifiedOwner);
@@ -41,6 +48,9 @@ function DashboardPage() {
   }, [navigate]);
 
   async function handleLogout() {
+    // SECURITY FIX: Destroy the local draft cache before logging out
+    // This ensures intimate or private studio data does not leak to the next user.
+    localStorage.removeItem("shibari-studio-draft");
     await supabase.auth.signOut();
   }
 
