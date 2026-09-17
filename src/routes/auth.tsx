@@ -10,11 +10,11 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
-type AuthMode = "participant" | "owner";
+type AuthMode = "user" | "owner";
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<AuthMode>("participant");
+  const [mode, setMode] = useState<AuthMode>("user");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -82,8 +82,8 @@ function AuthPage() {
                 <div className="flex p-1 bg-white/40 backdrop-blur-md rounded-full border border-white/50 relative">
                   <div className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded-full shadow-sm transition-all duration-300 ease-out ${mode === 'owner' ? 'left-[calc(50%+2px)]' : 'left-1'}`} />
                   
-                  <button type="button" onClick={() => setMode('participant')} className={`relative flex-1 flex items-center justify-center gap-2 py-3 text-xs font-bold uppercase tracking-widest rounded-full transition-colors z-10 ${mode === 'participant' ? 'text-foreground' : 'text-foreground/50 hover:text-foreground/80'}`}>
-                    <User className="w-4 h-4" /> Participant
+                  <button type="button" onClick={() => setMode('user')} className={`relative flex-1 flex items-center justify-center gap-2 py-3 text-xs font-bold uppercase tracking-widest rounded-full transition-colors z-10 ${mode === 'user' ? 'text-foreground' : 'text-foreground/50 hover:text-foreground/80'}`}>
+                    <User className="w-4 h-4" /> user
                   </button>
                   <button type="button" onClick={() => setMode('owner')} className={`relative flex-1 flex items-center justify-center gap-2 py-3 text-xs font-bold uppercase tracking-widest rounded-full transition-colors z-10 ${mode === 'owner' ? 'text-foreground' : 'text-foreground/50 hover:text-foreground/80'}`}>
                     <Building className="w-4 h-4" /> Studio
