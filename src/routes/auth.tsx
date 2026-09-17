@@ -58,7 +58,7 @@ function AuthPage() {
           className="bg-white/40 backdrop-blur-3xl border border-white/60 rounded-[2.5rem] p-8 sm:p-10 shadow-[0_30px_60px_-15px_rgba(78,44,35,0.25)]"
         >
           <div className="text-center mb-8">
-            <h1 className="font-serif text-4xl text-foreground">Secure Portal</h1>
+            <h1 className="font-serif text-4xl text-foreground">Login</h1>
             <p className="mt-3 text-sm font-medium text-foreground/70">
               Select your path to enter the Collective.
             </p>
