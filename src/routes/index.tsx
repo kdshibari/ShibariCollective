@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Bookmark, MapPin } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-// import Map from "@/components/Map";
+import Map from "@/components/Map";
 
 export const Route = createFileRoute("/")({
   component: DirectoryPage,
@@ -54,7 +54,6 @@ function DirectoryPage() {
 
     const isCurrentlySaved = savedStudioIds.has(studioId);
     
-    // Optimistic UI update
     const newSaved = new Set(savedStudioIds);
     if (isCurrentlySaved) {
       newSaved.delete(studioId);
@@ -65,7 +64,6 @@ function DirectoryPage() {
     }
     setSavedStudioIds(newSaved);
 
-    // Database sync
     try {
       if (isCurrentlySaved) {
         const { error } = await supabase.from("saved_studios").delete().match({ user_id: user.id, studio_id: studioId });
@@ -81,18 +79,15 @@ function DirectoryPage() {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row h-screen w-full bg-background pt-16">
+    <div className="flex flex-col lg:flex-row h-[100dvh] w-full bg-background pt-16 overflow-hidden">
       
       {/* LEAFLET MAP AREA (Top on mobile, Right on desktop) */}
-      <div className="flex-1 w-full h-[40vh] lg:h-full relative bg-neutral-900 order-1 lg:order-2 shrink-0">
-        {/* <Map studios={studios} /> */}
-        <div className="absolute inset-0 flex items-center justify-center text-white/20 font-bold uppercase tracking-widest text-sm">
-          Interactive Map Canvas
-        </div>
+      <div className="w-full h-[45vh] lg:h-full lg:flex-1 relative bg-neutral-900 order-1 lg:order-2 shrink-0 z-0">
+        <Map studios={studios} />
       </div>
 
       {/* DIRECTORY SIDEBAR (Bottom on mobile, Left on desktop) */}
-      <div className="w-full lg:w-[450px] h-[60vh] lg:h-full overflow-y-auto border-t lg:border-t-0 lg:border-r border-white/10 bg-background/50 backdrop-blur-xl p-4 sm:p-6 z-10 order-2 lg:order-1">
+      <div className="w-full lg:w-[450px] h-[55vh] lg:h-full overflow-y-auto border-t lg:border-t-0 lg:border-r border-white/10 bg-background/50 backdrop-blur-xl p-4 sm:p-6 z-10 order-2 lg:order-1 shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.3)] lg:shadow-none">
         <div className="mb-8 hidden lg:block">
           <p className="text-xs uppercase tracking-[0.3em] text-secondary font-bold mb-2">Global Directory</p>
           <h1 className="font-serif text-3xl text-foreground">Explore Spaces</h1>
