@@ -197,6 +197,19 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
   const [deletedPhotoIds, setDeletedPhotoIds] = useState<string[]>([]);
   const [newPhotos, setNewPhotos] = useState<{ file: File, preview: string }[]>([]);
 
+  const handleDelete = async (studioId: string) => {
+  const { error } = await supabase
+    .from('studios')
+    .delete()
+    .eq('id', studioId);
+    
+  if (error) {
+    toast.error("Failed to delete studio.");
+  } else {
+    toast.success("Studio permanently removed.");
+    onSuccess(); // Triggers the dashboard to refresh and close the editor
+  }
+};
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
     const selectedFiles = Array.from(e.target.files);
