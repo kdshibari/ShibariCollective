@@ -28,13 +28,12 @@ function DashboardPage() {
       const urlParams = new URLSearchParams(window.location.search);
       const intent = urlParams.get('intent');
       
-      // CRITICAL ROUTING FIX: Use the router to gracefully strip the query parameter
-      // This ensures the browser "Back" button doesn't trap them in a redirect loop.
+      // Instantly strip the intent parameter from the browser history without a reload
       if (intent) {
-        navigate({ to: "/dashboard", replace: true, search: {} });
+        window.history.replaceState({}, '', window.location.pathname);
       }
       
-      // Only force redirect if they are not verified AND they just clicked the owner intent
+      // Auto-redirect to the claim portal if they chose "Studio" but lack the role
       if (intent === 'owner' && !isVerifiedOwner) {
          navigate({ to: "/submit", replace: true });
          return; 
@@ -47,12 +46,18 @@ function DashboardPage() {
   }, [navigate]);
 
   async function handleLogout() {
-    // CRITICAL SECURITY FIX: Destroy the local draft cache before logging out to protect privacy
+    // Destroy the local draft cache before logging out to protect privacy
     localStorage.removeItem("shibari-studio-draft");
     await supabase.auth.signOut();
   }
 
-  if (loading) return <div className="min-h-screen bg-background flex items-center justify-center animate-pulse text-secondary text-sm font-bold tracking-widest uppercase">Loading Profile...</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center animate-pulse text-secondary text-sm font-bold tracking-widest uppercase">
+        Loading Profile...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground pt-24 pb-20 px-4 sm:px-6">
