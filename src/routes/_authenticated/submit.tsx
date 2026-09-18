@@ -5,7 +5,7 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { grantStudioOwnerRole } from "@/integrations/supabase/server";
 import { CONTINENTS } from "@/lib/geo";
-import { Plus, X, Info, ChevronRight, ChevronLeft, MapPin, Camera, Clock, CheckCircle2 } from "lucide-react";
+import { Info, ChevronRight, ChevronLeft, MapPin, Camera, Clock, CheckCircle2, UploadCloud, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export const Route = createFileRoute("/_authenticated/submit")({
@@ -38,13 +38,21 @@ const schema = z.object({
   other: z.string().max(255).optional(),
 });
 
+interface PhotoState {
+  file: File;
+  preview: string;
+}
+
 function SubmitPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [roles, setRoles] = useState<string[]>([]);
   const [checking, setChecking] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [photos, setPhotos] = useState<string[]>(["", "", "", "", ""]);
+  const [uploadProgress, setUploadProgress] = useState("");
+  
+  // Local File State
+  const [photos, setPhotos] = useState<PhotoState[]>([]);
   const [hours, setHours] = useState<Record<string, string>>({});
   
   const [form, setForm] = useState({
@@ -58,8 +66,8 @@ function SubmitPage() {
       try {
         const parsed = JSON.parse(draft);
         if (parsed.form) setForm(parsed.form);
-        if (parsed.photos) setPhotos(parsed.photos);
         if (parsed.hours) setHours(parsed.hours);
+        // We do not reload photos from local storage because File objects cannot be serialized safely
       } catch (e) { /* ignore invalid drafts */ }
     }
 
@@ -73,14 +81,13 @@ function SubmitPage() {
 
   useEffect(() => {
     if (!checking) {
-      localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, photos, hours }));
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, hours }));
     }
-  }, [form, photos, hours, checking]);
+  }, [form, hours, checking]);
 
   async function becomeStudioOwner() {
     try {
       await grantStudioOwnerRole();
-      // CRITICAL FIX: Refresh the session token so Supabase RLS accepts the new role
       await supabase.auth.refreshSession();
       setRoles([...roles, "studio_owner"]);
       toast.success("You are now a verified Studio Owner.");
@@ -89,14 +96,31 @@ function SubmitPage() {
     }
   }
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    const selectedFiles = Array.from(e.target.files);
+    
+    const newPhotos = selectedFiles.map(file => ({
+      file,
+      preview: URL.createObjectURL(file)
+    }));
+
+    setPhotos(prev => [...prev, ...newPhotos]);
+    
+    // Reset the input so the user can select the same file again if they delete and re-add it
+    e.target.value = '';
+  };
+
+  const removePhoto = (indexToRemove: number) => {
+    setPhotos(prev => prev.filter((_, index) => index !== indexToRemove));
+  };
+
   async function onSubmit() {
-    const validPhotos = photos.map((p) => p.trim()).filter(Boolean);
-    if (validPhotos.length < 5) {
-      toast.error("Please provide at least 5 high-quality photo URLs.");
+    if (photos.length < 5) {
+      toast.error(`You have selected ${photos.length} photos. A minimum of 5 is required.`);
       return;
     }
     
-    // CRITICAL FIX: Sanitize empty strings to undefined to prevent database constraint errors
     const payload = {
       ...form,
       latitude: form.latitude ? Number(form.latitude) : undefined,
@@ -118,9 +142,12 @@ function SubmitPage() {
     }
 
     setSaving(true);
+    setUploadProgress("Initializing profile...");
+    
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) return;
 
+    // 1. Create the studio record
     const { data: inserted, error } = await supabase
       .from("studios")
       .insert({
@@ -148,19 +175,52 @@ function SubmitPage() {
 
     if (error || !inserted) {
       setSaving(false);
+      setUploadProgress("");
       toast.error(error?.message ?? "Failed to create studio. Please check permissions.");
       return;
     }
 
-    const photoRows = validPhotos.map((url, position) => ({ studio_id: inserted.id, url, position }));
-    const { error: pErr } = await supabase.from("studio_photos").insert(photoRows);
-    
-    setSaving(false);
-    if (pErr) {
-      toast.error(pErr.message);
+    // 2. Upload images to Supabase Storage concurrently
+    setUploadProgress("Processing images...");
+    try {
+      const uploadPromises = photos.map(async (photo, index) => {
+        const fileExt = photo.file.name.split('.').pop();
+        const fileName = `${inserted.id}/${Date.now()}-${index}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('studios')
+          .upload(fileName, photo.file, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('studios')
+          .getPublicUrl(fileName);
+
+        return { studio_id: inserted.id, url: publicUrl, position: index };
+      });
+
+      const uploadedPhotos = await Promise.all(uploadPromises);
+
+      // 3. Link uploaded image URLs to the studio in the database
+      setUploadProgress("Finalizing listing...");
+      const { error: pErr } = await supabase.from("studio_photos").insert(uploadedPhotos);
+      
+      if (pErr) throw pErr;
+
+    } catch (err: any) {
+      setSaving(false);
+      setUploadProgress("");
+      toast.error("Studio created, but image uploads failed: " + err.message);
+      navigate({ to: "/studios/$id", params: { id: inserted.id } });
       return;
     }
 
+    setSaving(false);
+    setUploadProgress("");
     localStorage.removeItem(DRAFT_KEY);
     toast.success("Studio successfully published!");
     navigate({ to: "/studios/$id", params: { id: inserted.id } });
@@ -250,7 +310,6 @@ function SubmitPage() {
             {step === 3 && (
               <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
                 <h2 className="font-serif text-3xl text-foreground mb-8">Operating Hours & Contact</h2>
-                
                 <div className="space-y-4">
                   <h3 className="text-xs font-bold uppercase tracking-widest text-secondary">Weekly Schedule</h3>
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -267,7 +326,6 @@ function SubmitPage() {
                     ))}
                   </div>
                 </div>
-
                 <div className="space-y-4 pt-6 border-t border-white/40">
                   <h3 className="text-xs font-bold uppercase tracking-widest text-secondary">Digital Presence</h3>
                   <div className="grid gap-6 sm:grid-cols-2">
@@ -283,41 +341,55 @@ function SubmitPage() {
             {step === 4 && (
               <motion.div key="step4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
                 <h2 className="font-serif text-3xl text-foreground mb-2">Build Your Gallery</h2>
-                <p className="text-sm text-foreground/60 font-medium mb-8">Paste direct image URLs (JPG/PNG). Minimum 5 photos required to ensure quality directory standards.</p>
+                <div className="flex justify-between items-end mb-8">
+                  <p className="text-sm text-foreground/60 font-medium max-w-sm">
+                    Upload directly from your device. Minimum 5 photos required to ensure directory standards.
+                  </p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-secondary">
+                    {photos.length} / 5 Min
+                  </p>
+                </div>
                 
-                <div className="space-y-3">
-                  {photos.map((p, i) => (
-                    <div key={i} className="flex items-center gap-3 bg-white/30 p-2 rounded-2xl border border-white/50 focus-within:bg-white/60 focus-within:border-white/80 transition-all">
-                      <div className="w-8 h-8 rounded-full bg-white/50 flex items-center justify-center text-xs font-bold text-foreground/50 shrink-0">{i + 1}</div>
-                      <input
-                        type="url"
-                        placeholder="https://example.com/photo.jpg"
-                        value={p}
-                        onChange={(e) => {
-                          const c = [...photos];
-                          c[i] = e.target.value;
-                          setPhotos(c);
-                        }}
-                        className="flex-1 bg-transparent border-0 text-sm outline-none font-medium placeholder:text-foreground/30 focus:ring-0 py-2"
-                      />
-                      {photos.length > 5 && (
-                        <button
-                          type="button"
-                          onClick={() => setPhotos(photos.filter((_, j) => j !== i))}
-                          className="w-10 h-10 rounded-xl bg-white/50 flex items-center justify-center text-foreground/50 hover:bg-rose-400 hover:text-white transition-colors"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      )}
+                {/* Premium Native File Uploader */}
+                <div className="space-y-6">
+                  <label className="relative flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-white/60 bg-white/20 hover:bg-white/40 backdrop-blur-sm rounded-[2rem] cursor-pointer transition-all hover:scale-[1.01]">
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <UploadCloud className="w-10 h-10 text-secondary mb-3" />
+                      <p className="mb-2 text-sm font-bold text-foreground">Tap to select or drop images</p>
+                      <p className="text-xs text-foreground/60 font-medium">JPEG, PNG or WEBP (Max 5MB)</p>
                     </div>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => setPhotos([...photos, ""])}
-                    className="mt-4 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-secondary hover:text-foreground transition-colors"
-                  >
-                    <Plus className="h-4 w-4" /> Add Another Image
-                  </button>
+                    <input 
+                      type="file" 
+                      className="hidden" 
+                      multiple 
+                      accept="image/*"
+                      onChange={handleImageSelect}
+                    />
+                  </label>
+
+                  {/* Image Preview Grid */}
+                  {photos.length > 0 && (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 p-4 bg-white/20 rounded-[2rem] border border-white/30">
+                      {photos.map((photo, index) => (
+                        <div key={index} className="relative aspect-square group overflow-hidden rounded-2xl shadow-sm">
+                          <img 
+                            src={photo.preview} 
+                            alt={`Preview ${index}`} 
+                            className="w-full h-full object-cover transition-transform group-hover:scale-110"
+                          />
+                          <div className="absolute inset-0 bg-background/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+                            <button 
+                              type="button"
+                              onClick={() => removePhoto(index)}
+                              className="bg-secondary/90 text-white p-3 rounded-full hover:bg-secondary hover:scale-110 transition-all shadow-xl"
+                            >
+                              <X className="w-5 h-5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -325,6 +397,7 @@ function SubmitPage() {
           </AnimatePresence>
         </div>
 
+        {/* Action Bar */}
         <div className="fixed bottom-6 left-4 right-4 sm:left-auto sm:right-auto sm:w-full sm:max-w-3xl z-50">
           <div className="bg-white/80 backdrop-blur-3xl border border-white/60 shadow-[0_20px_40px_-10px_rgba(78,44,35,0.3)] rounded-full p-3 flex items-center justify-between">
             <button
@@ -346,9 +419,10 @@ function SubmitPage() {
               <button
                 onClick={onSubmit}
                 disabled={saving}
-                className="flex items-center gap-2 px-8 py-3 rounded-full bg-secondary text-white text-sm font-bold uppercase tracking-widest shadow-lg hover:scale-105 disabled:opacity-50 transition-all"
+                className="flex items-center justify-center gap-2 px-8 py-3 rounded-full bg-secondary text-white text-sm font-bold uppercase tracking-widest shadow-lg hover:scale-105 disabled:opacity-50 transition-all min-w-[200px]"
               >
-                {saving ? "Publishing..." : "Publish Studio"} <CheckCircle2 className="w-4 h-4" />
+                {saving ? uploadProgress || "Publishing..." : "Publish Studio"} 
+                {!saving && <CheckCircle2 className="w-4 h-4" />}
               </button>
             )}
           </div>
