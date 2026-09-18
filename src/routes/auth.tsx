@@ -10,11 +10,11 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
-type AuthMode = "user" | "owner";
+type AuthMode = "participant" | "owner";
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<AuthMode>("user");
+  const [mode, setMode] = useState<AuthMode>("participant");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -30,7 +30,6 @@ function AuthPage() {
     if (!email.trim()) return;
     setLoading(true);
     
-    // We pass the mode to the dashboard so it knows how to welcome them
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: `${window.location.origin}/dashboard?intent=${mode}` },
@@ -53,41 +52,69 @@ function AuthPage() {
 
       <div className="relative z-10 w-full max-w-md px-4">
         <motion.div 
+          layout
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
           className="bg-white/40 backdrop-blur-3xl border border-white/60 rounded-[2.5rem] p-8 sm:p-10 shadow-[0_30px_60px_-15px_rgba(78,44,35,0.25)]"
         >
-          <div className="text-center mb-8">
-            <h1 className="font-serif text-4xl text-foreground">Login</h1>
+          <motion.div layout className="text-center mb-8">
+            <h1 className="font-serif text-4xl text-foreground">Secure Portal</h1>
             <p className="mt-3 text-sm font-medium text-foreground/70">
               Select your path to enter the Collective.
             </p>
-          </div>
+          </motion.div>
 
           <AnimatePresence mode="wait">
             {submitted ? (
-              <motion.div key="success" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center text-center space-y-5 py-6">
+              <motion.div 
+                key="success" 
+                initial={{ scale: 0.85, opacity: 0 }} 
+                animate={{ scale: 1, opacity: 1 }} 
+                transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                className="flex flex-col items-center text-center space-y-5 py-6"
+              >
                 <div className="h-20 w-20 bg-secondary/10 rounded-full flex items-center justify-center">
                   <CheckCircle2 className="h-10 w-10 text-secondary" />
                 </div>
                 <h2 className="font-serif text-2xl text-foreground">Check your inbox</h2>
                 <p className="text-sm font-medium text-foreground/70 leading-relaxed">
-                  We've sent a link to <br/><span className="font-bold text-foreground">{email}</span>
+                  We've sent a magic link to <br/><span className="font-bold text-foreground">{email}</span>
                 </p>
               </motion.div>
             ) : (
-              <motion.form key="form" onSubmit={handleLogin} className="space-y-6">
-                
-                {/* Premium Segmented Control */}
+              <motion.form 
+                key="form" 
+                layout
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+                onSubmit={handleLogin} 
+                className="space-y-6"
+              >
+                {/* Premium Physics-Based Segmented Control */}
                 <div className="flex p-1 bg-white/40 backdrop-blur-md rounded-full border border-white/50 relative">
-                  <div className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded-full shadow-sm transition-all duration-300 ease-out ${mode === 'owner' ? 'left-[calc(50%+2px)]' : 'left-1'}`} />
-                  
-                  <button type="button" onClick={() => setMode('user')} className={`relative flex-1 flex items-center justify-center gap-2 py-3 text-xs font-bold uppercase tracking-widest rounded-full transition-colors z-10 ${mode === 'user' ? 'text-foreground' : 'text-foreground/50 hover:text-foreground/80'}`}>
-                    <User className="w-4 h-4" /> user
-                  </button>
-                  <button type="button" onClick={() => setMode('owner')} className={`relative flex-1 flex items-center justify-center gap-2 py-3 text-xs font-bold uppercase tracking-widest rounded-full transition-colors z-10 ${mode === 'owner' ? 'text-foreground' : 'text-foreground/50 hover:text-foreground/80'}`}>
-                    <Building className="w-4 h-4" /> Studio
-                  </button>
+                  {(['participant', 'owner'] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      type="button"
+                      onClick={() => setMode(tab)}
+                      className={`relative flex-1 flex items-center justify-center gap-2 py-3 text-xs font-bold uppercase tracking-widest rounded-full transition-colors z-10 ${mode === tab ? 'text-foreground' : 'text-foreground/50 hover:text-foreground/80'}`}
+                    >
+                      {mode === tab && (
+                        <motion.div
+                          layoutId="activeTabIndicator"
+                          className="absolute inset-0 bg-white rounded-full shadow-sm"
+                          transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                        />
+                      )}
+                      <span className="relative z-20 flex items-center gap-2">
+                        {tab === 'participant' ? <User className="w-4 h-4" /> : <Building className="w-4 h-4" />}
+                        {tab === 'participant' ? 'Participant' : 'Studio'}
+                      </span>
+                    </button>
+                  ))}
                 </div>
 
                 <label className="block group mt-6">
@@ -101,8 +128,8 @@ function AuthPage() {
                   </div>
                 </label>
 
-                <button type="submit" disabled={loading} className="w-full flex justify-center items-center gap-3 rounded-full bg-secondary px-6 py-4 text-sm font-bold uppercase tracking-widest text-secondary-foreground shadow-xl hover:shadow-2xl hover:scale-[1.02] disabled:opacity-50 transition-all">
-                  {loading ? "Dispatching..." : "Send Link"} <ArrowRight className="h-4 w-4" />
+                <button type="submit" disabled={loading} className="w-full flex justify-center items-center gap-3 rounded-full bg-secondary px-6 py-4 text-sm font-bold uppercase tracking-widest text-secondary-foreground shadow-xl hover:shadow-2xl hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 transition-all">
+                  {loading ? "Dispatching..." : "Send Magic Link"} <ArrowRight className="h-4 w-4" />
                 </button>
               </motion.form>
             )}
