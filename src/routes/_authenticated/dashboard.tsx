@@ -25,20 +25,19 @@ function DashboardPage() {
       const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", session.user.id);
       const isVerifiedOwner = roles?.some(r => r.role === "studio_owner" || r.role === "admin");
       
-      // We check URL params to see if they just logged in with "intent=owner"
       const urlParams = new URLSearchParams(window.location.search);
       const intent = urlParams.get('intent');
       
-      // SANITIZATION FIX: Instantly strip the intent parameter from the URL history
-      // This prevents the "Back" button from trapping the user in a redirect loop.
+      // CRITICAL ROUTING FIX: Use the router to gracefully strip the query parameter
+      // This ensures the browser "Back" button doesn't trap them in a redirect loop.
       if (intent) {
-        window.history.replaceState({}, '', window.location.pathname);
+        navigate({ to: "/dashboard", replace: true, search: {} });
       }
       
+      // Only force redirect if they are not verified AND they just clicked the owner intent
       if (intent === 'owner' && !isVerifiedOwner) {
-         // Auto-redirect them to the claim portal if they chose "Studio" but don't have the role
          navigate({ to: "/submit", replace: true });
-         return; // Stop execution here so we don't flash the dashboard
+         return; 
       }
 
       setIsOwner(!!isVerifiedOwner);
@@ -48,8 +47,7 @@ function DashboardPage() {
   }, [navigate]);
 
   async function handleLogout() {
-    // SECURITY FIX: Destroy the local draft cache before logging out
-    // This ensures intimate or private studio data does not leak to the next user.
+    // CRITICAL SECURITY FIX: Destroy the local draft cache before logging out to protect privacy
     localStorage.removeItem("shibari-studio-draft");
     await supabase.auth.signOut();
   }
@@ -60,7 +58,6 @@ function DashboardPage() {
     <div className="min-h-screen bg-background text-foreground pt-24 pb-20 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto">
         
-        {/* Profile Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-12">
           <div className="flex items-center gap-4">
             <div className="h-16 w-16 rounded-full bg-white/40 border border-white/60 shadow-md backdrop-blur-md flex items-center justify-center">
@@ -76,7 +73,6 @@ function DashboardPage() {
           </button>
         </div>
 
-        {/* Adaptive Portal */}
         {isOwner ? <OwnerPortal /> : <ParticipantPortal />}
 
       </div>
@@ -84,9 +80,6 @@ function DashboardPage() {
   );
 }
 
-// -----------------------------------------------------
-// STUDIO OWNER VIEW
-// -----------------------------------------------------
 function OwnerPortal() {
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
@@ -113,9 +106,6 @@ function OwnerPortal() {
   );
 }
 
-// -----------------------------------------------------
-// PARTICIPANT VIEW
-// -----------------------------------------------------
 function ParticipantPortal() {
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
@@ -127,7 +117,7 @@ function ParticipantPortal() {
         <Bookmark className="mx-auto h-12 w-12 text-foreground/30 mb-4" />
         <h3 className="font-serif text-3xl text-foreground">No Saved Spaces</h3>
         <p className="mt-3 text-foreground/70 font-medium max-w-md mx-auto">
-          Keep track of studios you'd like to visit. Browse the collective and click the bookmark icon to save them here.
+          Keep track of studios you'd like to visit. Browse the collective and save them directly from the directory.
         </p>
         <Link to="/" className="mt-8 inline-flex items-center gap-2 rounded-full bg-secondary text-secondary-foreground px-8 py-3.5 text-sm font-bold uppercase tracking-widest shadow-xl hover:scale-105 transition-all">
           Explore Map <ArrowRight className="h-4 w-4" />
