@@ -30,9 +30,9 @@ const schema = z.object({
   address: z.string().max(200).optional(),
   latitude: z.number().min(-90).max(90).optional(),
   longitude: z.number().min(-180).max(180).optional(),
-  email: z.string().trim().email().max(255).optional().or(z.literal("")),
+  email: z.string().trim().email().max(255).optional(),
   phone: z.string().max(50).optional(),
-  website: z.string().url().max(255).optional().or(z.literal("")),
+  website: z.string().url().max(255).optional(),
   instagram: z.string().max(255).optional(),
   facebook: z.string().max(255).optional(),
   other: z.string().max(255).optional(),
@@ -52,7 +52,6 @@ function SubmitPage() {
     latitude: "", longitude: "", email: "", phone: "", website: "", instagram: "", facebook: "", other: "",
   });
 
-  // Load drafts & check roles
   useEffect(() => {
     const draft = localStorage.getItem(DRAFT_KEY);
     if (draft) {
@@ -72,7 +71,6 @@ function SubmitPage() {
     });
   }, []);
 
-  // Auto-save draft
   useEffect(() => {
     if (!checking) {
       localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, photos, hours }));
@@ -82,6 +80,8 @@ function SubmitPage() {
   async function becomeStudioOwner() {
     try {
       await grantStudioOwnerRole();
+      // CRITICAL FIX: Refresh the session token so Supabase RLS accepts the new role
+      await supabase.auth.refreshSession();
       setRoles([...roles, "studio_owner"]);
       toast.success("You are now a verified Studio Owner.");
     } catch (error: any) {
@@ -95,10 +95,20 @@ function SubmitPage() {
       toast.error("Please provide at least 5 high-quality photo URLs.");
       return;
     }
+    
+    // CRITICAL FIX: Sanitize empty strings to undefined to prevent database constraint errors
     const payload = {
       ...form,
       latitude: form.latitude ? Number(form.latitude) : undefined,
       longitude: form.longitude ? Number(form.longitude) : undefined,
+      email: form.email.trim() || undefined,
+      phone: form.phone.trim() || undefined,
+      website: form.website.trim() || undefined,
+      address: form.address.trim() || undefined,
+      instagram: form.instagram.trim() || undefined,
+      facebook: form.facebook.trim() || undefined,
+      other: form.other.trim() || undefined,
+      description: form.description.trim() || undefined,
     };
     
     const parsed = schema.safeParse(payload);
@@ -132,14 +142,13 @@ function SubmitPage() {
           facebook: parsed.data.facebook || undefined,
           other: parsed.data.other || undefined,
         },
-        status: "approved",
       })
       .select("id")
       .single();
 
     if (error || !inserted) {
       setSaving(false);
-      toast.error(error?.message ?? "Failed to create studio.");
+      toast.error(error?.message ?? "Failed to create studio. Please check permissions.");
       return;
     }
 
@@ -191,7 +200,6 @@ function SubmitPage() {
     <div className="min-h-screen bg-background text-foreground pb-40 pt-12 sm:pt-20">
       <div className="mx-auto max-w-3xl px-4">
         
-        {/* PREMIUM HEADER & PROGRESS */}
         <div className="text-center mb-12">
           <p className="text-xs uppercase tracking-[0.4em] text-secondary font-bold mb-4">Studio Submission</p>
           <h1 className="font-serif text-5xl sm:text-6xl text-foreground">Curate Your Space</h1>
@@ -211,15 +219,14 @@ function SubmitPage() {
           </div>
         </div>
 
-        {/* ANIMATED WIZARD FORMS */}
         <div className="bg-white/40 backdrop-blur-3xl border border-white/60 rounded-[2.5rem] p-6 sm:p-10 shadow-[0_30px_60px_-15px_rgba(78,44,35,0.15)] min-h-[500px]">
           <AnimatePresence mode="wait">
             
             {step === 1 && (
               <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
                 <h2 className="font-serif text-3xl text-foreground mb-8">Let's start with the basics</h2>
-                <Input label="Official Studio Name" value={form.name} onChange={(v) => setForm({ ...form, name: v })} placeholder="e.g. The Rope Den" required />
-                <Textarea label="Studio Description (Optional but recommended)" value={form.description} onChange={(v) => setForm({ ...form, description: v })} placeholder="Describe the atmosphere, equipment, and ethos of your space..." />
+                <Input label="Official Studio Name" value={form.name} onChange={(v: string) => setForm({ ...form, name: v })} placeholder="e.g. The Rope Den" required />
+                <Textarea label="Studio Description (Optional but recommended)" value={form.description} onChange={(v: string) => setForm({ ...form, description: v })} placeholder="Describe the atmosphere, equipment, and ethos of your space..." />
               </motion.div>
             )}
 
@@ -228,14 +235,14 @@ function SubmitPage() {
                 <h2 className="font-serif text-3xl text-foreground mb-2">Where are you located?</h2>
                 <p className="text-sm text-foreground/60 font-medium mb-8">Coordinates are required to appear on the global proximity map.</p>
                 <div className="grid gap-6 sm:grid-cols-2">
-                  <Select label="Continent" value={form.continent} onChange={(v) => setForm({ ...form, continent: v })} options={CONTINENTS as unknown as string[]} required />
-                  <Input label="Country" value={form.country} onChange={(v) => setForm({ ...form, country: v })} placeholder="e.g. Germany" required />
+                  <Select label="Continent" value={form.continent} onChange={(v: string) => setForm({ ...form, continent: v })} options={CONTINENTS as unknown as string[]} required />
+                  <Input label="Country" value={form.country} onChange={(v: string) => setForm({ ...form, country: v })} placeholder="e.g. Germany" required />
                 </div>
-                <Input label="City" value={form.city} onChange={(v) => setForm({ ...form, city: v })} placeholder="e.g. Berlin" required />
-                <Input label="Street Address (Optional)" value={form.address} onChange={(v) => setForm({ ...form, address: v })} placeholder="Keep blank if private" />
+                <Input label="City" value={form.city} onChange={(v: string) => setForm({ ...form, city: v })} placeholder="e.g. Berlin" required />
+                <Input label="Street Address (Optional)" value={form.address} onChange={(v: string) => setForm({ ...form, address: v })} placeholder="Keep blank if private" />
                 <div className="grid gap-6 sm:grid-cols-2 p-4 bg-white/30 rounded-2xl border border-white/50">
-                  <Input label="Latitude" value={form.latitude} onChange={(v) => setForm({ ...form, latitude: v })} type="number" step="any" placeholder="e.g. 52.5200" />
-                  <Input label="Longitude" value={form.longitude} onChange={(v) => setForm({ ...form, longitude: v })} type="number" step="any" placeholder="e.g. 13.4050" />
+                  <Input label="Latitude" value={form.latitude} onChange={(v: string) => setForm({ ...form, latitude: v })} type="number" step="any" placeholder="e.g. 52.5200" />
+                  <Input label="Longitude" value={form.longitude} onChange={(v: string) => setForm({ ...form, longitude: v })} type="number" step="any" placeholder="e.g. 13.4050" />
                 </div>
               </motion.div>
             )}
@@ -264,10 +271,10 @@ function SubmitPage() {
                 <div className="space-y-4 pt-6 border-t border-white/40">
                   <h3 className="text-xs font-bold uppercase tracking-widest text-secondary">Digital Presence</h3>
                   <div className="grid gap-6 sm:grid-cols-2">
-                    <Input label="Public Email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} type="email" placeholder="hello@studio.com" />
-                    <Input label="Phone Number" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} placeholder="+1 234 567 890" />
-                    <Input label="Website" value={form.website} onChange={(v) => setForm({ ...form, website: v })} type="url" placeholder="https://..." />
-                    <Input label="Instagram" value={form.instagram} onChange={(v) => setForm({ ...form, instagram: v })} placeholder="@studio" />
+                    <Input label="Public Email" value={form.email} onChange={(v: string) => setForm({ ...form, email: v })} type="email" placeholder="hello@studio.com" />
+                    <Input label="Phone Number" value={form.phone} onChange={(v: string) => setForm({ ...form, phone: v })} placeholder="+1 234 567 890" />
+                    <Input label="Website" value={form.website} onChange={(v: string) => setForm({ ...form, website: v })} type="url" placeholder="https://..." />
+                    <Input label="Instagram" value={form.instagram} onChange={(v: string) => setForm({ ...form, instagram: v })} placeholder="@studio" />
                   </div>
                 </div>
               </motion.div>
@@ -318,7 +325,6 @@ function SubmitPage() {
           </AnimatePresence>
         </div>
 
-        {/* STICKY BOTTOM ACTION BAR */}
         <div className="fixed bottom-6 left-4 right-4 sm:left-auto sm:right-auto sm:w-full sm:max-w-3xl z-50">
           <div className="bg-white/80 backdrop-blur-3xl border border-white/60 shadow-[0_20px_40px_-10px_rgba(78,44,35,0.3)] rounded-full p-3 flex items-center justify-between">
             <button
