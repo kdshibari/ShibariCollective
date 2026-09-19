@@ -19,28 +19,34 @@ function DirectoryPage() {
 
   useEffect(() => {
     async function loadDirectory() {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user || null);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setUser(session?.user || null);
 
-      const { data: studioData } = await supabase
-        .from("studios")
-        .select("*, studio_photos(url)")
-        .eq("status", "approved")
-        .order("created_at", { ascending: false });
-      
-      setStudios(studioData || []);
-
-      if (session?.user) {
-        const { data: savedData } = await supabase
-          .from("saved_studios")
-          .select("studio_id")
-          .eq("user_id", session.user.id);
+        const { data: studioData, error } = await supabase
+          .from("studios")
+          .select("*, studio_photos(url)")
+          .eq("status", "approved")
+          .order("created_at", { ascending: false });
         
-        if (savedData) {
-          setSavedStudioIds(new Set(savedData.map(s => s.studio_id)));
+        if (error) throw error;
+        setStudios(studioData || []);
+
+        if (session?.user) {
+          const { data: savedData } = await supabase
+            .from("saved_studios")
+            .select("studio_id")
+            .eq("user_id", session.user.id);
+          
+          if (savedData) {
+            setSavedStudioIds(new Set(savedData.map(s => s.studio_id)));
+          }
         }
+      } catch (err) {
+        console.error("Directory Load Error:", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
     loadDirectory();
   }, []);
@@ -78,15 +84,21 @@ function DirectoryPage() {
     }
   };
 
+  // CRITICAL FIX: Sanitize the studios array before passing it to the Map component.
+  // Leaflet will fatally crash the app if it tries to plot a marker with undefined coordinates.
+  const safeMapStudios = studios.filter(
+    (studio) => typeof studio.latitude === "number" && typeof studio.longitude === "number"
+  );
+
   return (
     <div className="flex flex-col lg:flex-row h-[100dvh] w-full bg-background pt-16 overflow-hidden">
       
-      {/* LEAFLET MAP AREA (Top on mobile, Right on desktop) */}
+      {/* LEAFLET MAP AREA */}
       <div className="w-full h-[45vh] lg:h-full lg:flex-1 relative bg-neutral-900 order-1 lg:order-2 shrink-0 z-0">
-        <Map studios={studios} />
+        {!loading && <Map studios={safeMapStudios} />}
       </div>
 
-      {/* DIRECTORY SIDEBAR (Bottom on mobile, Left on desktop) */}
+      {/* DIRECTORY SIDEBAR */}
       <div className="w-full lg:w-[450px] h-[55vh] lg:h-full overflow-y-auto border-t lg:border-t-0 lg:border-r border-white/10 bg-background/50 backdrop-blur-xl p-4 sm:p-6 z-10 order-2 lg:order-1 shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.3)] lg:shadow-none">
         <div className="mb-8 hidden lg:block">
           <p className="text-xs uppercase tracking-[0.3em] text-secondary font-bold mb-2">Global Directory</p>
