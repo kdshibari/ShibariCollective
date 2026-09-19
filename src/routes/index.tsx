@@ -84,8 +84,7 @@ function DirectoryPage() {
     }
   };
 
-  // CRITICAL FIX: Sanitize the studios array before passing it to the Map component.
-  // Leaflet will fatally crash the app if it tries to plot a marker with undefined coordinates.
+  // Strictly sanitize coordinates before sending them to the Map
   const safeMapStudios = studios.filter(
     (studio) => typeof studio.latitude === "number" && typeof studio.longitude === "number"
   );
@@ -95,7 +94,8 @@ function DirectoryPage() {
       
       {/* LEAFLET MAP AREA */}
       <div className="w-full h-[45vh] lg:h-full lg:flex-1 relative bg-neutral-900 order-1 lg:order-2 shrink-0 z-0">
-        {!loading && <Map studios={safeMapStudios} />}
+        {/* BUG FIX: Passed the 'filtered' prop instead of 'studios' to prevent crash */}
+        {!loading && <Map filtered={safeMapStudios} userLoc={null} />}
       </div>
 
       {/* DIRECTORY SIDEBAR */}
