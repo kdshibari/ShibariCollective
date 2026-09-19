@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Mail, ArrowRight, CheckCircle2, User, Building } from "lucide-react";
+import { Mail, ArrowRight, CheckCircle2, User, Building, ExternalLink } from "lucide-react";
 import heroRope from "@/assets/hero-rope.jpg";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -12,6 +12,20 @@ export const Route = createFileRoute("/auth")({
 
 type AuthMode = "participant" | "owner";
 
+// Staggered Animation Configuration
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 15 },
+  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+};
+
 function AuthPage() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<AuthMode>("participant");
@@ -20,6 +34,13 @@ function AuthPage() {
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
+    // BUG FIX: Parse the URL intent so the correct tab is selected automatically
+    const params = new URLSearchParams(window.location.search);
+    const intent = params.get('intent');
+    if (intent === 'owner' || intent === 'participant') {
+      setMode(intent);
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) navigate({ to: "/dashboard", replace: true });
     });
@@ -53,8 +74,8 @@ function AuthPage() {
       <div className="relative z-10 w-full max-w-md px-4">
         <motion.div 
           layout
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
           className="bg-white/40 backdrop-blur-3xl border border-white/60 rounded-[2.5rem] p-8 sm:p-10 shadow-[0_30px_60px_-15px_rgba(78,44,35,0.25)]"
         >
@@ -78,23 +99,29 @@ function AuthPage() {
                   <CheckCircle2 className="h-10 w-10 text-secondary" />
                 </div>
                 <h2 className="font-serif text-2xl text-foreground">Check your inbox</h2>
-                <p className="text-sm font-medium text-foreground/70 leading-relaxed">
+                <p className="text-sm font-medium text-foreground/70 leading-relaxed mb-4">
                   We've sent a magic link to <br/><span className="font-bold text-foreground">{email}</span>
                 </p>
+                
+                {/* BUG FIX: Direct Mail App Deep Link */}
+                <a 
+                  href="mailto:"
+                  className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-secondary hover:text-foreground transition-colors"
+                >
+                  Open Mail App <ExternalLink className="w-3.5 h-3.5" />
+                </a>
               </motion.div>
             ) : (
               <motion.form 
                 key="form" 
-                layout
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+                variants={containerVariants}
+                initial="hidden"
+                animate="show"
                 exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.2 }}
                 onSubmit={handleLogin} 
                 className="space-y-6"
               >
-                {/* Premium Physics-Based Segmented Control */}
-                <div className="flex p-1 bg-white/40 backdrop-blur-md rounded-full border border-white/50 relative">
+                <motion.div variants={itemVariants} className="flex p-1 bg-white/40 backdrop-blur-md rounded-full border border-white/50 relative">
                   {(['participant', 'owner'] as const).map((tab) => (
                     <button
                       key={tab}
@@ -115,22 +142,27 @@ function AuthPage() {
                       </span>
                     </button>
                   ))}
-                </div>
+                </motion.div>
 
-                <label className="block group mt-6">
+                <motion.label variants={itemVariants} className="block group mt-6">
                   <div className="relative flex items-center">
                     <Mail className="absolute left-5 h-5 w-5 text-foreground/40 transition-colors group-focus-within:text-secondary" />
+                    {/* BUG FIX: Added autoFocus for instant keyboard pop */}
                     <input
-                      type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+                      type="email" required autoFocus value={email} onChange={(e) => setEmail(e.target.value)}
                       placeholder="Enter your email address..."
-                      className="w-full rounded-full border border-white/40 bg-white/50 backdrop-blur-md pl-14 pr-5 py-4 text-sm font-medium outline-none focus:border-white/80 focus:bg-white/80 transition-all shadow-sm"
+                      className="w-full rounded-full border border-white/40 bg-white/50 backdrop-blur-md pl-14 pr-5 py-4 text-sm font-medium outline-none focus:border-secondary focus:bg-white/80 transition-all shadow-sm valid:border-secondary/50"
                     />
                   </div>
-                </label>
+                </motion.label>
 
-                <button type="submit" disabled={loading} className="w-full flex justify-center items-center gap-3 rounded-full bg-secondary px-6 py-4 text-sm font-bold uppercase tracking-widest text-secondary-foreground shadow-xl hover:shadow-2xl hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 transition-all">
-                  {loading ? "Dispatching..." : "Send Magic Link"} <ArrowRight className="h-4 w-4" />
-                </button>
+                <motion.button variants={itemVariants} type="submit" disabled={loading} className="w-full flex justify-center items-center gap-3 rounded-full bg-secondary px-6 py-4 text-sm font-bold uppercase tracking-widest text-secondary-foreground shadow-xl hover:shadow-2xl hover:scale-[1.02] disabled:opacity-80 disabled:hover:scale-100 transition-all">
+                  {loading ? (
+                    <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <>Send Magic Link <ArrowRight className="h-4 w-4" /></>
+                  )}
+                </motion.button>
               </motion.form>
             )}
           </AnimatePresence>
