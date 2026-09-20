@@ -28,11 +28,9 @@ const schema = z.object({
   country: z.string().trim().min(2).max(80),
   city: z.string().trim().min(1).max(80),
   address: z.string().max(200).optional(),
-  latitude: z.number().min(-90).max(90).optional(),
-  longitude: z.number().min(-180).max(180).optional(),
-  email: z.string().trim().email().max(255).optional(),
+  email: z.string().trim().email().max(255).optional().or(z.literal("")),
   phone: z.string().max(50).optional(),
-  website: z.string().url().max(255).optional(),
+  website: z.string().url().max(255).optional().or(z.literal("")),
   instagram: z.string().max(255).optional(),
   facebook: z.string().max(255).optional(),
   other: z.string().max(255).optional(),
@@ -50,14 +48,12 @@ function SubmitPage() {
   const [checking, setChecking] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
-  
-  // Local File State
+
   const [photos, setPhotos] = useState<PhotoState[]>([]);
   const [hours, setHours] = useState<Record<string, string>>({});
-  
   const [form, setForm] = useState({
     name: "", description: "", continent: "", country: "", city: "", address: "",
-    latitude: "", longitude: "", email: "", phone: "", website: "", instagram: "", facebook: "", other: "",
+    email: "", phone: "", website: "", instagram: "", facebook: "", other: "",
   });
 
   useEffect(() => {
@@ -67,10 +63,9 @@ function SubmitPage() {
         const parsed = JSON.parse(draft);
         if (parsed.form) setForm(parsed.form);
         if (parsed.hours) setHours(parsed.hours);
-        // We do not reload photos from local storage because File objects cannot be serialized safely
       } catch (e) { /* ignore invalid drafts */ }
     }
-
+    
     supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) return;
       const { data: rs } = await supabase.from("user_roles").select("role").eq("user_id", data.user.id);
@@ -104,10 +99,7 @@ function SubmitPage() {
       file,
       preview: URL.createObjectURL(file)
     }));
-
     setPhotos(prev => [...prev, ...newPhotos]);
-    
-    // Reset the input so the user can select the same file again if they delete and re-add it
     e.target.value = '';
   };
 
@@ -123,8 +115,6 @@ function SubmitPage() {
     
     const payload = {
       ...form,
-      latitude: form.latitude ? Number(form.latitude) : undefined,
-      longitude: form.longitude ? Number(form.longitude) : undefined,
       email: form.email.trim() || undefined,
       phone: form.phone.trim() || undefined,
       website: form.website.trim() || undefined,
@@ -147,7 +137,6 @@ function SubmitPage() {
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) return;
 
-    // 1. Create the studio record
     const { data: inserted, error } = await supabase
       .from("studios")
       .insert({
@@ -158,8 +147,6 @@ function SubmitPage() {
         country: parsed.data.country,
         city: parsed.data.city,
         address: parsed.data.address || null,
-        latitude: parsed.data.latitude ?? null,
-        longitude: parsed.data.longitude ?? null,
         email: parsed.data.email || null,
         phone: parsed.data.phone || null,
         website: parsed.data.website || null,
@@ -180,7 +167,6 @@ function SubmitPage() {
       return;
     }
 
-    // 2. Upload images to Supabase Storage concurrently
     setUploadProgress("Processing images...");
     try {
       const uploadPromises = photos.map(async (photo, index) => {
@@ -205,7 +191,6 @@ function SubmitPage() {
 
       const uploadedPhotos = await Promise.all(uploadPromises);
 
-      // 3. Link uploaded image URLs to the studio in the database
       setUploadProgress("Finalizing listing...");
       const { error: pErr } = await supabase.from("studio_photos").insert(uploadedPhotos);
       
@@ -292,24 +277,20 @@ function SubmitPage() {
 
             {step === 2 && (
               <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
-                <h2 className="font-serif text-3xl text-foreground mb-2">Where are you located?</h2>
-                <p className="text-sm text-foreground/60 font-medium mb-8">Coordinates are required to appear on the global proximity map.</p>
+                <h2 className="font-serif text-3xl text-foreground mb-8">Where are you located?</h2>
                 <div className="grid gap-6 sm:grid-cols-2">
                   <Select label="Continent" value={form.continent} onChange={(v: string) => setForm({ ...form, continent: v })} options={CONTINENTS as unknown as string[]} required />
                   <Input label="Country" value={form.country} onChange={(v: string) => setForm({ ...form, country: v })} placeholder="e.g. Germany" required />
                 </div>
                 <Input label="City" value={form.city} onChange={(v: string) => setForm({ ...form, city: v })} placeholder="e.g. Berlin" required />
                 <Input label="Street Address (Optional)" value={form.address} onChange={(v: string) => setForm({ ...form, address: v })} placeholder="Keep blank if private" />
-                <div className="grid gap-6 sm:grid-cols-2 p-4 bg-white/30 rounded-2xl border border-white/50">
-                  <Input label="Latitude" value={form.latitude} onChange={(v: string) => setForm({ ...form, latitude: v })} type="number" step="any" placeholder="e.g. 52.5200" />
-                  <Input label="Longitude" value={form.longitude} onChange={(v: string) => setForm({ ...form, longitude: v })} type="number" step="any" placeholder="e.g. 13.4050" />
-                </div>
               </motion.div>
             )}
 
             {step === 3 && (
               <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
                 <h2 className="font-serif text-3xl text-foreground mb-8">Operating Hours & Contact</h2>
+                
                 <div className="space-y-4">
                   <h3 className="text-xs font-bold uppercase tracking-widest text-secondary">Weekly Schedule</h3>
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -326,6 +307,7 @@ function SubmitPage() {
                     ))}
                   </div>
                 </div>
+
                 <div className="space-y-4 pt-6 border-t border-white/40">
                   <h3 className="text-xs font-bold uppercase tracking-widest text-secondary">Digital Presence</h3>
                   <div className="grid gap-6 sm:grid-cols-2">
@@ -350,7 +332,6 @@ function SubmitPage() {
                   </p>
                 </div>
                 
-                {/* Premium Native File Uploader */}
                 <div className="space-y-6">
                   <label className="relative flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-white/60 bg-white/20 hover:bg-white/40 backdrop-blur-sm rounded-[2rem] cursor-pointer transition-all hover:scale-[1.01]">
                     <div className="flex flex-col items-center justify-center pt-5 pb-6">
@@ -358,31 +339,16 @@ function SubmitPage() {
                       <p className="mb-2 text-sm font-bold text-foreground">Tap to select or drop images</p>
                       <p className="text-xs text-foreground/60 font-medium">JPEG, PNG or WEBP (Max 5MB)</p>
                     </div>
-                    <input 
-                      type="file" 
-                      className="hidden" 
-                      multiple 
-                      accept="image/*"
-                      onChange={handleImageSelect}
-                    />
+                    <input type="file" className="hidden" multiple accept="image/*" onChange={handleImageSelect} />
                   </label>
 
-                  {/* Image Preview Grid */}
                   {photos.length > 0 && (
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 p-4 bg-white/20 rounded-[2rem] border border-white/30">
                       {photos.map((photo, index) => (
                         <div key={index} className="relative aspect-square group overflow-hidden rounded-2xl shadow-sm">
-                          <img 
-                            src={photo.preview} 
-                            alt={`Preview ${index}`} 
-                            className="w-full h-full object-cover transition-transform group-hover:scale-110"
-                          />
+                          <img src={photo.preview} alt={`Preview ${index}`} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
                           <div className="absolute inset-0 bg-background/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
-                            <button 
-                              type="button"
-                              onClick={() => removePhoto(index)}
-                              className="bg-secondary/90 text-white p-3 rounded-full hover:bg-secondary hover:scale-110 transition-all shadow-xl"
-                            >
+                            <button type="button" onClick={() => removePhoto(index)} className="bg-secondary/90 text-white p-3 rounded-full hover:bg-secondary hover:scale-110 transition-all shadow-xl">
                               <X className="w-5 h-5" />
                             </button>
                           </div>
@@ -393,7 +359,6 @@ function SubmitPage() {
                 </div>
               </motion.div>
             )}
-
           </AnimatePresence>
         </div>
 
@@ -407,7 +372,6 @@ function SubmitPage() {
             >
               <ChevronLeft className="w-4 h-4" /> Back
             </button>
-
             {step < 4 ? (
               <button
                 onClick={() => setStep(step + 1)}
@@ -433,15 +397,15 @@ function SubmitPage() {
   );
 }
 
-// PREMIUM COMPONENTS
-function Input({ label, value, onChange, type = "text", required, step, placeholder }: any) {
+// PREMIUM UTILITY COMPONENTS
+function Input({ label, value, onChange, type = "text", required, placeholder }: any) {
   return (
     <label className="block group">
       <span className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-foreground/60 group-focus-within:text-secondary transition-colors">
         {label} {required && <span className="text-secondary">*</span>}
       </span>
       <input
-        type={type} step={step} required={required} value={value} placeholder={placeholder}
+        type={type} required={required} value={value} placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
         className="w-full rounded-2xl border border-white/40 bg-white/40 backdrop-blur-sm px-5 py-4 text-sm font-medium outline-none focus:border-white/80 focus:bg-white/70 transition-all shadow-sm placeholder:text-foreground/30"
       />
