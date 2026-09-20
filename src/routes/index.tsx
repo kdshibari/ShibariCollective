@@ -66,7 +66,7 @@ function DirectoryPage() {
       toast.success("Removed from your saved spaces.");
     } else {
       newSaved.add(studioId);
-      toast.success("Saved to your dashboard!");
+      toast.success("Saved");
     }
     
     setSavedStudioIds(newSaved);
@@ -107,9 +107,9 @@ function DirectoryPage() {
         <p className="text-xs uppercase tracking-[0.4em] text-secondary font-bold mb-4 flex items-center justify-center sm:justify-start gap-2">
           <Globe2 className="w-4 h-4" /> Global Directory
         </p>
-        <h1 className="font-serif text-5xl sm:text-7xl text-foreground">Explore Spaces</h1>
+        <h1 className="font-serif text-5xl sm:text-7xl text-foreground">Explore Studios & Spaces</h1>
         <p className="mt-6 text-foreground/60 max-w-xl text-sm sm:text-base leading-relaxed mx-auto sm:mx-0">
-          A curated selection of vetted studios, rope dojos, and private spaces dedicated to the art and practice of Shibari around the world.
+          A curated selection of rope studios, and private spaces dedicated to the art and practice of Shibari around the world.
         </p>
       </div>
 
