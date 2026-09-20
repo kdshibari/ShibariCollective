@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Building, Bookmark, ArrowRight, PlusCircle, User, Edit3, MapPin, Camera, X, UploadCloud, Save, ArrowLeft, Clock, Globe } from "lucide-react";
+import { Building, Bookmark, ArrowRight, PlusCircle, User, Edit3, MapPin, Camera, X, UploadCloud, Save, ArrowLeft, Clock, Globe, Crosshair } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { CONTINENTS } from "@/lib/geo";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
@@ -184,12 +185,18 @@ function OwnerPortal({ userId }: { userId: string }) {
 function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: () => void, onSuccess: () => void }) {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
   
+  // BUG FIX: Added continent, country, latitude, and longitude back to state so the map works
   const [form, setForm] = useState({
     name: studio.name || "",
     description: studio.description || "",
+    continent: studio.continent || "",
+    country: studio.country || "",
     city: studio.city || "",
     address: studio.address || "",
+    latitude: studio.latitude || "",
+    longitude: studio.longitude || "",
     email: studio.email || "",
     phone: studio.phone || "",
     website: studio.website || "",
@@ -201,6 +208,29 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
   const [existingPhotos, setExistingPhotos] = useState<any[]>(studio.studio_photos || []);
   const [deletedPhotoIds, setDeletedPhotoIds] = useState<string[]>([]);
   const [newPhotos, setNewPhotos] = useState<{ file: File, preview: string }[]>([]);
+
+  const handleGeocode = async () => {
+    if (!form.city || !form.country) {
+      toast.error("City and Country are required to auto-locate.");
+      return;
+    }
+    setGeocoding(true);
+    try {
+      const query = [form.address, form.city, form.country].filter(Boolean).join(", ");
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      
+      if (data && data.length > 0) {
+        setForm(prev => ({ ...prev, latitude: data[0].lat, longitude: data[0].lon }));
+        toast.success("Coordinates successfully locked.");
+      } else {
+        toast.error("Could not pinpoint address. Please enter coordinates manually.");
+      }
+    } catch (e) {
+      toast.error("Geocoding failed. Ensure you have an internet connection.");
+    }
+    setGeocoding(false);
+  };
 
   const handleDelete = async (studioId: string) => {
     setDeleting(true);
@@ -240,8 +270,12 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
         .update({
           name: form.name,
           description: form.description,
+          continent: form.continent,
+          country: form.country,
           city: form.city,
           address: form.address || null,
+          latitude: form.latitude ? Number(form.latitude) : null,
+          longitude: form.longitude ? Number(form.longitude) : null,
           email: form.email || null,
           phone: form.phone || null,
           website: form.website || null,
@@ -303,11 +337,36 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <Input label="Name" value={form.name} onChange={(v: string) => setForm({...form, name: v})} required />
-            <Input label="City" value={form.city} onChange={(v: string) => setForm({...form, city: v})} required />
+            <Input label="Description" value={form.description} onChange={(v: string) => setForm({...form, description: v})} />
           </div>
-          <Input label="Street Address" value={form.address} onChange={(v: string) => setForm({...form, address: v})} placeholder="Optional" />
-          <div className="mt-4">
-            <Textarea label="Description" value={form.description} onChange={(v: string) => setForm({...form, description: v})} />
+        </div>
+
+        {/* Location & Coordinates */}
+        <div className="pt-6 border-t border-white/40">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-secondary flex items-center gap-2 mb-4">
+            <MapPin className="w-4 h-4" /> Location Engine
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            <Select label="Continent" value={form.continent} onChange={(v: string) => setForm({ ...form, continent: v })} options={CONTINENTS as unknown as string[]} required />
+            <Input label="Country" value={form.country} onChange={(v: string) => setForm({...form, country: v})} required />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            <Input label="City" value={form.city} onChange={(v: string) => setForm({...form, city: v})} required />
+            <Input label="Street Address" value={form.address} onChange={(v: string) => setForm({...form, address: v})} placeholder="Optional" />
+          </div>
+          
+          <div className="bg-white/30 rounded-[1.5rem] p-5 border border-white/50 relative overflow-hidden">
+             <div className="grid grid-cols-2 gap-4 mb-4 relative z-10">
+               <Input label="Latitude" value={form.latitude} onChange={(v: string) => setForm({...form, latitude: v})} type="number" step="any" />
+               <Input label="Longitude" value={form.longitude} onChange={(v: string) => setForm({...form, longitude: v})} type="number" step="any" />
+             </div>
+             <button 
+                onClick={handleGeocode}
+                disabled={geocoding}
+                className="w-full bg-secondary text-white py-3 rounded-full text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg hover:scale-[1.02] disabled:opacity-50 transition-all relative z-10"
+             >
+                {geocoding ? "Calculating GPS..." : "Auto-Locate via Address"} <Crosshair className="w-4 h-4" />
+             </button>
           </div>
         </div>
 
@@ -412,35 +471,56 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
 // -----------------------------------------------------
 function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: string }) {
   const [savedStudios, setSavedStudios] = useState<any[]>([]);
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [displayName, setDisplayName] = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
 
   useEffect(() => {
-    async function fetchSavedStudios() {
+    async function fetchData() {
       if (!userId) return;
       
-      const { data, error } = await supabase
-        .from("saved_studios")
-        .select(`
-          studio_id,
-          created_at,
-          studios (
-            id, name, city, country, status,
-            studio_photos (url)
-          )
-        `)
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false });
+      const [savesRes, profileRes] = await Promise.all([
+        supabase
+          .from("saved_studios")
+          .select(`studio_id, created_at, studios (id, name, city, country, status, studio_photos (url))`)
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false }),
+        supabase.from("profiles").select("*").eq("id", userId).single()
+      ]);
 
-      if (!error && data) {
-        const formattedStudios = data
+      if (!savesRes.error && savesRes.data) {
+        const formattedStudios = savesRes.data
           .filter(record => record.studios) 
           .map(record => ({ ...record.studios, saved_at: record.created_at }));
         setSavedStudios(formattedStudios);
       }
+
+      if (profileRes.data) {
+        setProfile(profileRes.data);
+        setDisplayName(profileRes.data.display_name || "");
+      }
+      
       setLoading(false);
     }
-    fetchSavedStudios();
+    fetchData();
   }, [userId]);
+
+  const handleSaveProfile = async () => {
+    setSavingProfile(true);
+    const { error } = await supabase.from("profiles").update({ display_name: displayName }).eq("id", userId);
+    
+    if (error) {
+      toast.error("Failed to update profile.");
+    } else {
+      setProfile({ ...profile, display_name: displayName });
+      setIsEditingProfile(false);
+      toast.success("Profile successfully updated.");
+    }
+    setSavingProfile(false);
+  };
 
   const handleUnsave = async (studioId: string) => {
     setSavedStudios(prev => prev.filter(studio => studio.id !== studioId));
@@ -459,23 +539,59 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
       
       {/* PREMIUM PARTICIPANT IDENTITY CARD */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="col-span-1 md:col-span-2 bg-white/40 backdrop-blur-3xl border border-white/60 rounded-[2rem] p-8 shadow-xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-8 opacity-10">
-            <User className="w-32 h-32" />
+        <div className="col-span-1 md:col-span-2 bg-white/40 backdrop-blur-3xl border border-white/60 rounded-[2rem] p-8 shadow-xl relative overflow-hidden flex flex-col justify-between">
+          <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
+            <User className="w-40 h-40" />
           </div>
-          <p className="text-xs font-bold uppercase tracking-widest text-secondary mb-2">Participant Profile</p>
-          <h2 className="font-serif text-3xl text-foreground mb-1">Rope Journey</h2>
-          <p className="text-sm font-medium text-foreground/60">{userEmail}</p>
           
-          <div className="mt-8 flex gap-8">
+          <div className="relative z-10 flex justify-between items-start">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-secondary mb-2">Participant Profile</p>
+              
+              {isEditingProfile ? (
+                <div className="flex items-center gap-3 mt-2">
+                  <input 
+                    autoFocus
+                    value={displayName} 
+                    onChange={(e) => setDisplayName(e.target.value)} 
+                    placeholder="Enter display name..."
+                    className="bg-white/50 border border-white/80 rounded-lg px-4 py-2 font-serif text-2xl outline-none focus:border-secondary transition-colors"
+                  />
+                  <button onClick={handleSaveProfile} disabled={savingProfile} className="bg-secondary text-white p-2 rounded-lg hover:scale-105 transition-all">
+                    <Save className="w-5 h-5" />
+                  </button>
+                  <button onClick={() => setIsEditingProfile(false)} disabled={savingProfile} className="bg-white/50 text-foreground p-2 rounded-lg hover:bg-white/80 transition-all">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              ) : (
+                <div className="group flex items-center gap-4 mt-2">
+                  <h2 className="font-serif text-4xl text-foreground mb-1">{profile?.display_name || "Rope Explorer"}</h2>
+                  <button onClick={() => setIsEditingProfile(true)} className="opacity-0 group-hover:opacity-100 bg-white/50 p-2 rounded-full hover:bg-white/80 transition-all">
+                    <Edit3 className="w-4 h-4 text-secondary" />
+                  </button>
+                </div>
+              )}
+              
+              <p className="text-sm font-medium text-foreground/60">{userEmail}</p>
+            </div>
+          </div>
+          
+          <div className="mt-12 flex flex-wrap gap-8 relative z-10">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Saved Spaces</p>
               <p className="font-serif text-3xl text-foreground mt-1">{savedStudios.length}</p>
             </div>
             <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Member Since</p>
+              <p className="font-serif text-xl text-foreground mt-2">
+                {profile?.created_at ? new Date(profile.created_at).getFullYear() : new Date().getFullYear()}
+              </p>
+            </div>
+            <div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Account Status</p>
               <p className="font-serif text-xl text-foreground mt-2 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-secondary"></span> Verified
+                <span className="w-2 h-2 rounded-full bg-secondary shadow-[0_0_10px_rgba(226,114,91,0.8)]"></span> Verified
               </p>
             </div>
           </div>
@@ -525,7 +641,7 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
                     {studio.studio_photos?.[0]?.url ? (
                       <img src={studio.studio_photos[0].url} alt={studio.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-foreground/30 text-xs font-bold uppercase tracking-widest">No Cover</div>
+                      <div className="w-full h-full flex items-center justify-center text-foreground/30 text-xs font-bold uppercase tracking-widest">No Cover Image</div>
                     )}
                     
                     <button
@@ -561,14 +677,14 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
 }
 
 // PREMIUM UTILITY COMPONENTS
-function Input({ label, value, onChange, type = "text", required, placeholder }: any) {
+function Input({ label, value, onChange, type = "text", required, step, placeholder }: any) {
   return (
     <label className="block group">
       <span className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-foreground/60 group-focus-within:text-secondary transition-colors">
         {label} {required && <span className="text-secondary">*</span>}
       </span>
       <input
-        type={type} required={required} value={value} placeholder={placeholder}
+        type={type} required={required} step={step} value={value} placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
         className="w-full rounded-2xl border border-white/40 bg-white/40 backdrop-blur-sm px-5 py-4 text-sm font-medium outline-none focus:border-white/80 focus:bg-white/70 transition-all shadow-sm placeholder:text-foreground/30"
       />
@@ -585,6 +701,25 @@ function Textarea({ label, value, onChange, placeholder }: any) {
         onChange={(e) => onChange(e.target.value)}
         className="w-full rounded-2xl border border-white/40 bg-white/40 backdrop-blur-sm px-5 py-4 text-sm font-medium outline-none focus:border-white/80 focus:bg-white/70 transition-all shadow-sm placeholder:text-foreground/30 resize-none"
       />
+    </label>
+  );
+}
+
+function Select({ label, value, onChange, options, required }: any) {
+  return (
+    <label className="block group">
+      <span className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-foreground/60 group-focus-within:text-secondary transition-colors">
+        {label} {required && <span className="text-secondary">*</span>}
+      </span>
+      <select
+        required={required} value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-2xl border border-white/40 bg-white/40 backdrop-blur-sm px-5 py-4 text-sm font-medium outline-none focus:border-white/80 focus:bg-white/70 transition-all shadow-sm appearance-none cursor-pointer"
+        style={{ backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234E2C23' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1.25rem center', backgroundSize: '1em' }}
+      >
+        <option value="" disabled>Select...</option>
+        {options.map((o: string) => <option key={o} value={o}>{o}</option>)}
+      </select>
     </label>
   );
 }
