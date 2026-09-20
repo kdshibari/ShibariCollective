@@ -146,7 +146,7 @@ function StudioPage() {
           )}
         </div>
 
-        <aside className="space-y-4">
+          <aside className="space-y-4">
           <div className="card-warm rounded-xl p-5">
             <h3 className="font-serif text-xl text-foreground">Contact</h3>
             <ul className="mt-3 space-y-2 text-sm">
@@ -159,9 +159,15 @@ function StudioPage() {
               {studio.socials?.facebook && (
                 <Row icon={<Globe className="h-4 w-4" />} href={studio.socials.facebook}>Facebook</Row>
               )}
+              {studio.socials?.fetlife && (
+                <Row icon={<Globe className="h-4 w-4" />} href={studio.socials.fetlife}>FetLife</Row>
+              )}
               {studio.socials?.other && (
                 <Row icon={<Globe className="h-4 w-4" />} href={studio.socials.other}>Other</Row>
               )}
+            </ul>
+          </div>
+        </aside>
             </ul>
             {mapUrl && (
               <a
