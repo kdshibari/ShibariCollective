@@ -8,9 +8,9 @@ export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
       { title: "Contact — Shibari Collective" },
-      { name: "description", content: "Send us a message. We reply to every inquiry from studios and practitioners." },
+      { name: "description", content: "Send us a message." },
       { property: "og:title", content: "Contact — Shibari Collective" },
-      { property: "og:description", content: "Send us a message. We reply to every inquiry from studios and practitioners." },
+      { property: "og:description", content: "Send us a message." },
     ],
   }),
   component: ContactPage,
@@ -48,14 +48,14 @@ function ContactPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-16 sm:py-24">
       <p className="text-xs uppercase tracking-[0.3em] text-secondary">Get in touch</p>
-      <h1 className="mt-3 font-serif text-5xl text-foreground">Contact us</h1>
+      <h1 className="mt-3 font-serif text-5xl text-foreground">Contact Us</h1>
       <p className="mt-4 max-w-lg text-muted-foreground">
-        Questions, feedback, or want to partner? Send a message — we usually reply within a couple of days.
+        Questions, feedback, or want to partner? Send a message, we usually reply within a couple of days.
       </p>
 
       {sent ? (
         <div className="card-warm mt-10 rounded-2xl p-8 text-center">
-          <h2 className="font-serif text-2xl text-foreground">Thanks — we got it.</h2>
+          <h2 className="font-serif text-2xl text-foreground">Thanks! We got it.</h2>
           <p className="mt-2 text-sm text-muted-foreground">We'll be in touch soon.</p>
           <button
             onClick={() => setSent(false)}
