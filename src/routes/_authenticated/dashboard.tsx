@@ -1,13 +1,15 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Building, Bookmark, ArrowRight, PlusCircle, User, Edit3, MapPin, Camera, X, UploadCloud, Save, ArrowLeft } from "lucide-react";
+import { Building, Bookmark, ArrowRight, PlusCircle, User, Edit3, MapPin, Camera, X, UploadCloud, Save, ArrowLeft, Clock, Globe } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
 });
+
+const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 function DashboardPage() {
   const navigate = useNavigate();
@@ -182,14 +184,20 @@ function OwnerPortal({ userId }: { userId: string }) {
 function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: () => void, onSuccess: () => void }) {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  
   const [form, setForm] = useState({
     name: studio.name || "",
     description: studio.description || "",
     city: studio.city || "",
+    address: studio.address || "",
+    email: studio.email || "",
+    phone: studio.phone || "",
     website: studio.website || "",
     instagram: studio.socials?.instagram || "",
+    facebook: studio.socials?.facebook || "",
   });
 
+  const [hours, setHours] = useState<Record<string, string>>(studio.hours || {});
   const [existingPhotos, setExistingPhotos] = useState<any[]>(studio.studio_photos || []);
   const [deletedPhotoIds, setDeletedPhotoIds] = useState<string[]>([]);
   const [newPhotos, setNewPhotos] = useState<{ file: File, preview: string }[]>([]);
@@ -233,8 +241,12 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
           name: form.name,
           description: form.description,
           city: form.city,
+          address: form.address || null,
+          email: form.email || null,
+          phone: form.phone || null,
           website: form.website || null,
-          socials: { ...studio.socials, instagram: form.instagram || undefined }
+          hours: hours,
+          socials: { ...studio.socials, instagram: form.instagram || undefined, facebook: form.facebook || undefined }
         })
         .eq("id", studio.id);
       
@@ -282,23 +294,58 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
         <div className="w-9" />
       </div>
 
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <label className="block">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/60 ml-2">Name</span>
-            <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full mt-1 rounded-2xl border border-white/40 bg-white/50 px-5 py-3 text-sm font-medium outline-none focus:border-secondary" />
-          </label>
-          <label className="block">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/60 ml-2">City</span>
-            <input value={form.city} onChange={e => setForm({...form, city: e.target.value})} className="w-full mt-1 rounded-2xl border border-white/40 bg-white/50 px-5 py-3 text-sm font-medium outline-none focus:border-secondary" />
-          </label>
-        </div>
+      <div className="space-y-8">
         
-        <label className="block">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/60 ml-2">Description</span>
-          <textarea rows={3} value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="w-full mt-1 rounded-2xl border border-white/40 bg-white/50 px-5 py-3 text-sm font-medium outline-none focus:border-secondary resize-none" />
-        </label>
+        {/* The Basics */}
+        <div>
+          <h3 className="text-xs font-bold uppercase tracking-widest text-secondary flex items-center gap-2 mb-4">
+            <Edit3 className="w-4 h-4" /> The Basics
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            <Input label="Name" value={form.name} onChange={(v: string) => setForm({...form, name: v})} required />
+            <Input label="City" value={form.city} onChange={(v: string) => setForm({...form, city: v})} required />
+          </div>
+          <Input label="Street Address" value={form.address} onChange={(v: string) => setForm({...form, address: v})} placeholder="Optional" />
+          <div className="mt-4">
+            <Textarea label="Description" value={form.description} onChange={(v: string) => setForm({...form, description: v})} />
+          </div>
+        </div>
 
+        {/* Contact & Socials */}
+        <div className="pt-6 border-t border-white/40">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-secondary flex items-center gap-2 mb-4">
+            <Globe className="w-4 h-4" /> Digital Presence
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input label="Email" value={form.email} onChange={(v: string) => setForm({...form, email: v})} type="email" />
+            <Input label="Phone" value={form.phone} onChange={(v: string) => setForm({...form, phone: v})} />
+            <Input label="Website" value={form.website} onChange={(v: string) => setForm({...form, website: v})} type="url" />
+            <Input label="Instagram" value={form.instagram} onChange={(v: string) => setForm({...form, instagram: v})} placeholder="@studio" />
+            <Input label="Facebook" value={form.facebook} onChange={(v: string) => setForm({...form, facebook: v})} placeholder="Facebook Link" />
+          </div>
+        </div>
+
+        {/* Schedule */}
+        <div className="pt-6 border-t border-white/40">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-secondary flex items-center gap-2 mb-4">
+            <Clock className="w-4 h-4" /> Weekly Schedule
+          </h3>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {DAYS.map((d) => (
+              <div key={d} className="flex items-center gap-3 bg-white/30 p-2 rounded-xl border border-white/50">
+                <label className="w-24 text-xs font-bold text-foreground/70 pl-2">{d.substring(0,3)}</label>
+                <input
+                  placeholder="10:00 - 22:00"
+                  value={hours[d] ?? ""}
+                  onChange={(e) => setHours({ ...hours, [d]: e.target.value })}
+                  className="flex-1 bg-transparent border-0 text-sm outline-none font-medium placeholder:text-foreground/30 focus:ring-0"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Gallery */}
         <div className="pt-6 border-t border-white/40">
           <h3 className="text-xs font-bold uppercase tracking-widest text-secondary flex items-center gap-2 mb-4">
             <Camera className="w-4 h-4" /> Manage Gallery
@@ -510,5 +557,34 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
         )}
       </div>
     </motion.div>
+  );
+}
+
+// PREMIUM UTILITY COMPONENTS
+function Input({ label, value, onChange, type = "text", required, placeholder }: any) {
+  return (
+    <label className="block group">
+      <span className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-foreground/60 group-focus-within:text-secondary transition-colors">
+        {label} {required && <span className="text-secondary">*</span>}
+      </span>
+      <input
+        type={type} required={required} value={value} placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-2xl border border-white/40 bg-white/40 backdrop-blur-sm px-5 py-4 text-sm font-medium outline-none focus:border-white/80 focus:bg-white/70 transition-all shadow-sm placeholder:text-foreground/30"
+      />
+    </label>
+  );
+}
+
+function Textarea({ label, value, onChange, placeholder }: any) {
+  return (
+    <label className="block group">
+      <span className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-foreground/60 group-focus-within:text-secondary transition-colors">{label}</span>
+      <textarea
+        rows={5} value={value} placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-2xl border border-white/40 bg-white/40 backdrop-blur-sm px-5 py-4 text-sm font-medium outline-none focus:border-white/80 focus:bg-white/70 transition-all shadow-sm placeholder:text-foreground/30 resize-none"
+      />
+    </label>
   );
 }
