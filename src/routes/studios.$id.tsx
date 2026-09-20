@@ -56,12 +56,11 @@ function StudioPage() {
   if (!studio) return <div className="mx-auto max-w-4xl px-4 py-16">Studio not found.</div>;
 
   const photos = (studio.studio_photos ?? []).sort((a, b) => a.position - b.position);
-  const mapUrl =
-    studio.latitude != null && studio.longitude != null
-      ? `https://www.google.com/maps/search/?api=1&query=${studio.latitude},${studio.longitude}`
-      : studio.address
-        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${studio.address}, ${studio.city},${studio.country}`)}`
-        : null;
+  
+  // Safe Google Maps fallback using physical address instead of coordinates
+  const mapUrl = studio.address
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${studio.address}, ${studio.city},${studio.country}`)}`
+    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${studio.city},${studio.country}`)}`;
 
   return (
     <article className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
