@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { LogOut, Building, Bookmark, ArrowRight, PlusCircle, User, Edit3, MapPin, Camera, X, UploadCloud, Save, ArrowLeft } from "lucide-react";
+import { Building, Bookmark, ArrowRight, PlusCircle, User, Edit3, MapPin, Camera, X, UploadCloud, Save, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
@@ -45,12 +45,6 @@ function DashboardPage() {
     }
     loadProfile();
   }, [navigate]);
-
-  async function handleLogout() {
-    localStorage.removeItem("shibari-studio-draft");
-    await supabase.auth.signOut();
-    window.location.href = "/";
-  }
 
   if (loading) {
     return (
