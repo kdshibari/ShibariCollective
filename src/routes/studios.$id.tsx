@@ -24,8 +24,6 @@ interface Studio {
   country: string;
   city: string;
   address: string | null;
-  latitude: number | null;
-  longitude: number | null;
   hours: Record<string, string> | null;
   email: string | null;
   phone: string | null;
@@ -54,7 +52,7 @@ function StudioPage() {
       });
   }, [id]);
 
-  if (loading) return <div className="mx-auto max-w-4xl px-4 py-16">Loading…</div>;
+  if (loading) return <div className="mx-auto max-w-4xl px-4 py-16 animate-pulse text-secondary text-sm font-bold tracking-widest uppercase">Loading…</div>;
   if (!studio) return <div className="mx-auto max-w-4xl px-4 py-16">Studio not found.</div>;
 
   const photos = (studio.studio_photos ?? []).sort((a, b) => a.position - b.position);
@@ -62,7 +60,7 @@ function StudioPage() {
     studio.latitude != null && studio.longitude != null
       ? `https://www.google.com/maps/search/?api=1&query=${studio.latitude},${studio.longitude}`
       : studio.address
-        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${studio.address}, ${studio.city}, ${studio.country}`)}`
+        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${studio.address}, ${studio.city},${studio.country}`)}`
         : null;
 
   return (
@@ -146,7 +144,7 @@ function StudioPage() {
           )}
         </div>
 
-          <aside className="space-y-4">
+        <aside className="space-y-4">
           <div className="card-warm rounded-xl p-5">
             <h3 className="font-serif text-xl text-foreground">Contact</h3>
             <ul className="mt-3 space-y-2 text-sm">
@@ -166,15 +164,12 @@ function StudioPage() {
                 <Row icon={<Globe className="h-4 w-4" />} href={studio.socials.other}>Other</Row>
               )}
             </ul>
-          </div>
-        </aside>
-            </ul>
             {mapUrl && (
               <a
                 href={mapUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-4 block rounded-md bg-secondary px-4 py-2 text-center text-sm font-medium text-secondary-foreground hover:opacity-90"
+                className="mt-4 block rounded-md bg-secondary px-4 py-2 text-center text-sm font-medium text-secondary-foreground hover:opacity-90 transition-opacity"
               >
                 Open in maps
               </a>
@@ -189,9 +184,9 @@ function StudioPage() {
 function Row({ icon, href, children }: { icon: React.ReactNode; href: string; children: React.ReactNode }) {
   return (
     <li>
-      <a href={href} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-foreground hover:text-secondary">
+      <a href={href} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-foreground hover:text-secondary transition-colors">
         {icon}
-        <span>{children}</span>
+        <span className="truncate">{children}</span>
       </a>
     </li>
   );
