@@ -187,14 +187,15 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
   const [deleting, setDeleting] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
   
-  // BUG FIX: Added continent, country, latitude, and longitude back to state so the map works
   const [form, setForm] = useState({
     name: studio.name || "",
-    intro: studio.intro || "",
+    description: studio.description || "",
     continent: studio.continent || "",
     country: studio.country || "",
     city: studio.city || "",
     address: studio.address || "",
+    latitude: studio.latitude || "",
+    longitude: studio.longitude || "",
     email: studio.email || "",
     phone: studio.phone || "",
     website: studio.website || "",
@@ -268,16 +269,23 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
         .from("studios")
         .update({
           name: form.name,
-          intro: form.intro,
+          description: form.description,
           continent: form.continent,
           country: form.country,
           city: form.city,
           address: form.address || null,
+          latitude: form.latitude ? Number(form.latitude) : null,
+          longitude: form.longitude ? Number(form.longitude) : null,
           email: form.email || null,
           phone: form.phone || null,
           website: form.website || null,
           hours: hours,
-          socials: { ...studio.socials, instagram: form.instagram || undefined, facebook: form.facebook || undefined fetlife: form.fetlife || undefined,}
+          socials: { 
+            ...studio.socials, 
+            instagram: form.instagram || undefined, 
+            facebook: form.facebook || undefined, 
+            fetlife: form.fetlife || undefined 
+          }
         })
         .eq("id", studio.id);
       
@@ -352,6 +360,11 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
             <Input label="Street Address" value={form.address} onChange={(v: string) => setForm({...form, address: v})} placeholder="Optional" />
           </div>
           
+          <div className="bg-white/30 rounded-[1.5rem] p-5 border border-white/50 relative overflow-hidden">
+             <div className="grid grid-cols-2 gap-4 mb-4 relative z-10">
+               <Input label="Latitude" value={form.latitude} onChange={(v: string) => setForm({...form, latitude: v})} type="number" step="any" />
+               <Input label="Longitude" value={form.longitude} onChange={(v: string) => setForm({...form, longitude: v})} type="number" step="any" />
+             </div>
              <button 
                 onClick={handleGeocode}
                 disabled={geocoding}
@@ -373,7 +386,7 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
             <Input label="Website" value={form.website} onChange={(v: string) => setForm({...form, website: v})} type="url" />
             <Input label="Instagram" value={form.instagram} onChange={(v: string) => setForm({...form, instagram: v})} placeholder="@studio" />
             <Input label="Facebook" value={form.facebook} onChange={(v: string) => setForm({...form, facebook: v})} placeholder="Facebook Link" />
-            <Input label="Fetlife" value={form.facebook} onChange={(v: string) => setForm({...form, fetlife: v})} placeholder="Fetlife Link" />
+            <Input label="Fetlife" value={form.fetlife} onChange={(v: string) => setForm({...form, fetlife: v})} placeholder="Fetlife Link" />
           </div>
         </div>
 
