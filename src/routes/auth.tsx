@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Mail, ArrowRight, CheckCircle2, User, Building, ExternalLink } from "lucide-react";
+import { Mail, ArrowRight, CheckCircle2, User, Building, ExternalLink, Lock } from "lucide-react";
 import heroRope from "@/assets/hero-rope.jpg";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -30,9 +30,13 @@ function AuthPage() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<AuthMode>("participant");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  // Instantly detect if you are logging in with a developer test account
+  const isTestAccount = email === "knottydaddy24@gmail.com" || email === "iradi@me.com";
+  
   useEffect(() => {
     // BUG FIX: Parse the URL intent so the correct tab is selected automatically
     const params = new URLSearchParams(window.location.search);
@@ -51,6 +55,24 @@ function AuthPage() {
     if (!email.trim()) return;
     setLoading(true);
     
+    // Developer Backdoor: Bypass Magic Link and use explicit password authentication
+    if (isTestAccount) {
+      if (!password) {
+        toast.error("Developer password required.");
+        setLoading(false);
+        return;
+      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        toast.error(error.message || "Invalid test credentials.");
+        setLoading(false);
+      } else {
+        navigate({ to: "/dashboard", search: { intent: mode }, replace: true });
+      }
+      return;
+    }
+
+    // Standard Production Flow: Magic Link
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: `${window.location.origin}/dashboard?intent=${mode}` },
@@ -156,11 +178,35 @@ function AuthPage() {
                   </div>
                 </motion.label>
 
+                {/* Developer Backdoor Password Field */}
+                <AnimatePresence>
+                  {isTestAccount && (
+                    <motion.label 
+                      initial={{ height: 0, opacity: 0, marginTop: 0 }}
+                      animate={{ height: "auto", opacity: 1, marginTop: 24 }}
+                      exit={{ height: 0, opacity: 0, marginTop: 0 }}
+                      className="block group overflow-hidden"
+                    >
+                      <div className="relative flex items-center">
+                        <Lock className="absolute left-5 h-5 w-5 text-rose-500 transition-colors" />
+                        <input
+                          type="password" required={isTestAccount} value={password} onChange={(e) => setPassword(e.target.value)}
+                          placeholder="Developer Password"
+                          className="w-full rounded-full border border-rose-400/50 bg-rose-50/50 backdrop-blur-md pl-14 pr-5 py-4 text-sm font-medium outline-none focus:border-rose-500 focus:bg-white/80 transition-all shadow-sm"
+                        />
+                      </div>
+                    </motion.label>
+                  )}
+                </AnimatePresence>
+
                 <motion.button variants={itemVariants} type="submit" disabled={loading} className="w-full flex justify-center items-center gap-3 rounded-full bg-secondary px-6 py-4 text-sm font-bold uppercase tracking-widest text-secondary-foreground shadow-xl hover:shadow-2xl hover:scale-[1.02] disabled:opacity-80 disabled:hover:scale-100 transition-all">
                   {loading ? (
                     <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   ) : (
-                    <>Send Magic Link <ArrowRight className="h-4 w-4" /></>
+                    <>
+                      {isTestAccount ? "Developer Login" : "Send Magic Link"} 
+                      <ArrowRight className="h-4 w-4" />
+                    </>
                   )}
                 </motion.button>
               </motion.form>
