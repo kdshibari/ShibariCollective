@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Building, Bookmark, ArrowRight, PlusCircle, User, Edit3, MapPin, Camera, X, UploadCloud, Save, ArrowLeft, Clock, Globe, Crosshair } from "lucide-react";
+import { Building, Bookmark, ArrowRight, PlusCircle, User, Edit3, MapPin, Camera, X, UploadCloud, Save, ArrowLeft, Clock, Globe } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { CONTINENTS } from "@/lib/geo";
@@ -139,7 +139,7 @@ function OwnerPortal({ userId }: { userId: string }) {
           <Building className="mx-auto h-12 w-12 text-foreground/30 mb-4" />
           <h3 className="font-serif text-3xl text-foreground">Your Portfolio is Empty</h3>
           <p className="mt-3 text-foreground/70 font-medium max-w-md mx-auto">
-            You are a verified owner, but you haven't listed a studio yet. Curate your space to appear on the global map.
+            You are a verified owner, but you haven't listed a studio yet. Curate your space to appear in the global directory.
           </p>
           <Link to="/submit" className="mt-8 inline-flex items-center gap-2 rounded-full bg-foreground text-background px-8 py-3.5 text-sm font-bold uppercase tracking-widest shadow-xl hover:scale-105 transition-all">
             Create Listing <ArrowRight className="h-4 w-4" />
@@ -185,7 +185,6 @@ function OwnerPortal({ userId }: { userId: string }) {
 function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: () => void, onSuccess: () => void }) {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [geocoding, setGeocoding] = useState(false);
   
   const [form, setForm] = useState({
     name: studio.name || "",
@@ -194,8 +193,6 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
     country: studio.country || "",
     city: studio.city || "",
     address: studio.address || "",
-    latitude: studio.latitude || "",
-    longitude: studio.longitude || "",
     email: studio.email || "",
     phone: studio.phone || "",
     website: studio.website || "",
@@ -208,29 +205,6 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
   const [existingPhotos, setExistingPhotos] = useState<any[]>(studio.studio_photos || []);
   const [deletedPhotoIds, setDeletedPhotoIds] = useState<string[]>([]);
   const [newPhotos, setNewPhotos] = useState<{ file: File, preview: string }[]>([]);
-
-  const handleGeocode = async () => {
-    if (!form.city || !form.country) {
-      toast.error("City and Country are required to auto-locate.");
-      return;
-    }
-    setGeocoding(true);
-    try {
-      const query = [form.address, form.city, form.country].filter(Boolean).join(", ");
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
-      const data = await res.json();
-      
-      if (data && data.length > 0) {
-        setForm(prev => ({ ...prev, latitude: data[0].lat, longitude: data[0].lon }));
-        toast.success("Coordinates successfully locked.");
-      } else {
-        toast.error("Could not pinpoint address. Please enter coordinates manually.");
-      }
-    } catch (e) {
-      toast.error("Geocoding failed. Ensure you have an internet connection.");
-    }
-    setGeocoding(false);
-  };
 
   const handleDelete = async (studioId: string) => {
     setDeleting(true);
@@ -274,8 +248,6 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
           country: form.country,
           city: form.city,
           address: form.address || null,
-          latitude: form.latitude ? Number(form.latitude) : null,
-          longitude: form.longitude ? Number(form.longitude) : null,
           email: form.email || null,
           phone: form.phone || null,
           website: form.website || null,
@@ -346,32 +318,18 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
           </div>
         </div>
 
-        {/* Location & Coordinates */}
+        {/* Location Information */}
         <div className="pt-6 border-t border-white/40">
           <h3 className="text-xs font-bold uppercase tracking-widest text-secondary flex items-center gap-2 mb-4">
-            <MapPin className="w-4 h-4" /> Location Engine
+            <MapPin className="w-4 h-4" /> Location Information
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <Select label="Continent" value={form.continent} onChange={(v: string) => setForm({ ...form, continent: v })} options={CONTINENTS as unknown as string[]} required />
             <Input label="Country" value={form.country} onChange={(v: string) => setForm({...form, country: v})} required />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input label="City" value={form.city} onChange={(v: string) => setForm({...form, city: v})} required />
             <Input label="Street Address" value={form.address} onChange={(v: string) => setForm({...form, address: v})} placeholder="Optional" />
-          </div>
-          
-          <div className="bg-white/30 rounded-[1.5rem] p-5 border border-white/50 relative overflow-hidden">
-             <div className="grid grid-cols-2 gap-4 mb-4 relative z-10">
-               <Input label="Latitude" value={form.latitude} onChange={(v: string) => setForm({...form, latitude: v})} type="number" step="any" />
-               <Input label="Longitude" value={form.longitude} onChange={(v: string) => setForm({...form, longitude: v})} type="number" step="any" />
-             </div>
-             <button 
-                onClick={handleGeocode}
-                disabled={geocoding}
-                className="w-full bg-secondary text-white py-3 rounded-full text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg hover:scale-[1.02] disabled:opacity-50 transition-all relative z-10"
-             >
-                {geocoding ? "Calculating GPS..." : "Auto-Locate via Address"} <Crosshair className="w-4 h-4" />
-             </button>
           </div>
         </div>
 
@@ -608,7 +566,7 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
             <Building className="w-6 h-6 text-white/50 mb-4" />
             <h3 className="font-serif text-2xl">Studio Owner?</h3>
             <p className="text-xs font-medium text-white/60 mt-2 leading-relaxed">
-              Claim your profile to list your space on the global map and manage your gallery.
+              Claim your profile to list your space on the global directory and manage your gallery.
             </p>
           </div>
           <Link to="/submit" className="mt-6 w-full rounded-full bg-white text-black py-3 text-xs font-bold uppercase tracking-widest text-center hover:bg-white/90 transition-colors">
@@ -627,7 +585,7 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
             <Bookmark className="mx-auto h-8 w-8 text-foreground/30 mb-4" />
             <p className="text-foreground/70 font-medium">Your curated list of spaces will appear here.</p>
             <Link to="/" className="mt-6 inline-flex items-center gap-2 rounded-full bg-foreground text-background px-6 py-3 text-xs font-bold uppercase tracking-widest shadow-xl hover:scale-105 transition-all">
-              Explore Map <ArrowRight className="h-4 w-4" />
+              Explore Directory <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         ) : (
