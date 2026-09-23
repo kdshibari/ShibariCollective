@@ -39,7 +39,7 @@
 :root {
   --radius: 0.5rem;
   /* Deep Umber Backgrounds */
-  --background: #261e1c;
+  --background: #181514;
   --cream: #EAE6E1;
   --card: #221E1C;
   --popover: #221E1C;
@@ -48,7 +48,7 @@
   --card-foreground: #EAE6E1;
   --popover-foreground: #EAE6E1;
   --primary: #EAE6E1;
-  --primary-foreground: #1d1816;
+  --primary-foreground: #181514;
   --jute: #B59B7D;
   /* Muted Crimson Secondary Accents & Buttons */
   --secondary: #8B3A36;
