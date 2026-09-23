@@ -101,14 +101,18 @@ function AuthPage() {
       <div className="relative mx-auto grid min-h-screen max-w-7xl grid-cols-1 lg:grid-cols-[1.05fr_0.95fr]">
         
         {/* Left Column */}
-        <div className="relative flex items-center justify-center px-6 py-12 sm:px-10 lg:px-12">
-          <div className="absolute inset-0 hidden lg:block">
-            <img
-              src={heroRope.src ?? heroRope}
-              alt="Shibari rope details"
-              className="h-full w-full object-cover opacity-65"
-            />
-          </div>
+<div className="relative flex items-center justify-center px-6 py-12 sm:px-10 lg:px-12">
+  <div className="absolute inset-0 hidden lg:block">
+    <img
+      src={heroRope.src ?? heroRope}
+      alt="Shibari rope details"
+      className="h-full w-full object-cover opacity-65"
+    />
+    {/* Bottom fade to blend with the vertical page scroll */}
+    <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+    {/* Right fade to blend smoothly into the login column */}
+    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-background" />
+  </div>
 
           <motion.div
             initial="hidden"
