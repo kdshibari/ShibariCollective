@@ -18,7 +18,7 @@ function DashboardPage() {
   const [isOwner, setIsOwner] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { f
+  useEffect(() => {
     async function loadProfile() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
