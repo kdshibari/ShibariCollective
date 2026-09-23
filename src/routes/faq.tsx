@@ -35,7 +35,7 @@ const faqs = [
     items: [
       {
         q: "Who can list a space?",
-        a: "Any studio management or respecitve owners can list a space on the platform."
+        a: "Any studio management or their respecitve owners can list a space on the platform."
       },
       {
         q: "What is required for a studio listing?",
