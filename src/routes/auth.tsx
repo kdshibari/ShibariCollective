@@ -118,7 +118,7 @@ function AuthPage() {
               Shibari Collective
             </motion.p>
             <motion.h1 variants={itemVariants} className="mt-6 font-serif text-4xl leading-tight sm:text-5xl">
-              Find your people. Build your practice.
+              Find your studio. Build your practice.
             </motion.h1>
             <motion.p variants={itemVariants} className="mt-5 max-w-lg text-base text-muted-foreground">
               Access curated studios, save favorites, and manage your profile in one place.
@@ -127,8 +127,8 @@ function AuthPage() {
             <motion.div variants={itemVariants} className="mt-8 space-y-4">
               {[
                 "Private studio directory",
-                "Saved favorites and bookings",
-                "Owner tools for profile management",
+                "Search by Territories",
+                "Need one more to add",
               ].map((item) => (
                 <div key={item} className="flex items-center gap-3 text-sm text-foreground/90">
                   <CheckCircle2 className="h-4 w-4 text-secondary" />
@@ -136,14 +136,6 @@ function AuthPage() {
                 </div>
               ))}
             </motion.div>
-
-            <motion.div variants={itemVariants} className="mt-8 flex items-center gap-3 text-sm text-muted-foreground">
-              <span className="inline-flex items-center gap-2 rounded-full border border-border px-2.5 py-1.5">
-                <ExternalLink className="h-3.5 w-3.5" />
-                Secure member access
-              </span>
-            </motion.div>
-          </motion.div>
         </div>
 
         <div className="flex items-center justify-center px-6 py-12 sm:px-10 lg:px-12">
