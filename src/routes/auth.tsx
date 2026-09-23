@@ -108,6 +108,8 @@ function AuthPage() {
       alt="Shibari rope details"
       className="h-full w-full object-cover opacity-65"
     />
+    {/* Top fade to blend smoothly into the upper edge */}
+    <div className="absolute inset-0 bg-gradient-to-b from-background via-transparent to-transparent" />
     {/* Bottom fade to blend with the vertical page scroll */}
     <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
     {/* Right fade to blend smoothly into the login column */}
