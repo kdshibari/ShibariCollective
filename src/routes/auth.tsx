@@ -240,3 +240,4 @@ function AuthPage() {
       </div>
     </div>
   );
+}
