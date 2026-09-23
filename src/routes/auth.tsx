@@ -99,6 +99,8 @@ function AuthPage() {
     <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(194,141,98,0.18),_transparent_42%)]" />
       <div className="relative mx-auto grid min-h-screen max-w-7xl grid-cols-1 lg:grid-cols-[1.05fr_0.95fr]">
+        
+        {/* Left Column */}
         <div className="relative flex items-center justify-center px-6 py-12 sm:px-10 lg:px-12">
           <div className="absolute inset-0 hidden lg:block">
             <img
@@ -135,13 +137,11 @@ function AuthPage() {
                   <span>{item}</span>
                 </div>
               ))}
-        </motion.div>
-          </motion.div> {/* <--- Add this missing closing tag here */}
+            </motion.div>
+          </motion.div> {/* <-- Correctly closed left-side motion.div */}
         </div>
 
-        <div className="flex items-center justify-center px-6 py-12 sm:px-10 lg:px-12">
-          <div className="w-full max-w-md rounded-3xl border border-border bg-card/80 p-6 shadow-[0_20px_70px_rgba(0,0,0,0.25)] backdrop-blur-xl sm:p-8">
-
+        {/* Right Column */}
         <div className="flex items-center justify-center px-6 py-12 sm:px-10 lg:px-12">
           <div className="w-full max-w-md rounded-3xl border border-border bg-card/80 p-6 shadow-[0_20px_70px_rgba(0,0,0,0.25)] backdrop-blur-xl sm:p-8">
             <div className="mb-8 flex items-center justify-between gap-3">
@@ -240,4 +240,3 @@ function AuthPage() {
       </div>
     </div>
   );
-}
