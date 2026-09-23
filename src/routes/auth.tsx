@@ -8,7 +8,6 @@ import {
   CheckCircle2,
   User,
   Building,
-  ExternalLink,
   Lock,
 } from "lucide-react";
 import heroRope from "@/assets/hero-rope.jpg";
@@ -18,7 +17,7 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
-type AuthMode = "User" | "owner";
+type AuthMode = "participant" | "owner";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -39,7 +38,8 @@ const itemVariants = {
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<AuthMode>("User");
+  const [mode, setMode] = useState<AuthMode>("participant");
+  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -49,7 +49,7 @@ function AuthPage() {
     const params = new URLSearchParams(window.location.search);
     const intent = params.get("intent");
 
-    if (intent === "owner" || intent === "User") {
+    if (intent === "owner" || intent === "participant") {
       setMode(intent);
     }
 
@@ -60,7 +60,7 @@ function AuthPage() {
     });
   }, [navigate]);
 
-  async function handleLogin(e: React.FormEvent) {
+  async function handleAuth(e: React.FormEvent) {
     e.preventDefault();
 
     if (!email.trim() || !password.trim()) {
@@ -71,31 +71,51 @@ function AuthPage() {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
+      if (isSignUp) {
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+        });
 
-      if (error) {
-        toast.error(error.message);
-        return;
-      }
+        if (error) {
+          toast.error(error.message);
+          return;
+        }
 
-      if (data.session) {
-        setSubmitted(true);
-        navigate({ to: "/dashboard" });
+        if (data.session) {
+          setSubmitted(true);
+          navigate({ to: "/dashboard" });
+        } else if (data.user) {
+          toast.success("Account created! Please check your email for a verification link.");
+          setIsSignUp(false); // Switch back to login view
+        }
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+
+        if (error) {
+          toast.error(error.message);
+          return;
+        }
+
+        if (data.session) {
+          setSubmitted(true);
+          navigate({ to: "/dashboard" });
+        }
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unable to sign in.";
+      const message = error instanceof Error ? error.message : "Authentication failed.";
       toast.error(message);
     } finally {
       setLoading(false);
     }
   }
 
-  const tabs: AuthMode[] = ["User", "owner"];
+  const tabs: AuthMode[] = ["participant", "owner"];
 
- return (
+  return (
     <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(194,141,98,0.18),_transparent_42%)]" />
       <div className="relative mx-auto grid min-h-screen max-w-7xl grid-cols-1 lg:grid-cols-[1.05fr_0.95fr]">
@@ -145,8 +165,8 @@ function AuthPage() {
             <motion.div variants={itemVariants} className="mt-8 space-y-4">
               {[
                 "Private studio directory",
-                "Search by territories",
-                "Need one more to add",
+                "Search by Territories",
+                "Curated professional spaces",
               ].map((item) => (
                 <div key={item} className="flex items-center gap-3 text-sm text-foreground/90">
                   <CheckCircle2 className="h-4 w-4 text-secondary" />
@@ -162,8 +182,12 @@ function AuthPage() {
           <div className="w-full max-w-md rounded-3xl border border-border bg-card/80 p-6 shadow-[0_20px_70px_rgba(0,0,0,0.25)] backdrop-blur-xl sm:p-8">
             <div className="mb-8 flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">Welcome back</p>
-                <h2 className="mt-2 font-serif text-3xl text-foreground">Sign in</h2>
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                  {isSignUp ? "Join the collective" : "Welcome back"}
+                </p>
+                <h2 className="mt-2 font-serif text-3xl text-foreground">
+                  {isSignUp ? "Create account" : "Sign in"}
+                </h2>
               </div>
               <div className="rounded-full bg-secondary/10 p-2 text-secondary">
                 <Lock className="h-5 w-5" />
@@ -173,7 +197,7 @@ function AuthPage() {
             <div className="mb-6 grid grid-cols-2 rounded-full border border-border bg-muted/50 p-1">
               {tabs.map((tab) => {
                 const active = mode === tab;
-                const label = tab === "User" ? "User" : "Studio owner";
+                const label = tab === "participant" ? "Participant" : "Studio owner";
 
                 return (
                   <button
@@ -186,7 +210,7 @@ function AuthPage() {
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    {tab === "User" ? <User className="mr-2 inline h-4 w-4" /> : <Building className="mr-2 inline h-4 w-4" />}
+                    {tab === "participant" ? <User className="mr-2 inline h-4 w-4" /> : <Building className="mr-2 inline h-4 w-4" />}
                     {label}
                   </button>
                 );
@@ -195,12 +219,12 @@ function AuthPage() {
 
             <AnimatePresence mode="wait">
               <motion.form
-                key={mode}
+                key={mode + (isSignUp ? "-signup" : "-signin")}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.2 }}
-                onSubmit={handleLogin}
+                onSubmit={handleAuth}
                 className="space-y-5"
               >
                 <div className="space-y-2">
@@ -238,18 +262,28 @@ function AuthPage() {
                   disabled={loading}
                   className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-secondary px-4 py-3 text-sm font-medium text-secondary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  {loading ? "Signing in..." : `Continue as ${mode === "owner" ? "studio owner" : "User"}`}
+                  {loading 
+                    ? (isSignUp ? "Creating account..." : "Signing in...") 
+                    : (isSignUp ? `Join as ${mode === "owner" ? "studio owner" : "participant"}` : `Continue as ${mode === "owner" ? "studio owner" : "participant"}`)
+                  }
                   {!loading && <ArrowRight className="h-4 w-4" />}
                 </button>
               </motion.form>
             </AnimatePresence>
 
             {submitted && (
-              <p className="mt-4 text-center text-sm text-green-600">Signed in successfully. Redirecting...</p>
+              <p className="mt-4 text-center text-sm text-green-600">Successfully authenticated. Redirecting...</p>
             )}
 
             <p className="mt-6 text-center text-sm text-muted-foreground">
-              Need an account? <button type="button" className="font-medium text-secondary hover:underline">Contact us</button>
+              {isSignUp ? "Already have an account? " : "Need an account? "} 
+              <button 
+                type="button" 
+                onClick={() => setIsSignUp(!isSignUp)} 
+                className="font-medium text-secondary hover:underline transition-all"
+              >
+                {isSignUp ? "Sign in" : "Sign up"}
+              </button>
             </p>
           </div>
         </div>
