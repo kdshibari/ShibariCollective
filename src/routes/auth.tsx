@@ -100,23 +100,28 @@ function AuthPage() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(194,141,98,0.18),_transparent_42%)]" />
       <div className="relative mx-auto grid min-h-screen max-w-7xl grid-cols-1 lg:grid-cols-[1.05fr_0.95fr]">
         
-        {/* Left Column */}
-        <div className="relative flex items-center justify-center px-6 py-12 sm:px-10 lg:px-12">
-  <div className="absolute inset-0 hidden lg:block">
-    <img
-      src={heroRope.src ?? heroRope}
-      alt="Shibari rope details"
-      className="h-full w-full object-cover opacity-65"
-    />
-    {/* Extended Top fade to completely hide the hard seam */}
-    <div className="absolute inset-0 bg-gradient-to-b from-background from-[2%] via-background/80 via-[15%] to-transparent to-[30%]" />
-    
-    {/* Bottom fade */}
-    <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
-    
-    {/* Right fade */}
-    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-background" />
-  </div>
+      {/* Left Column Image with CSS Alpha Masking */}
+        <div 
+          className="absolute inset-0 hidden lg:block"
+          style={{ 
+            WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)',
+            maskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)' 
+          }}
+        >
+          <div 
+            className="h-full w-full"
+            style={{ 
+              WebkitMaskImage: 'linear-gradient(to right, black 40%, transparent 100%)',
+              maskImage: 'linear-gradient(to right, black 40%, transparent 100%)' 
+            }}
+          >
+            <img
+              src={heroRope.src ?? heroRope}
+              alt="Shibari rope details"
+              className="h-full w-full object-cover opacity-65"
+            />
+          </div>
+        </div>
 
           <motion.div
             initial="hidden"
