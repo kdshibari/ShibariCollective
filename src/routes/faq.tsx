@@ -18,7 +18,7 @@ const faqs = [
     items: [
       {
         q: "What is the Shibari Collective?",
-        a: "It is a curated global directory designed to connect Shibari practitioners with dedicated, trusted rope studios and private spaces around the world."
+        a: "It is a global directory designed to connect Shibari practitioners with dedicated rope studios and private spaces around the world."
       },
       {
         q: "Are there membership fees?",
@@ -35,11 +35,11 @@ const faqs = [
     items: [
       {
         q: "Who can list a space?",
-        a: "Only verified studio owners can list a space on the platform."
+        a: "Any studio management or respecitve owners can list a space on the platform."
       },
       {
         q: "What is required for a studio listing?",
-        a: "Owners must provide a studio name, continent, country, city, and contact information, and the directory requires a minimum of five photos in JPEG, PNG, or WEBP formats under 5MB each."
+        a: "Studios must provide a studio name, continent, country, city, and contact information, and the directory requires a minimum of five photos in JPEG, PNG, or WEBP formats under 5MB each."
       },
       {
         q: "Can I keep my location private?",
