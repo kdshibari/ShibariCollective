@@ -18,7 +18,7 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
-type AuthMode = "participant" | "owner";
+type AuthMode = "user" | "owner";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -39,7 +39,7 @@ const itemVariants = {
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<AuthMode>("participant");
+  const [mode, setMode] = useState<AuthMode>("user");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -49,7 +49,7 @@ function AuthPage() {
     const params = new URLSearchParams(window.location.search);
     const intent = params.get("intent");
 
-    if (intent === "owner" || intent === "participant") {
+    if (intent === "owner" || intent === "user") {
       setMode(intent);
     }
 
@@ -93,7 +93,7 @@ function AuthPage() {
     }
   }
 
-  const tabs: AuthMode[] = ["participant", "owner"];
+  const tabs: AuthMode[] = ["user", "owner"];
 
  return (
     <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
@@ -173,7 +173,7 @@ function AuthPage() {
             <div className="mb-6 grid grid-cols-2 rounded-full border border-border bg-muted/50 p-1">
               {tabs.map((tab) => {
                 const active = mode === tab;
-                const label = tab === "participant" ? "Participant" : "Studio owner";
+                const label = tab === "user" ? "user" : "Studio owner";
 
                 return (
                   <button
@@ -186,7 +186,7 @@ function AuthPage() {
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    {tab === "participant" ? <User className="mr-2 inline h-4 w-4" /> : <Building className="mr-2 inline h-4 w-4" />}
+                    {tab === "user" ? <User className="mr-2 inline h-4 w-4" /> : <Building className="mr-2 inline h-4 w-4" />}
                     {label}
                   </button>
                 );
@@ -238,7 +238,7 @@ function AuthPage() {
                   disabled={loading}
                   className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-secondary px-4 py-3 text-sm font-medium text-secondary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  {loading ? "Signing in..." : `Continue as ${mode === "owner" ? "studio owner" : "participant"}`}
+                  {loading ? "Signing in..." : `Continue as ${mode === "owner" ? "studio owner" : "user"}`}
                   {!loading && <ArrowRight className="h-4 w-4" />}
                 </button>
               </motion.form>
