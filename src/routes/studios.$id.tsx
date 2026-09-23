@@ -19,45 +19,45 @@ export const Route = createFileRoute("/studios/$id")({
   component: StudioPage,
 });
 
-// ---------------------------------------------------------
-// SECURE SERVER FUNCTION: Dispatches the email notification
-// This code only runs on the server (Netlify Edge/Node)
-// ---------------------------------------------------------
 const sendReportEmail = createServerFn({ method: "POST" })
   .validator((data: { studioName: string; comments: string; reporterEmail: string }) => data)
   .handler(async ({ data }) => {
-    // We use the Resend REST API here as it requires zero additional npm packages.
-    // You can swap the URL/headers if you prefer SendGrid or Postmark.
-    const RESEND_API_KEY = process.env.RESEND_API_KEY;
+    const GMAIL_USER = process.env.GMAIL_USER;
+    const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
     
-    if (!RESEND_API_KEY) {
-      console.warn("RESEND_API_KEY is missing. Database logged, but email skipped.");
+    if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
+      console.warn("Gmail credentials missing. Database logged, but email skipped.");
       return { success: false };
     }
 
     try {
-      await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${RESEND_API_KEY}`,
-          "Content-Type": "application/json",
+      const nodemailer = await import("nodemailer");
+      
+      const transporter = nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port: 465,
+        secure: true,
+        auth: {
+          user: GMAIL_USER,
+          pass: GMAIL_APP_PASSWORD,
         },
-        body: JSON.stringify({
-          from: "reports@shibaricollective.com", // Replace with your verified sending domain
-          to: "theshibaricollective@gmail.com",
-          subject: `🚨 Studio Report: ${data.studioName}`,
-          html: `
-            <div style="font-family: sans-serif; color: #181514; padding: 20px;">
-              <h2 style="color: #8B3A36;">New Studio Report</h2>
-              <p><strong>Studio:</strong> ${data.studioName}</p>
-              <p><strong>Reporter Email:</strong> ${data.reporterEmail}</p>
-              <p><strong>Reason provided:</strong></p>
-              <blockquote style="border-left: 4px solid #8B3A36; padding-left: 16px; color: #555; background: #f9f9f9; padding: 12px;">
-                ${data.comments}
-              </blockquote>
-            </div>
-          `,
-        }),
+      });
+
+      await transporter.sendMail({
+        from: `"Shibari Collective Alerts" <${GMAIL_USER}>`,
+        to: "theshibaricollective@gmail.com",
+        subject: `🚨 Studio Report: ${data.studioName}`,
+        html: `
+          <div style="font-family: sans-serif; color: #181514; padding: 20px;">
+            <h2 style="color: #8B3A36;">New Studio Report</h2>
+            <p><strong>Studio:</strong> ${data.studioName}</p>
+            <p><strong>Reporter Email:</strong> ${data.reporterEmail}</p>
+            <p><strong>Reason provided:</strong></p>
+            <blockquote style="border-left: 4px solid #8B3A36; padding-left: 16px; color: #555; background: #f9f9f9; padding: 12px;">
+              ${data.comments}
+            </blockquote>
+          </div>
+        `,
       });
       return { success: true };
     } catch (error) {
@@ -90,10 +90,8 @@ function StudioPage() {
   const [loading, setLoading] = useState(true);
   const [emblaRef, embla] = useEmblaCarousel({ loop: true });
   
-  // Cinematic Lightbox State
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
-  // Report Modal State
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportComments, setReportComments] = useState("");
   const [isReporting, setIsReporting] = useState(false);
@@ -110,7 +108,6 @@ function StudioPage() {
       });
   }, [id]);
 
-  // Lock body scroll when lightbox or report modal is open
   useEffect(() => {
     if (lightboxIndex !== null || showReportModal) {
       document.body.style.overflow = "hidden";
@@ -131,7 +128,6 @@ function StudioPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
-      // 1. Log to the database for your permanent records
       const { error } = await supabase.from('studio_reports').insert({
         studio_id: studio?.id,
         user_id: user?.id || null,
@@ -140,7 +136,6 @@ function StudioPage() {
 
       if (error) throw error;
       
-      // 2. Trigger the server function to dispatch the email to Gmail
       await sendReportEmail({
         data: {
           studioName: studio?.name || "Unknown Studio",
@@ -149,7 +144,7 @@ function StudioPage() {
         }
       });
 
-      toast.success("Report submitted securely. Our team will review this as soon as possible.");
+      toast.success("Report submitted securely. Our team will review this immediately.");
       setShowReportModal(false);
       setReportComments("");
     } catch (err: any) {
@@ -176,16 +171,14 @@ function StudioPage() {
           <ArrowLeft className="h-4 w-4" /> Directory
         </Link>
 
-        {/* Desktop Editorial Grid vs Mobile Carousel */}
         {photos.length > 0 && (
           <div className="mb-12">
-            {/* Mobile Carousel */}
             <div className="relative md:hidden rounded-[2rem] overflow-hidden">
               <div ref={emblaRef} className="overflow-hidden">
                 <div className="flex">
                   {photos.map((p, i) => (
                     <div key={i} className="min-w-0 shrink-0 basis-full relative" onClick={() => setLightboxIndex(i)}>
-                      <img src={p.url} alt={`${studio.name} - ${i + 1}`} className="aspect-[4/5] w-full object-cover" />
+                      <img src={p.url} alt={`${studio.name} ${i + 1}`} className="aspect-[4/5] w-full object-cover" />
                       <div className="absolute bottom-4 right-4 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full text-white text-[10px] font-bold tracking-widest flex items-center gap-2">
                         <Maximize2 className="w-3 h-3" /> {i + 1} / {photos.length}
                       </div>
@@ -195,7 +188,6 @@ function StudioPage() {
               </div>
             </div>
 
-            {/* Premium Desktop Asymmetric Grid */}
             <div className="hidden md:grid grid-cols-2 gap-4 h-[60vh] rounded-[2rem] overflow-hidden relative">
               <div className="relative group cursor-pointer h-full bg-neutral-900 overflow-hidden" onClick={() => setLightboxIndex(0)}>
                 <img src={photos[0].url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
@@ -214,7 +206,6 @@ function StudioPage() {
                     <img src={photos[2].url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                     <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                     
-                    {/* View All Overlay if more than 3 photos exist */}
                     {photos.length > 3 && (
                       <div className="absolute bottom-4 right-4 bg-background/90 backdrop-blur-md px-5 py-2.5 rounded-full shadow-xl flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-foreground hover:scale-105 transition-transform">
                         <Camera className="w-4 h-4" /> View All {photos.length}
@@ -261,7 +252,6 @@ function StudioPage() {
               </div>
             )}
             
-            {/* Mobile Report Button */}
             <div className="mt-16 pt-8 border-t border-white/10 flex justify-center lg:hidden">
               <button
                 onClick={() => setShowReportModal(true)}
@@ -272,7 +262,6 @@ function StudioPage() {
             </div>
           </div>
 
-          {/* Desktop Contact Sidebar */}
           <aside className="space-y-6 hidden lg:block">
             <div className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8 shadow-xl sticky top-32">
               <h3 className="font-serif text-3xl text-foreground mb-8">Connect</h3>
@@ -304,7 +293,6 @@ function StudioPage() {
                   <MapPin className="w-4 h-4" /> Open in Maps
                 </a>
                 
-                {/* Desktop Report Button */}
                 <button
                   onClick={() => setShowReportModal(true)}
                   className="w-full flex justify-center items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-foreground/40 hover:text-rose-500 transition-colors pt-4"
@@ -317,7 +305,6 @@ function StudioPage() {
         </div>
       </article>
 
-      {/* Sticky Mobile Action Bar */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-2xl border-t border-white/10 p-4 sm:p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
         <div className="flex gap-3 max-w-md mx-auto">
           {primaryContactHref && (
@@ -342,7 +329,6 @@ function StudioPage() {
         </div>
       </div>
 
-      {/* Cinematic Full-Screen Lightbox */}
       <AnimatePresence>
         {lightboxIndex !== null && (
           <motion.div 
@@ -395,7 +381,6 @@ function StudioPage() {
         )}
       </AnimatePresence>
 
-      {/* Cinematic Report Modal */}
       <AnimatePresence>
         {showReportModal && (
           <motion.div 
