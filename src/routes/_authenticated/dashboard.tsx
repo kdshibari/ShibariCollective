@@ -18,7 +18,7 @@ function DashboardPage() {
   const [isOwner, setIsOwner] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  useEffect(() => { f
     async function loadProfile() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -577,7 +577,7 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
 
       <div className="pt-8 border-t border-white/20">
         <h2 className="text-sm font-bold uppercase tracking-widest text-secondary flex items-center gap-2 mb-8">
-          <Bookmark className="h-4 w-4" /> Saved Directory
+          <Bookmark className="h-4 w-4" /> Saved Studios
         </h2>
 
         {savedStudios.length === 0 ? (
