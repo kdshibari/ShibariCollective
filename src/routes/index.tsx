@@ -107,9 +107,9 @@ function DirectoryPage() {
         <p className="text-xs uppercase tracking-[0.4em] text-secondary font-bold mb-4 flex items-center justify-center sm:justify-start gap-2">
           <Globe2 className="w-4 h-4" /> Global Directory
         </p>
-        <h1 className="font-serif text-5xl sm:text-7xl text-foreground">Explore Studios & Spaces</h1>
+        <h1 className="font-serif text-5xl sm:text-7xl text-foreground">Explore Spaces</h1>
         <p className="mt-6 text-foreground/60 max-w-xl text-sm sm:text-base leading-relaxed mx-auto sm:mx-0">
-          A curated selection of rope studios, and private spaces dedicated to the art and practice of Shibari around the world.
+          A curated selection of rope studios and private spaces dedicated to the art and practice of Shibari around the world.
         </p>
       </div>
 
@@ -135,26 +135,13 @@ function DirectoryPage() {
       {/* Animated Editorial Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
+          <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6 sm:gap-8 space-y-6 sm:space-y-8">
             {[1, 2, 3, 4, 5, 6].map(i => (
-              <div key={i} className="aspect-[3/4] bg-white/5 animate-pulse rounded-[2rem]" />
+              <div key={i} className="aspect-[3/4] bg-white/5 animate-pulse rounded-[2rem] break-inside-avoid inline-block w-full" />
             ))}
           </div>
         ) : (
-          <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8"><motion.div layout className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6 sm:gap-8 space-y-6 sm:space-y-8">
-  <AnimatePresence mode="popLayout">
-    {filteredStudios.map(studio => (
-      <StudioCard 
-        key={studio.id} 
-        studio={studio} 
-        isSaved={savedStudioIds.has(studio.id)} 
-        onToggleSave={() => toggleSave(studio.id)} 
-        navigate={navigate}
-      />
-    ))}
-  </AnimatePresence>
-</motion.div>
-            
+          <motion.div layout className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6 sm:gap-8 space-y-6 sm:space-y-8">
             <AnimatePresence mode="popLayout">
               {filteredStudios.map(studio => (
                 <StudioCard 
@@ -193,7 +180,7 @@ function StudioCard({ studio, isSaved, onToggleSave, navigate }: { studio: any, 
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="group relative rounded-[2rem] overflow-hidden bg-neutral-900 cursor-pointer aspect-[4/5] sm:aspect-[3/4] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)] hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] transition-shadow duration-500 border border-white/10"
+      className="group relative rounded-[2rem] overflow-hidden bg-neutral-900 cursor-pointer aspect-[4/5] sm:aspect-[3/4] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)] hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] transition-shadow duration-500 border border-white/10 break-inside-avoid inline-block w-full"
       onClick={() => navigate({ to: "/studios/$id", params: { id: studio.id } })}
     >
       {/* Background Image */}
