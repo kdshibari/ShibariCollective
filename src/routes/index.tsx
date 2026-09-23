@@ -141,7 +141,20 @@ function DirectoryPage() {
             ))}
           </div>
         ) : (
-          <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
+          <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8"><motion.div layout className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6 sm:gap-8 space-y-6 sm:space-y-8">
+  <AnimatePresence mode="popLayout">
+    {filteredStudios.map(studio => (
+      <StudioCard 
+        key={studio.id} 
+        studio={studio} 
+        isSaved={savedStudioIds.has(studio.id)} 
+        onToggleSave={() => toggleSave(studio.id)} 
+        navigate={navigate}
+      />
+    ))}
+  </AnimatePresence>
+</motion.div>
+            
             <AnimatePresence mode="popLayout">
               {filteredStudios.map(studio => (
                 <StudioCard 
