@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { MapPin, Phone, Mail, Globe, Instagram, ArrowLeft, ChevronLeft, ChevronRight, X, Maximize2, Camera, Flag } from "lucide-react";
@@ -17,6 +18,53 @@ export const Route = createFileRoute("/studios/$id")({
   }),
   component: StudioPage,
 });
+
+// ---------------------------------------------------------
+// SECURE SERVER FUNCTION: Dispatches the email notification
+// This code only runs on the server (Netlify Edge/Node)
+// ---------------------------------------------------------
+const sendReportEmail = createServerFn({ method: "POST" })
+  .validator((data: { studioName: string; comments: string; reporterEmail: string }) => data)
+  .handler(async ({ data }) => {
+    // We use the Resend REST API here as it requires zero additional npm packages.
+    // You can swap the URL/headers if you prefer SendGrid or Postmark.
+    const RESEND_API_KEY = process.env.RESEND_API_KEY;
+    
+    if (!RESEND_API_KEY) {
+      console.warn("RESEND_API_KEY is missing. Database logged, but email skipped.");
+      return { success: false };
+    }
+
+    try {
+      await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${RESEND_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: "reports@shibaricollective.com", // Replace with your verified sending domain
+          to: "theshibaricollective@gmail.com",
+          subject: `🚨 Studio Report: ${data.studioName}`,
+          html: `
+            <div style="font-family: sans-serif; color: #181514; padding: 20px;">
+              <h2 style="color: #8B3A36;">New Studio Report</h2>
+              <p><strong>Studio:</strong> ${data.studioName}</p>
+              <p><strong>Reporter Email:</strong> ${data.reporterEmail}</p>
+              <p><strong>Reason provided:</strong></p>
+              <blockquote style="border-left: 4px solid #8B3A36; padding-left: 16px; color: #555; background: #f9f9f9; padding: 12px;">
+                ${data.comments}
+              </blockquote>
+            </div>
+          `,
+        }),
+      });
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to send report email:", error);
+      return { success: false };
+    }
+  });
 
 interface Studio {
   id: string;
@@ -83,6 +131,7 @@ function StudioPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
+      // 1. Log to the database for your permanent records
       const { error } = await supabase.from('studio_reports').insert({
         studio_id: studio?.id,
         user_id: user?.id || null,
@@ -91,7 +140,16 @@ function StudioPage() {
 
       if (error) throw error;
       
-      toast.success("Report submitted securely. Our team will review this immediately.");
+      // 2. Trigger the server function to dispatch the email to Gmail
+      await sendReportEmail({
+        data: {
+          studioName: studio?.name || "Unknown Studio",
+          comments: reportComments.trim(),
+          reporterEmail: user?.email || "Anonymous Visitor",
+        }
+      });
+
+      toast.success("Report submitted securely. Our team will review this as soon as possible.");
       setShowReportModal(false);
       setReportComments("");
     } catch (err: any) {
