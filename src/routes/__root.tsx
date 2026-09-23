@@ -269,6 +269,7 @@ function Footer() {
             <li><Link to="/" className="hover:underline">Browse studios</Link></li>
             <li><Link to="/submit" className="hover:underline">Submit your studio</Link></li>
             <li><Link to="/contact" className="hover:underline">Contact us</Link></li>
+            <li><Link to="/faq" className="hover:underline">FAQ</Link></li>
           </ul>
         </div>
         <div>
@@ -282,7 +283,7 @@ function Footer() {
       <DisclaimerSection />
       <div className="border-t border-primary-foreground/10">
         <p className="mx-auto max-w-7xl px-4 py-4 text-xs opacity-70 sm:px-6">
-          Made by Shibari Collective © {new Date().getFullYear()}
+          Made by Shibari Collective, {new Date().getFullYear()}
         </p>
       </div>
     </footer>
