@@ -135,8 +135,12 @@ function AuthPage() {
                   <span>{item}</span>
                 </div>
               ))}
-            </motion.div>
+        </motion.div>
+          </motion.div> {/* <--- Add this missing closing tag here */}
         </div>
+
+        <div className="flex items-center justify-center px-6 py-12 sm:px-10 lg:px-12">
+          <div className="w-full max-w-md rounded-3xl border border-border bg-card/80 p-6 shadow-[0_20px_70px_rgba(0,0,0,0.25)] backdrop-blur-xl sm:p-8">
 
         <div className="flex items-center justify-center px-6 py-12 sm:px-10 lg:px-12">
           <div className="w-full max-w-md rounded-3xl border border-border bg-card/80 p-6 shadow-[0_20px_70px_rgba(0,0,0,0.25)] backdrop-blur-xl sm:p-8">
