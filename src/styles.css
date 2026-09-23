@@ -38,38 +38,32 @@
 
 :root {
   --radius: 0.5rem;
-  
-  /* Soft Apricot - Backgrounds */
-  --background: #FFDAB9;
-  --cream: #FFDAB9;
-  --card: #FFDAB9;
-  --popover: #FFDAB9;
-  
-  /* Espresso - Text & Primary Elements */
-  --foreground: #4E2C23;
-  --card-foreground: #4E2C23;
-  --popover-foreground: #4E2C23;
-  --primary: #4E2C23;
-  --primary-foreground: #FFDAB9;
-  --jute: #4E2C23;
-
-  /* Burnt Peach - Secondary Accents & Buttons */
-  --secondary: #E2725B;
-  --secondary-foreground: #FFDAB9;
-  --oxblood: #E2725B;
-  --ring: #E2725B;
-  --destructive: #E2725B;
-  --destructive-foreground: #FFDAB9;
-
-  /* Auto-generated Muted & Border Shades */
-  --muted: color-mix(in srgb, #FFDAB9 85%, #4E2C23);
-  --muted-foreground: color-mix(in srgb, #4E2C23 65%, #FFDAB9);
-  
-  --accent: color-mix(in srgb, #FFDAB9 85%, #E2725B);
-  --accent-foreground: #E2725B;
-  
-  --border: color-mix(in srgb, #4E2C23 15%, #FFDAB9);
-  --input: color-mix(in srgb, #4E2C23 15%, #FFDAB9);
+  /* Deep Umber Backgrounds */
+  --background: #181514;
+  --cream: #EAE6E1;
+  --card: #221E1C;
+  --popover: #221E1C;
+  /* Soft Ivory Text & Primary Elements */
+  --foreground: #EAE6E1;
+  --card-foreground: #EAE6E1;
+  --popover-foreground: #EAE6E1;
+  --primary: #EAE6E1;
+  --primary-foreground: #181514;
+  --jute: #B59B7D;
+  /* Muted Crimson Secondary Accents & Buttons */
+  --secondary: #8B3A36;
+  --secondary-foreground: #EAE6E1;
+  --oxblood: #8B3A36;
+  --ring: #8B3A36;
+  --destructive: #8B3A36;
+  --destructive-foreground: #EAE6E1;
+  /* Muted & Border Shades */
+  --muted: color-mix(in srgb, #221E1C 85%, #EAE6E1);
+  --muted-foreground: color-mix(in srgb, #EAE6E1 65%, #221E1C);
+  --accent: color-mix(in srgb, #221E1C 85%, #8B3A36);
+  --accent-foreground: #8B3A36;
+  --border: color-mix(in srgb, #EAE6E1 15%, #181514);
+  --input: color-mix(in srgb, #EAE6E1 15%, #181514);
 }
 
 @layer base {
