@@ -232,6 +232,17 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
     setExistingPhotos(prev => prev.filter(p => p.id !== photoId));
   };
 
+  const replaceExistingPhoto = (e: React.ChangeEvent<HTMLInputElement>, photoId: string) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    
+    setDeletedPhotoIds(prev => [...prev, photoId]);
+    setExistingPhotos(prev => prev.filter(p => p.id !== photoId));
+    
+    setNewPhotos(prev => [...prev, { file, preview: URL.createObjectURL(file) }]);
+    e.target.value = '';
+  };
+
   const removeNewPhoto = (index: number) => {
     setNewPhotos(prev => prev.filter((_, i) => i !== index));
   };
@@ -376,22 +387,36 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
           
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {existingPhotos.map(photo => (
-              <div key={photo.id} className="relative aspect-square group rounded-2xl overflow-hidden shadow-sm border border-white/40">
+              <div key={photo.id} className="relative aspect-square group rounded-2xl overflow-hidden shadow-sm border border-white/20">
                 <img src={photo.url} className="w-full h-full object-cover" alt="Studio" />
-                <button onClick={() => removeExistingPhoto(photo.id)} className="absolute top-2 right-2 bg-rose-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:scale-110">
-                  <X className="w-4 h-4" />
-                </button>
+                
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
+                  <div className="flex justify-between items-center gap-2">
+                    <label className="flex-1 text-center bg-white/20 hover:bg-white/30 text-white text-[10px] font-bold uppercase tracking-widest py-2 rounded-full cursor-pointer backdrop-blur-md transition-colors border border-white/30">
+                      Replace
+                      <input type="file" accept="image/*" onChange={(e) => replaceExistingPhoto(e, photo.id)} className="hidden" />
+                    </label>
+                    <button type="button" onClick={() => removeExistingPhoto(photo.id)} className="bg-rose-500 text-white p-2 rounded-full hover:bg-rose-600 transition-colors shadow-lg">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
               </div>
             ))}
             
             {newPhotos.map((photo, i) => (
               <div key={i} className="relative aspect-square group rounded-2xl overflow-hidden shadow-sm border-2 border-secondary/50">
                 <img src={photo.preview} className="w-full h-full object-cover opacity-80" alt="New Upload" />
-                <button onClick={() => removeNewPhoto(i)} className="absolute top-2 right-2 bg-rose-500 text-white p-1.5 rounded-full hover:scale-110">
-                  <X className="w-4 h-4" />
-                </button>
-                <div className="absolute bottom-2 left-0 right-0 text-center">
-                  <span className="bg-secondary text-white text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-full">Pending</span>
+                
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-3">
+                  <div className="flex justify-between items-center gap-2">
+                    <span className="flex-1 text-center bg-secondary text-white text-[10px] font-bold uppercase tracking-widest py-2 rounded-full shadow-lg">
+                      Pending
+                    </span>
+                    <button type="button" onClick={() => removeNewPhoto(i)} className="bg-rose-500 text-white p-2 rounded-full hover:bg-rose-600 transition-colors shadow-lg">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
