@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Building, Bookmark, ArrowRight, PlusCircle, User, Edit3, MapPin, Camera, X, UploadCloud, Save, ArrowLeft, Clock, Globe } from "lucide-react";
+import { Building, Bookmark, ArrowRight, PlusCircle, User, Edit3, MapPin, Camera, X, UploadCloud, Save, ArrowLeft, Clock, Globe, Image as ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { CONTINENTS } from "@/lib/geo";
@@ -63,7 +63,7 @@ function DashboardPage() {
         
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-12">
           <div className="flex items-center gap-4">
-            <div className="h-16 w-16 rounded-full bg-white/40 border border-white/60 shadow-md backdrop-blur-md flex items-center justify-center">
+            <div className="h-16 w-16 rounded-full bg-white/5 border border-white/10 shadow-md backdrop-blur-md flex items-center justify-center">
               <User className="h-8 w-8 text-secondary" />
             </div>
             <div>
@@ -100,7 +100,13 @@ function OwnerPortal({ userId }: { userId: string }) {
       .eq("owner_id", userId)
       .order("created_at", { ascending: false });
     
-    setStudios(data || []);
+    // Explicitly sort photos so the logo (position 0) is always the cover image
+    const sortedData = (data || []).map(studio => ({
+      ...studio,
+      studio_photos: (studio.studio_photos || []).sort((a: any, b: any) => a.position - b.position)
+    }));
+
+    setStudios(sortedData);
     setLoading(false);
   };
 
@@ -108,7 +114,7 @@ function OwnerPortal({ userId }: { userId: string }) {
     if (userId) fetchStudios();
   }, [userId]);
 
-  if (loading) return <div className="animate-pulse h-64 bg-white/20 rounded-[2rem] border border-white/40"></div>;
+  if (loading) return <div className="animate-pulse h-64 bg-white/5 rounded-[2rem] border border-white/10"></div>;
 
   if (editingStudio) {
     return (
@@ -135,7 +141,7 @@ function OwnerPortal({ userId }: { userId: string }) {
       </div>
 
       {studios.length === 0 ? (
-        <div className="bg-white/30 backdrop-blur-xl border border-white/50 rounded-[2rem] p-8 sm:p-12 text-center shadow-[0_20px_40px_-10px_rgba(78,44,35,0.1)]">
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 sm:p-12 text-center shadow-[0_20px_40px_-10px_rgba(78,44,35,0.1)]">
           <Building className="mx-auto h-12 w-12 text-foreground/30 mb-4" />
           <h3 className="font-serif text-3xl text-foreground">Your Portfolio is Empty</h3>
           <p className="mt-3 text-foreground/70 font-medium max-w-md mx-auto">
@@ -148,12 +154,12 @@ function OwnerPortal({ userId }: { userId: string }) {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {studios.map(studio => (
-            <div key={studio.id} className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[2rem] overflow-hidden shadow-lg hover:shadow-xl transition-all group">
-              <div className="aspect-[21/9] bg-white/50 relative overflow-hidden">
+            <div key={studio.id} className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] overflow-hidden shadow-lg hover:shadow-xl transition-all group">
+              <div className="aspect-[21/9] bg-black/20 relative overflow-hidden">
                 {studio.studio_photos?.[0]?.url ? (
-                  <img src={studio.studio_photos[0].url} alt="Cover" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <img src={studio.studio_photos[0].url} alt="Studio Logo" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-80 group-hover:opacity-100" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-foreground/40 font-bold uppercase tracking-widest text-xs">No Cover Image</div>
+                  <div className="w-full h-full flex items-center justify-center text-foreground/40 font-bold uppercase tracking-widest text-xs">No Logo</div>
                 )}
                 <div className="absolute top-4 right-4 bg-background/80 backdrop-blur-md px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest">
                   {studio.status}
@@ -166,7 +172,7 @@ function OwnerPortal({ userId }: { userId: string }) {
                 </p>
                 <button 
                   onClick={() => setEditingStudio(studio)}
-                  className="mt-6 w-full flex items-center justify-center gap-2 bg-white/50 hover:bg-white/80 border border-white/60 rounded-full py-3 text-sm font-bold uppercase tracking-widest transition-all"
+                  className="mt-6 w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full py-3 text-sm font-bold uppercase tracking-widest transition-all"
                 >
                   Manage Studio <Edit3 className="w-4 h-4" />
                 </button>
@@ -202,9 +208,18 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
   });
 
   const [hours, setHours] = useState<Record<string, string>>(studio.hours || {});
-  const [existingPhotos, setExistingPhotos] = useState<any[]>(studio.studio_photos || []);
+  
+  // Separate Logo (Position 0) from Gallery (Position 1+)
+  const sortedPhotos = [...(studio.studio_photos || [])].sort((a: any, b: any) => a.position - b.position);
+  const initialLogo = sortedPhotos.length > 0 && sortedPhotos[0].position === 0 ? sortedPhotos[0] : null;
+  const initialGallery = initialLogo ? sortedPhotos.slice(1) : sortedPhotos;
+
+  const [existingLogo, setExistingLogo] = useState<any>(initialLogo);
+  const [existingGallery, setExistingGallery] = useState<any[]>(initialGallery);
   const [deletedPhotoIds, setDeletedPhotoIds] = useState<string[]>([]);
-  const [newPhotos, setNewPhotos] = useState<{ file: File, preview: string }[]>([]);
+  
+  const [newLogo, setNewLogo] = useState<{ file: File, preview: string } | null>(null);
+  const [newGallery, setNewGallery] = useState<{ file: File, preview: string }[]>([]);
 
   const handleDelete = async (studioId: string) => {
     setDeleting(true);
@@ -219,35 +234,56 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
     }
   };
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files) return;
-    const selectedFiles = Array.from(e.target.files);
-    const mapped = selectedFiles.map(file => ({ file, preview: URL.createObjectURL(file) }));
-    setNewPhotos(prev => [...prev, ...mapped]);
+  // --- LOGO HANDLERS ---
+  const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    
+    if (existingLogo) {
+      setDeletedPhotoIds(prev => [...prev, existingLogo.id]);
+      setExistingLogo(null);
+    }
+    
+    setNewLogo({ file, preview: URL.createObjectURL(file) });
     e.target.value = '';
   };
 
-  const removeExistingPhoto = (photoId: string) => {
-    setDeletedPhotoIds(prev => [...prev, photoId]);
-    setExistingPhotos(prev => prev.filter(p => p.id !== photoId));
+  // --- GALLERY HANDLERS ---
+  const handleGallerySelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    const selectedFiles = Array.from(e.target.files);
+    const mapped = selectedFiles.map(file => ({ file, preview: URL.createObjectURL(file) }));
+    setNewGallery(prev => [...prev, ...mapped]);
+    e.target.value = '';
   };
 
-  const replaceExistingPhoto = (e: React.ChangeEvent<HTMLInputElement>, photoId: string) => {
+  const removeExistingGalleryPhoto = (photoId: string) => {
+    setDeletedPhotoIds(prev => [...prev, photoId]);
+    setExistingGallery(prev => prev.filter(p => p.id !== photoId));
+  };
+
+  const replaceExistingGalleryPhoto = (e: React.ChangeEvent<HTMLInputElement>, photoId: string) => {
     if (!e.target.files || e.target.files.length === 0) return;
     const file = e.target.files[0];
     
     setDeletedPhotoIds(prev => [...prev, photoId]);
-    setExistingPhotos(prev => prev.filter(p => p.id !== photoId));
+    setExistingGallery(prev => prev.filter(p => p.id !== photoId));
     
-    setNewPhotos(prev => [...prev, { file, preview: URL.createObjectURL(file) }]);
+    setNewGallery(prev => [...prev, { file, preview: URL.createObjectURL(file) }]);
     e.target.value = '';
   };
 
-  const removeNewPhoto = (index: number) => {
-    setNewPhotos(prev => prev.filter((_, i) => i !== index));
+  const removeNewGalleryPhoto = (index: number) => {
+    setNewGallery(prev => prev.filter((_, i) => i !== index));
   };
 
+  // --- SAVE ---
   const handleSave = async () => {
+    if (!existingLogo && !newLogo) {
+      toast.error("A Studio Logo is required.");
+      return;
+    }
+
     setSaving(true);
     try {
       const { error: updateError } = await supabase
@@ -279,19 +315,46 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
         if (delError) throw delError;
       }
 
-      if (newPhotos.length > 0) {
-        toast.info(`Uploading ${newPhotos.length} new photos...`);
-        const uploadPromises = newPhotos.map(async (photo, index) => {
-          const fileExt = photo.file.name.split('.').pop();
-          const fileName = `${studio.id}/${Date.now()}-${index}.${fileExt}`;
-          
-          const { error: uploadError } = await supabase.storage.from('studios').upload(fileName, photo.file);
-          if (uploadError) throw uploadError;
+      const uploadPromises: Promise<any>[] = [];
 
+      // 1. Process Logo Upload
+      if (newLogo) {
+        toast.info(`Uploading logo...`);
+        const fileExt = newLogo.file.name.split('.').pop();
+        const fileName = `${studio.id}/logo_${Date.now()}.${fileExt}`;
+        
+        const uploadTask = supabase.storage.from('studios').upload(fileName, newLogo.file).then(async ({ error }) => {
+          if (error) throw error;
           const { data: { publicUrl } } = supabase.storage.from('studios').getPublicUrl(fileName);
-          return { studio_id: studio.id, url: publicUrl, position: existingPhotos.length + index };
+          // Logo is ALWAYS position 0
+          return { studio_id: studio.id, url: publicUrl, position: 0 };
         });
+        uploadPromises.push(uploadTask);
+      }
 
+      // 2. Process Gallery Uploads
+      if (newGallery.length > 0) {
+        toast.info(`Uploading ${newGallery.length} gallery photos...`);
+        let maxPos = 0;
+        if (existingGallery.length > 0) {
+           maxPos = Math.max(...existingGallery.map(p => p.position));
+        }
+
+        const galleryTasks = newGallery.map((photo, index) => {
+          const fileExt = photo.file.name.split('.').pop();
+          const fileName = `${studio.id}/gallery_${Date.now()}_${index}.${fileExt}`;
+          
+          return supabase.storage.from('studios').upload(fileName, photo.file).then(async ({ error }) => {
+            if (error) throw error;
+            const { data: { publicUrl } } = supabase.storage.from('studios').getPublicUrl(fileName);
+            // Append to existing gallery positions
+            return { studio_id: studio.id, url: publicUrl, position: maxPos + 1 + index };
+          });
+        });
+        uploadPromises.push(...galleryTasks);
+      }
+
+      if (uploadPromises.length > 0) {
         const uploadedPhotos = await Promise.all(uploadPromises);
         const { error: insError } = await supabase.from("studio_photos").insert(uploadedPhotos);
         if (insError) throw insError;
@@ -307,9 +370,9 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
   };
 
   return (
-    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white/40 backdrop-blur-3xl border border-white/60 rounded-[2.5rem] p-6 sm:p-10 shadow-2xl relative">
+    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-6 sm:p-10 shadow-2xl relative">
       <div className="flex items-center justify-between mb-8">
-        <button onClick={onClose} className="p-2 bg-white/50 rounded-full hover:bg-white/80 transition-colors">
+        <button onClick={onClose} className="p-2 bg-white/5 rounded-full hover:bg-white/10 transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </button>
         <h2 className="font-serif text-3xl text-foreground text-center flex-1">Edit Studio</h2>
@@ -330,7 +393,7 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
         </div>
 
         {/* Location Information */}
-        <div className="pt-6 border-t border-white/40">
+        <div className="pt-6 border-t border-white/10">
           <h3 className="text-xs font-bold uppercase tracking-widest text-secondary flex items-center gap-2 mb-4">
             <MapPin className="w-4 h-4" /> Location Information
           </h3>
@@ -345,7 +408,7 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
         </div>
 
         {/* Contact & Socials */}
-        <div className="pt-6 border-t border-white/40">
+        <div className="pt-6 border-t border-white/10">
           <h3 className="text-xs font-bold uppercase tracking-widest text-secondary flex items-center gap-2 mb-4">
             <Globe className="w-4 h-4" /> Digital Presence
           </h3>
@@ -360,13 +423,13 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
         </div>
 
         {/* Schedule */}
-        <div className="pt-6 border-t border-white/40">
+        <div className="pt-6 border-t border-white/10">
           <h3 className="text-xs font-bold uppercase tracking-widest text-secondary flex items-center gap-2 mb-4">
             <Clock className="w-4 h-4" /> Weekly Schedule
           </h3>
           <div className="grid gap-3 sm:grid-cols-2">
             {DAYS.map((d) => (
-              <div key={d} className="flex items-center gap-3 bg-white/30 p-2 rounded-xl border border-white/50">
+              <div key={d} className="flex items-center gap-3 bg-white/5 p-2 rounded-xl border border-white/10">
                 <label className="w-24 text-xs font-bold text-foreground/70 pl-2">{d.substring(0,3)}</label>
                 <input
                   placeholder="10:00 - 22:00"
@@ -379,24 +442,55 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
           </div>
         </div>
 
-        {/* Gallery */}
-        <div className="pt-6 border-t border-white/40">
+        {/* Logo Section */}
+        <div className="pt-6 border-t border-white/10">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-secondary flex items-center gap-2 mb-4">
+            <ImageIcon className="w-4 h-4" /> Studio Logo
+          </h3>
+          <div className="flex items-center gap-6">
+            <div className="relative w-32 h-32 rounded-full overflow-hidden border border-white/10 shadow-xl bg-black/20 shrink-0">
+              {(newLogo || existingLogo) ? (
+                <>
+                  <img src={newLogo ? newLogo.preview : existingLogo.url} className="w-full h-full object-cover" alt="Studio Logo" />
+                  <div className="absolute inset-0 bg-black/60 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-white cursor-pointer hover:text-secondary transition-colors">
+                      Replace
+                      <input type="file" accept="image/*" onChange={handleLogoSelect} className="hidden" />
+                    </label>
+                  </div>
+                </>
+              ) : (
+                <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-white/5 transition-colors">
+                  <UploadCloud className="w-6 h-6 text-foreground/50 mb-1" />
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-foreground/50 text-center px-2">Upload Logo</span>
+                  <input type="file" accept="image/*" onChange={handleLogoSelect} className="hidden" />
+                </label>
+              )}
+            </div>
+            <div className="text-sm text-foreground/60 max-w-sm leading-relaxed">
+              This image serves as your studio's primary identity across the directory. We recommend a square format (1:1).
+            </div>
+          </div>
+        </div>
+
+        {/* Gallery Section */}
+        <div className="pt-6 border-t border-white/10">
           <h3 className="text-xs font-bold uppercase tracking-widest text-secondary flex items-center gap-2 mb-4">
             <Camera className="w-4 h-4" /> Manage Gallery
           </h3>
           
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {existingPhotos.map(photo => (
-              <div key={photo.id} className="relative aspect-square group rounded-2xl overflow-hidden shadow-sm border border-white/20">
+            {existingGallery.map(photo => (
+              <div key={photo.id} className="relative aspect-[4/5] group rounded-2xl overflow-hidden shadow-sm border border-white/10">
                 <img src={photo.url} className="w-full h-full object-cover" alt="Studio" />
                 
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
                   <div className="flex justify-between items-center gap-2">
-                    <label className="flex-1 text-center bg-white/20 hover:bg-white/30 text-white text-[10px] font-bold uppercase tracking-widest py-2 rounded-full cursor-pointer backdrop-blur-md transition-colors border border-white/30">
+                    <label className="flex-1 text-center bg-white/10 hover:bg-white/20 text-white text-[10px] font-bold uppercase tracking-widest py-2 rounded-full cursor-pointer backdrop-blur-md transition-colors border border-white/10">
                       Replace
-                      <input type="file" accept="image/*" onChange={(e) => replaceExistingPhoto(e, photo.id)} className="hidden" />
+                      <input type="file" accept="image/*" onChange={(e) => replaceExistingGalleryPhoto(e, photo.id)} className="hidden" />
                     </label>
-                    <button type="button" onClick={() => removeExistingPhoto(photo.id)} className="bg-rose-500 text-white p-2 rounded-full hover:bg-rose-600 transition-colors shadow-lg">
+                    <button type="button" onClick={() => removeExistingGalleryPhoto(photo.id)} className="bg-rose-500 text-white p-2 rounded-full hover:bg-rose-600 transition-colors shadow-lg">
                       <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -404,8 +498,8 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
               </div>
             ))}
             
-            {newPhotos.map((photo, i) => (
-              <div key={i} className="relative aspect-square group rounded-2xl overflow-hidden shadow-sm border-2 border-secondary/50">
+            {newGallery.map((photo, i) => (
+              <div key={i} className="relative aspect-[4/5] group rounded-2xl overflow-hidden shadow-sm border-2 border-secondary/50">
                 <img src={photo.preview} className="w-full h-full object-cover opacity-80" alt="New Upload" />
                 
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-3">
@@ -413,7 +507,7 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
                     <span className="flex-1 text-center bg-secondary text-white text-[10px] font-bold uppercase tracking-widest py-2 rounded-full shadow-lg">
                       Pending
                     </span>
-                    <button type="button" onClick={() => removeNewPhoto(i)} className="bg-rose-500 text-white p-2 rounded-full hover:bg-rose-600 transition-colors shadow-lg">
+                    <button type="button" onClick={() => removeNewGalleryPhoto(i)} className="bg-rose-500 text-white p-2 rounded-full hover:bg-rose-600 transition-colors shadow-lg">
                       <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -421,10 +515,10 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
               </div>
             ))}
 
-            <label className="flex flex-col items-center justify-center aspect-square border-2 border-dashed border-white/60 bg-white/20 hover:bg-white/40 rounded-2xl cursor-pointer transition-all">
+            <label className="flex flex-col items-center justify-center aspect-[4/5] border border-dashed border-white/30 bg-white/5 hover:bg-white/10 rounded-2xl cursor-pointer transition-all">
               <UploadCloud className="w-6 h-6 text-secondary mb-2" />
               <span className="text-[10px] font-bold uppercase tracking-widest text-foreground">Add Photos</span>
-              <input type="file" multiple accept="image/*" onChange={handleImageSelect} className="hidden" />
+              <input type="file" multiple accept="image/*" onChange={handleGallerySelect} className="hidden" />
             </label>
           </div>
         </div>
@@ -483,7 +577,15 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
       if (!savesRes.error && savesRes.data) {
         const formattedStudios = savesRes.data
           .filter(record => record.studios) 
-          .map(record => ({ ...record.studios, saved_at: record.created_at }));
+          .map(record => {
+            const st = record.studios as any;
+            return {
+              ...st,
+              // Sort photos so logo is always [0]
+              studio_photos: (st.studio_photos || []).sort((a: any, b: any) => a.position - b.position),
+              saved_at: record.created_at
+            }
+          });
         setSavedStudios(formattedStudios);
       }
 
@@ -521,14 +623,14 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
       .match({ user_id: userId, studio_id: studioId });
   };
 
-  if (loading) return <div className="animate-pulse h-64 bg-white/20 rounded-[2rem] border border-white/40"></div>;
+  if (loading) return <div className="animate-pulse h-64 bg-white/5 rounded-[2rem] border border-white/10"></div>;
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
       
       {/* PREMIUM PARTICIPANT IDENTITY CARD */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="col-span-1 md:col-span-2 bg-white/40 backdrop-blur-3xl border border-white/60 rounded-[2rem] p-8 shadow-xl relative overflow-hidden flex flex-col justify-between">
+        <div className="col-span-1 md:col-span-2 bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2rem] p-8 shadow-xl relative overflow-hidden flex flex-col justify-between">
           <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
             <User className="w-40 h-40" />
           </div>
@@ -544,19 +646,19 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
                     value={displayName} 
                     onChange={(e) => setDisplayName(e.target.value)} 
                     placeholder="Enter display name..."
-                    className="bg-white/50 border border-white/80 rounded-lg px-4 py-2 font-serif text-2xl outline-none focus:border-secondary transition-colors"
+                    className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 font-serif text-2xl outline-none focus:border-secondary transition-colors text-foreground"
                   />
                   <button onClick={handleSaveProfile} disabled={savingProfile} className="bg-secondary text-white p-2 rounded-lg hover:scale-105 transition-all">
                     <Save className="w-5 h-5" />
                   </button>
-                  <button onClick={() => setIsEditingProfile(false)} disabled={savingProfile} className="bg-white/50 text-foreground p-2 rounded-lg hover:bg-white/80 transition-all">
+                  <button onClick={() => setIsEditingProfile(false)} disabled={savingProfile} className="bg-white/5 text-foreground p-2 rounded-lg hover:bg-white/10 transition-all border border-white/10">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
               ) : (
                 <div className="group flex items-center gap-4 mt-2">
                   <h2 className="font-serif text-4xl text-foreground mb-1">{profile?.display_name || "Rope Explorer"}</h2>
-                  <button onClick={() => setIsEditingProfile(true)} className="opacity-0 group-hover:opacity-100 bg-white/50 p-2 rounded-full hover:bg-white/80 transition-all">
+                  <button onClick={() => setIsEditingProfile(true)} className="opacity-0 group-hover:opacity-100 bg-white/5 p-2 rounded-full hover:bg-white/10 transition-all border border-white/10">
                     <Edit3 className="w-4 h-4 text-secondary" />
                   </button>
                 </div>
@@ -586,27 +688,27 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
           </div>
         </div>
 
-        <div className="col-span-1 bg-neutral-900 rounded-[2rem] p-8 text-white flex flex-col justify-between shadow-xl">
+        <div className="col-span-1 bg-white/5 border border-white/10 backdrop-blur-xl rounded-[2rem] p-8 text-foreground flex flex-col justify-between shadow-xl">
           <div>
-            <Building className="w-6 h-6 text-white/50 mb-4" />
+            <Building className="w-6 h-6 text-foreground/50 mb-4" />
             <h3 className="font-serif text-2xl">Studio Owner?</h3>
-            <p className="text-xs font-medium text-white/60 mt-2 leading-relaxed">
+            <p className="text-xs font-medium text-foreground/60 mt-2 leading-relaxed">
               Claim your profile to list your space on the global directory and manage your gallery.
             </p>
           </div>
-          <Link to="/submit" className="mt-6 w-full rounded-full bg-white text-black py-3 text-xs font-bold uppercase tracking-widest text-center hover:bg-white/90 transition-colors">
+          <Link to="/submit" className="mt-6 w-full rounded-full bg-foreground text-background py-3 text-xs font-bold uppercase tracking-widest text-center hover:scale-[1.02] transition-transform">
             Upgrade Account
           </Link>
         </div>
       </div>
 
-      <div className="pt-8 border-t border-white/20">
+      <div className="pt-8 border-t border-white/10">
         <h2 className="text-sm font-bold uppercase tracking-widest text-secondary flex items-center gap-2 mb-8">
           <Bookmark className="h-4 w-4" /> Saved Studios
         </h2>
 
         {savedStudios.length === 0 ? (
-          <div className="bg-white/20 backdrop-blur-xl border border-white/40 rounded-[2rem] p-12 text-center border-dashed">
+          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-12 text-center border-dashed">
             <Bookmark className="mx-auto h-8 w-8 text-foreground/30 mb-4" />
             <p className="text-foreground/70 font-medium">Your curated list of spaces will appear here.</p>
             <Link to="/" className="mt-6 inline-flex items-center gap-2 rounded-full bg-foreground text-background px-6 py-3 text-xs font-bold uppercase tracking-widest shadow-xl hover:scale-105 transition-all">
@@ -624,13 +726,13 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ duration: 0.2 }}
-                  className="group relative bg-white/40 backdrop-blur-xl border border-white/60 rounded-[2rem] overflow-hidden shadow-lg hover:shadow-xl transition-all"
+                  className="group relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] overflow-hidden shadow-lg hover:shadow-xl transition-all"
                 >
                   <div className="aspect-[16/9] relative overflow-hidden bg-black/20">
                     {studio.studio_photos?.[0]?.url ? (
-                      <img src={studio.studio_photos[0].url} alt={studio.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                      <img src={studio.studio_photos[0].url} alt={studio.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-80 group-hover:opacity-100" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-foreground/30 text-xs font-bold uppercase tracking-widest">No Cover Image</div>
+                      <div className="w-full h-full flex items-center justify-center text-foreground/30 text-xs font-bold uppercase tracking-widest">No Logo</div>
                     )}
                     
                     <button
@@ -650,7 +752,7 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
                     <Link 
                       to="/studios/$id" 
                       params={{ id: studio.id }}
-                      className="mt-6 w-full flex items-center justify-center gap-2 rounded-full border border-foreground/20 py-2.5 text-xs font-bold uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background transition-colors"
+                      className="mt-6 w-full flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 py-2.5 text-xs font-bold uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background transition-colors"
                     >
                       View Space <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
