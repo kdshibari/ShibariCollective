@@ -398,53 +398,6 @@ function SubmitPage() {
 }
 
 // PREMIUM UTILITY COMPONENTS
-function Input({ label, value, onChange, type = "text", required, placeholder }: any) {
-  return (
-    <label className="block group">
-      <span className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-foreground/60 group-focus-within:text-secondary transition-colors">
-        {label} {required && <span className="text-secondary">*</span>}
-      </span>
-      <input
-        type={type} required={required} value={value} placeholder={placeholder}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-2xl border border-white/40 bg-white/40 backdrop-blur-sm px-5 py-4 text-sm font-medium outline-none focus:border-white/80 focus:bg-white/70 transition-all shadow-sm placeholder:text-foreground/30"
-      />
-    </label>
-  );
-}
-
-function Textarea({ label, value, onChange, placeholder }: any) {
-  return (
-    <label className="block group">
-      <span className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-foreground/60 group-focus-within:text-secondary transition-colors">{label}</span>
-      <textarea
-        rows={5} value={value} placeholder={placeholder}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-2xl border border-white/40 bg-white/40 backdrop-blur-sm px-5 py-4 text-sm font-medium outline-none focus:border-white/80 focus:bg-white/70 transition-all shadow-sm placeholder:text-foreground/30 resize-none"
-      />
-    </label>
-  );
-}
-
-function Select({ label, value, onChange, options, required }: any) {
-  return (
-    <label className="block group">
-      <span className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-foreground/60 group-focus-within:text-secondary transition-colors">
-        {label} {required && <span className="text-secondary">*</span>}
-      </span>
-      <select
-        required={required} value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-2xl border border-white/40 bg-white/40 backdrop-blur-sm px-5 py-4 text-sm font-medium outline-none focus:border-white/80 focus:bg-white/70 transition-all shadow-sm appearance-none cursor-pointer"
-        style={{ backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234E2C23' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1.25rem center', backgroundSize: '1em' }}
-      >
-        <option value="" disabled>Select...</option>
-        {options.map((o: string) => <option key={o} value={o}>{o}</option>)}
-      </select>
-    </label>
-  );
-}
-// PREMIUM UTILITY COMPONENTS
 function Input({ label, value, onChange, type = "text", required, step, placeholder }: any) {
   return (
     <label className="block group">
