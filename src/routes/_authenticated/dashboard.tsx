@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Building, Bookmark, ArrowRight, PlusCircle, User, Edit3, MapPin, Camera, X, UploadCloud, Save, ArrowLeft, Clock, Globe, Image as ImageIcon } from "lucide-react";
@@ -91,6 +91,7 @@ function OwnerPortal({ userId }: { userId: string }) {
   const [studios, setStudios] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingStudio, setEditingStudio] = useState<any | null>(null);
+  const location = useLocation();
 
   const fetchStudios = async () => {
     setLoading(true);
@@ -113,6 +114,11 @@ function OwnerPortal({ userId }: { userId: string }) {
   useEffect(() => {
     if (userId) fetchStudios();
   }, [userId]);
+
+  // Instantly close the editor if the user clicks the "Dashboard" navigation link or browser back button
+  useEffect(() => {
+    setEditingStudio(null);
+  }, [location.key]);
 
   if (loading) return <div className="animate-pulse h-64 bg-white/5 rounded-[2rem] border border-white/10"></div>;
 
@@ -556,6 +562,7 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
   const [savedStudios, setSavedStudios] = useState<any[]>([]);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const location = useLocation();
   
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [displayName, setDisplayName] = useState("");
@@ -598,6 +605,11 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
     }
     fetchData();
   }, [userId]);
+
+  // Instantly close the editor if the user clicks the "Dashboard" navigation link or browser back button
+  useEffect(() => {
+    setIsEditingProfile(false);
+  }, [location.key]);
 
   const handleSaveProfile = async () => {
     setSavingProfile(true);
