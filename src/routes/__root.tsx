@@ -202,7 +202,7 @@ function Header() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="fixed inset-0 z-40 bg-background/95 backdrop-blur-3xl md:hidden flex flex-col items-center justify-center gap-8 px-4"
+            className="fixed inset-0 z-[45] bg-background/95 backdrop-blur-3xl md:hidden flex flex-col items-center justify-center gap-8 px-4"
           >
             <Link to="/" onClick={() => setMobileMenuOpen(false)} className={mobileLinkClass}>Explore Studios</Link>
             <Link to="/contact" onClick={() => setMobileMenuOpen(false)} className={mobileLinkClass}>Contact Us</Link>
