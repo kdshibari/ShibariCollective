@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
+
 const BASE_URL = "https://shibaricollective.com";
+
 export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
@@ -10,6 +12,7 @@ export const Route = createFileRoute("/sitemap.xml")({
           { path: "/contact", changefreq: "monthly", priority: "0.5" },
           { path: "/auth", changefreq: "monthly", priority: "0.4" },
           { path: "/faq", changefreq: "monthly", priority: "0.6" },
+          { path: "/disclaimer", changefreq: "monthly", priority: "0.3" },
         ];
 
         const urls = entries.map(
