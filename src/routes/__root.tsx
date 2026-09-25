@@ -222,7 +222,7 @@ function Header() {
                   onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
                   className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-foreground/50 hover:text-rose-500 transition-colors mt-4"
                 >
-                  <LogOut className="w-4 h-4" /> Disconnect
+                  <LogOut className="w-4 h-4" /> Log Out
                 </button>
               </>
             ) : (
