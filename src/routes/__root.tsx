@@ -1,4 +1,3 @@
-import { DisclaimerSection } from "@/DisclaimerSection";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -41,6 +40,7 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
+
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="max-w-md text-center">
@@ -154,6 +154,7 @@ function Header() {
           <nav className="hidden items-center gap-6 md:flex">
             <Link to="/" className={linkClass}>Studios</Link>
             <Link to="/contact" className={linkClass}>Contact</Link>
+            
             {signedIn ? (
               <div className="flex items-center gap-4 border-l border-white/10 pl-6 ml-2">
                 <Link
@@ -270,6 +271,7 @@ function Footer() {
             <li><Link to="/submit" className="hover:underline">Submit your studio</Link></li>
             <li><Link to="/contact" className="hover:underline">Contact us</Link></li>
             <li><Link to="/faq" className="hover:underline">FAQ</Link></li>
+            <li><Link to="/disclaimer" className="hover:underline">Disclaimer & Terms</Link></li>
           </ul>
         </div>
         <div>
@@ -280,10 +282,10 @@ function Footer() {
           </ul>
         </div>
       </div>
-      <DisclaimerSection />
+      
       <div className="border-t border-primary-foreground/10">
         <p className="mx-auto max-w-7xl px-4 py-4 text-xs opacity-70 sm:px-6">
-          Made by Shibari Collective, {new Date().getFullYear()}
+          Made by Shibari Collective — {new Date().getFullYear()}
         </p>
       </div>
     </footer>
