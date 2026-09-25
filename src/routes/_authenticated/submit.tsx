@@ -49,7 +49,10 @@ function SubmitPage() {
   const [saving, setSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
 
-  const [photos, setPhotos] = useState<PhotoState[]>([]);
+  // Separated Image State
+  const [logo, setLogo] = useState<PhotoState | null>(null);
+  const [gallery, setGallery] = useState<PhotoState[]>([]);
+  
   const [hours, setHours] = useState<Record<string, string>>({});
   const [form, setForm] = useState({
     name: "", description: "", continent: "", country: "", city: "", address: "",
@@ -91,25 +94,38 @@ function SubmitPage() {
     }
   }
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // --- LOGO HANDLERS ---
+  const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    setLogo({ file, preview: URL.createObjectURL(file) });
+    e.target.value = '';
+  };
+
+  // --- GALLERY HANDLERS ---
+  const handleGallerySelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
     const selectedFiles = Array.from(e.target.files);
-    
     const newPhotos = selectedFiles.map(file => ({
       file,
       preview: URL.createObjectURL(file)
     }));
-    setPhotos(prev => [...prev, ...newPhotos]);
+    setGallery(prev => [...prev, ...newPhotos]);
     e.target.value = '';
   };
 
-  const removePhoto = (indexToRemove: number) => {
-    setPhotos(prev => prev.filter((_, index) => index !== indexToRemove));
+  const removeGalleryPhoto = (indexToRemove: number) => {
+    setGallery(prev => prev.filter((_, index) => index !== indexToRemove));
   };
 
+  // --- SUBMIT ---
   async function onSubmit() {
-    if (photos.length < 5) {
-      toast.error(`You have selected ${photos.length} photos. A minimum of 5 is required.`);
+    if (!logo) {
+      toast.error("A studio logo is required.");
+      return;
+    }
+    if (gallery.length < 5) {
+      toast.error(`You have selected ${gallery.length} gallery photos. A minimum of 5 is required.`);
       return;
     }
     
@@ -169,25 +185,31 @@ function SubmitPage() {
 
     setUploadProgress("Processing images...");
     try {
-      const uploadPromises = photos.map(async (photo, index) => {
+      const uploadPromises: Promise<any>[] = [];
+
+      // 1. Upload Logo (Position 0)
+      const logoExt = logo.file.name.split('.').pop();
+      const logoFileName = `${inserted.id}/logo_${Date.now()}.${logoExt}`;
+      const logoTask = supabase.storage.from('studios').upload(logoFileName, logo.file, { cacheControl: '3600', upsert: false })
+        .then(async ({ error: uploadError }) => {
+          if (uploadError) throw uploadError;
+          const { data: { publicUrl } } = supabase.storage.from('studios').getPublicUrl(logoFileName);
+          return { studio_id: inserted.id, url: publicUrl, position: 0 };
+        });
+      uploadPromises.push(logoTask);
+
+      // 2. Upload Gallery (Position 1+)
+      const galleryTasks = gallery.map(async (photo, index) => {
         const fileExt = photo.file.name.split('.').pop();
-        const fileName = `${inserted.id}/${Date.now()}-${index}.${fileExt}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('studios')
-          .upload(fileName, photo.file, {
-            cacheControl: '3600',
-            upsert: false
+        const fileName = `${inserted.id}/gallery_${Date.now()}_${index}.${fileExt}`;
+        return supabase.storage.from('studios').upload(fileName, photo.file, { cacheControl: '3600', upsert: false })
+          .then(async ({ error: uploadError }) => {
+            if (uploadError) throw uploadError;
+            const { data: { publicUrl } } = supabase.storage.from('studios').getPublicUrl(fileName);
+            return { studio_id: inserted.id, url: publicUrl, position: index + 1 };
           });
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('studios')
-          .getPublicUrl(fileName);
-
-        return { studio_id: inserted.id, url: publicUrl, position: index };
       });
+      uploadPromises.push(...galleryTasks);
 
       const uploadedPhotos = await Promise.all(uploadPromises);
 
@@ -321,41 +343,69 @@ function SubmitPage() {
             )}
 
             {step === 4 && (
-              <motion.div key="step4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
-                <h2 className="font-serif text-3xl text-foreground mb-2">Build Your Gallery</h2>
-                <div className="flex justify-between items-end mb-8">
-                  <p className="text-sm text-foreground/60 font-medium max-w-sm">
-                    Upload directly from your device. Minimum 5 photos required to ensure directory standards.
-                  </p>
-                  <p className="text-xs font-bold uppercase tracking-widest text-secondary">
-                    {photos.length} / 5 Min
-                  </p>
-                </div>
+              <motion.div key="step4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
+                <h2 className="font-serif text-3xl text-foreground mb-2">Visual Identity & Gallery</h2>
                 
-                <div className="space-y-6">
-                  <label className="relative flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-white/60 bg-white/20 hover:bg-white/40 backdrop-blur-sm rounded-[2rem] cursor-pointer transition-all hover:scale-[1.01]">
-                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                      <UploadCloud className="w-10 h-10 text-secondary mb-3" />
-                      <p className="mb-2 text-sm font-bold text-foreground">Tap to select or drop images</p>
-                      <p className="text-xs text-foreground/60 font-medium">JPEG, PNG or WEBP (Max 5MB)</p>
-                    </div>
-                    <input type="file" className="hidden" multiple accept="image/*" onChange={handleImageSelect} />
-                  </label>
-
-                  {photos.length > 0 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 p-4 bg-white/20 rounded-[2rem] border border-white/30">
-                      {photos.map((photo, index) => (
-                        <div key={index} className="relative aspect-square group overflow-hidden rounded-2xl shadow-sm">
-                          <img src={photo.preview} alt={`Preview ${index}`} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
-                          <div className="absolute inset-0 bg-background/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
-                            <button type="button" onClick={() => removePhoto(index)} className="bg-secondary/90 text-white p-3 rounded-full hover:bg-secondary hover:scale-110 transition-all shadow-xl">
-                              <X className="w-5 h-5" />
-                            </button>
+                {/* Logo Section */}
+                <div>
+                  <div className="flex justify-between items-end mb-4">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-secondary">Studio Logo</h3>
+                    <p className="text-xs font-bold uppercase tracking-widest text-secondary">Required</p>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <div className="relative w-32 h-32 rounded-full overflow-hidden border border-white/10 shadow-xl bg-black/20 shrink-0">
+                      {logo ? (
+                        <>
+                          <img src={logo.preview} className="w-full h-full object-cover" alt="Studio Logo" />
+                          <div className="absolute inset-0 bg-black/60 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+                            <label className="text-[10px] font-bold uppercase tracking-widest text-white cursor-pointer hover:text-secondary transition-colors">
+                              Replace
+                              <input type="file" accept="image/*" onChange={handleLogoSelect} className="hidden" />
+                            </label>
                           </div>
-                        </div>
-                      ))}
+                        </>
+                      ) : (
+                        <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-white/5 transition-colors">
+                          <UploadCloud className="w-6 h-6 text-foreground/50 mb-1" />
+                          <span className="text-[9px] font-bold uppercase tracking-widest text-foreground/50 text-center px-2">Upload Logo</span>
+                          <input type="file" accept="image/*" onChange={handleLogoSelect} className="hidden" />
+                        </label>
+                      )}
                     </div>
-                  )}
+                    <div className="text-sm text-foreground/60 max-w-sm leading-relaxed">
+                      This serves as your studio's primary identity across the directory. We recommend a square format (1:1).
+                    </div>
+                  </div>
+                </div>
+
+                {/* Gallery Section */}
+                <div className="pt-6 border-t border-white/10">
+                  <div className="flex justify-between items-end mb-4">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-secondary">Studio Gallery</h3>
+                    <p className="text-xs font-bold uppercase tracking-widest text-secondary">{gallery.length} / 5 Min</p>
+                  </div>
+                  <p className="text-sm text-foreground/60 font-medium max-w-sm mb-6">
+                    Upload directly from your device. Minimum 5 photos required to showcase your space.
+                  </p>
+                  
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    {gallery.map((photo, index) => (
+                      <div key={index} className="relative aspect-[4/5] group overflow-hidden rounded-2xl shadow-sm border border-white/10">
+                        <img src={photo.preview} alt={`Preview ${index}`} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                        <div className="absolute inset-0 bg-background/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+                          <button type="button" onClick={() => removeGalleryPhoto(index)} className="bg-rose-500/90 text-white p-3 rounded-full hover:bg-rose-500 hover:scale-110 transition-all shadow-xl">
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+
+                    <label className="flex flex-col items-center justify-center aspect-[4/5] border border-dashed border-white/30 bg-white/5 hover:bg-white/10 rounded-2xl cursor-pointer transition-all">
+                      <UploadCloud className="w-6 h-6 text-secondary mb-2" />
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-foreground">Add Photos</span>
+                      <input type="file" className="hidden" multiple accept="image/*" onChange={handleGallerySelect} />
+                    </label>
+                  </div>
                 </div>
               </motion.div>
             )}
