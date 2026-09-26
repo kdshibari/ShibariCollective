@@ -98,10 +98,10 @@ function DirectoryPage() {
   }, [studios, activeRegion]);
 
   return (
-    <div className="min-h-screen bg-background -mt-px pt-16 pb-24">
+    <div className="min-h-screen bg-background pb-24">
       
-      {/* Editorial Header */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-12 text-center sm:text-left pt-8">
+      {/* Editorial Header Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-12 sm:pt-16 mb-10 text-center sm:text-left">
         <p className="text-xs uppercase tracking-[0.4em] text-secondary font-bold mb-4 flex items-center justify-center sm:justify-start gap-2">
           <Globe2 className="w-4 h-4" /> Global Directory
         </p>
@@ -111,9 +111,9 @@ function DirectoryPage() {
         </p>
       </div>
 
-      {/* Sticky Glassmorphic Filter Bar */}
-      <div className="sticky top-[64px] sm:top-[72px] z-40 bg-background/90 backdrop-blur-xl border-y border-white/10 py-4 mb-12 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex gap-3 overflow-x-auto no-scrollbar items-center">
+      {/* Redesigned Clean Filter Bar (Non-sticky to prevent layout collision) */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-12">
+        <div className="flex gap-3 overflow-x-auto no-scrollbar items-center py-2 border-y border-white/5">
           {regions.map(region => (
             <button
               key={region}
