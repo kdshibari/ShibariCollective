@@ -11,6 +11,21 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 });
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const TIME_OPTIONS = [
+  "00:00", "00:30", "01:00", "01:30", "02:00", "02:30", "03:00", "03:30",
+  "04:00", "04:30", "05:00", "05:30", "06:00", "06:30", "07:00", "07:30",
+  "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
+  "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30",
+  "16:00", "16:30", "17:00", "17:30", "18:00", "18:30", "19:00", "19:30",
+  "20:00", "20:30", "21:00", "21:30", "22:00", "22:30", "23:00", "23:30",
+  "24:00"
+];
+
+const formatUrl = (url: string) => {
+  let u = url.trim();
+  if (u && !/^https?:\/\//i.test(u)) u = `https://${u}`;
+  return u;
+};
 
 function DashboardPage() {
   const navigate = useNavigate();
@@ -101,7 +116,6 @@ function OwnerPortal({ userId }: { userId: string }) {
       .eq("owner_id", userId)
       .order("created_at", { ascending: false });
     
-    // Explicitly sort photos so the logo (position 0) is always the cover image
     const sortedData = (data || []).map(studio => ({
       ...studio,
       studio_photos: (studio.studio_photos || []).sort((a: any, b: any) => a.position - b.position)
@@ -115,7 +129,6 @@ function OwnerPortal({ userId }: { userId: string }) {
     if (userId) fetchStudios();
   }, [userId]);
 
-  // Instantly close the editor if the user clicks the "Dashboard" navigation link or browser back button
   useEffect(() => {
     setEditingStudio(null);
   }, [location.key]);
@@ -215,7 +228,6 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
 
   const [hours, setHours] = useState<Record<string, string>>(studio.hours || {});
   
-  // Separate Logo (Position 0) from Gallery (Position 1+)
   const sortedPhotos = [...(studio.studio_photos || [])].sort((a: any, b: any) => a.position - b.position);
   const initialLogo = sortedPhotos.length > 0 && sortedPhotos[0].position === 0 ? sortedPhotos[0] : null;
   const initialGallery = initialLogo ? sortedPhotos.slice(1) : sortedPhotos;
@@ -240,7 +252,6 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
     }
   };
 
-  // --- LOGO HANDLERS ---
   const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     const file = e.target.files[0];
@@ -254,7 +265,6 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
     e.target.value = '';
   };
 
-  // --- GALLERY HANDLERS ---
   const handleGallerySelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
     const selectedFiles = Array.from(e.target.files);
@@ -283,7 +293,6 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
     setNewGallery(prev => prev.filter((_, i) => i !== index));
   };
 
-  // --- SAVE ---
   const handleSave = async () => {
     if (!existingLogo && !newLogo) {
       toast.error("A Studio Logo is required.");
@@ -303,7 +312,7 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
           address: form.address || null,
           email: form.email || null,
           phone: form.phone || null,
-          website: form.website || null,
+          website: formatUrl(form.website) || null,
           hours: hours,
           socials: { 
             ...studio.socials, 
@@ -323,7 +332,6 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
 
       const uploadPromises: Promise<any>[] = [];
 
-      // 1. Process Logo Upload
       if (newLogo) {
         toast.info(`Uploading logo...`);
         const fileExt = newLogo.file.name.split('.').pop();
@@ -332,13 +340,11 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
         const uploadTask = supabase.storage.from('studios').upload(fileName, newLogo.file).then(async ({ error }) => {
           if (error) throw error;
           const { data: { publicUrl } } = supabase.storage.from('studios').getPublicUrl(fileName);
-          // Logo is ALWAYS position 0
           return { studio_id: studio.id, url: publicUrl, position: 0 };
         });
         uploadPromises.push(uploadTask);
       }
 
-      // 2. Process Gallery Uploads
       if (newGallery.length > 0) {
         toast.info(`Uploading ${newGallery.length} gallery photos...`);
         let maxPos = 0;
@@ -353,7 +359,6 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
           return supabase.storage.from('studios').upload(fileName, photo.file).then(async ({ error }) => {
             if (error) throw error;
             const { data: { publicUrl } } = supabase.storage.from('studios').getPublicUrl(fileName);
-            // Append to existing gallery positions
             return { studio_id: studio.id, url: publicUrl, position: maxPos + 1 + index };
           });
         });
@@ -421,7 +426,7 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input label="Email" value={form.email} onChange={(v: string) => setForm({...form, email: v})} type="email" />
             <Input label="Phone" value={form.phone} onChange={(v: string) => setForm({...form, phone: v})} />
-            <Input label="Website" value={form.website} onChange={(v: string) => setForm({...form, website: v})} type="url" />
+            <Input label="Website" value={form.website} onChange={(v: string) => setForm({...form, website: v})} type="url" placeholder="studio.com (we auto-format)" />
             <Input label="Instagram" value={form.instagram} onChange={(v: string) => setForm({...form, instagram: v})} placeholder="@studio" />
             <Input label="Facebook" value={form.facebook} onChange={(v: string) => setForm({...form, facebook: v})} placeholder="Facebook Link" />
             <Input label="Fetlife" value={form.fetlife} onChange={(v: string) => setForm({...form, fetlife: v})} placeholder="Fetlife Link" />
@@ -433,17 +438,9 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
           <h3 className="text-xs font-bold uppercase tracking-widest text-secondary flex items-center gap-2 mb-4">
             <Clock className="w-4 h-4" /> Weekly Schedule
           </h3>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 lg:grid-cols-2">
             {DAYS.map((d) => (
-              <div key={d} className="flex items-center gap-3 bg-white/5 p-2 rounded-xl border border-white/10">
-                <label className="w-24 text-xs font-bold text-foreground/70 pl-2">{d.substring(0,3)}</label>
-                <input
-                  placeholder="10:00 - 22:00"
-                  value={hours[d] ?? ""}
-                  onChange={(e) => setHours({ ...hours, [d]: e.target.value })}
-                  className="flex-1 bg-transparent border-0 text-sm outline-none font-medium placeholder:text-foreground/30 focus:ring-0"
-                />
-              </div>
+              <TimeRangeRow key={d} day={d} value={hours[d] ?? ""} onChange={(val) => setHours({ ...hours, [d]: val })} />
             ))}
           </div>
         </div>
@@ -468,7 +465,7 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
               ) : (
                 <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-white/5 transition-colors">
                   <UploadCloud className="w-6 h-6 text-foreground/50 mb-1" />
-                  <span className="text-xs font-bold uppercase tracking-widest text-foreground/50 text-center px-2">Upload Logo</span>
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-foreground/50 text-center px-2">Upload Logo</span>
                   <input type="file" accept="image/*" onChange={handleLogoSelect} className="hidden" />
                 </label>
               )}
@@ -523,7 +520,7 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
 
             <label className="flex flex-col items-center justify-center aspect-[4/5] border border-dashed border-white/30 bg-white/5 hover:bg-white/10 rounded-2xl cursor-pointer transition-all">
               <UploadCloud className="w-6 h-6 text-secondary mb-2" />
-              <span className="text-xs font-bold uppercase tracking-widest text-foreground">Add Photos</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-foreground">Add Photos</span>
               <input type="file" multiple accept="image/*" onChange={handleGallerySelect} className="hidden" />
             </label>
           </div>
@@ -606,7 +603,6 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
     fetchData();
   }, [userId]);
 
-  // Instantly close the editor if the user clicks the "Dashboard" navigation link or browser back button
   useEffect(() => {
     setIsEditingProfile(false);
   }, [location.key]);
@@ -780,6 +776,46 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
 }
 
 // PREMIUM UTILITY COMPONENTS
+function TimeRangeRow({ day, value, onChange }: { day: string, value: string, onChange: (v: string) => void }) {
+  const isOpen = value !== "" && value !== "Closed";
+  const [openTime, closeTime] = isOpen ? value.split("-") : ["10:00", "22:00"];
+
+  return (
+    <div className="flex items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/10">
+      <div className="w-20 sm:w-24 flex items-center gap-2 shrink-0">
+        <input 
+          type="checkbox" 
+          checked={isOpen} 
+          onChange={(e) => onChange(e.target.checked ? `${openTime}-${closeTime}` : "Closed")} 
+          className="accent-secondary w-4 h-4 cursor-pointer" 
+        />
+        <label className="text-xs font-bold uppercase tracking-widest text-foreground/70">{day.substring(0,3)}</label>
+      </div>
+      {isOpen ? (
+        <div className="flex flex-1 items-center gap-2">
+          <select 
+            value={openTime} 
+            onChange={e => onChange(`${e.target.value}-${closeTime}`)} 
+            className="flex-1 bg-white/10 rounded-lg text-xs p-2.5 text-foreground outline-none border border-white/10 cursor-pointer appearance-none text-center"
+          >
+            {TIME_OPTIONS.map(t => <option key={`open-${t}`} value={t} className="bg-background text-foreground">{t}</option>)}
+          </select>
+          <span className="text-xs text-foreground/40 font-bold uppercase">to</span>
+          <select 
+            value={closeTime} 
+            onChange={e => onChange(`${openTime}-${e.target.value}`)} 
+            className="flex-1 bg-white/10 rounded-lg text-xs p-2.5 text-foreground outline-none border border-white/10 cursor-pointer appearance-none text-center"
+          >
+            {TIME_OPTIONS.map(t => <option key={`close-${t}`} value={t} className="bg-background text-foreground">{t}</option>)}
+          </select>
+        </div>
+      ) : (
+        <div className="flex-1 text-xs font-bold uppercase tracking-widest text-foreground/30 px-2 text-center">Closed</div>
+      )}
+    </div>
+  );
+}
+
 function Input({ label, value, onChange, type = "text", required, step, placeholder }: any) {
   return (
     <label className="block group">
