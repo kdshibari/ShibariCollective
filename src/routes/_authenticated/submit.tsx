@@ -165,87 +165,97 @@ function SubmitPage() {
     }
     
     setSaving(true);
-    setUploadProgress("Initializing profile...");
+    setUploadProgress("Uploading media to staging...");
     
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) return;
 
-    const { data: inserted, error } = await supabase
-      .from("studios")
-      .insert({
-        owner_id: userData.user.id,
-        name: form.name.trim(),
-        description: form.description.trim() || null,
-        continent: form.continent,
-        country: form.country.trim(),
-        city: form.city.trim(),
-        address: form.address.trim() || null,
-        email: form.email.trim() || null,
-        phone: form.phone.trim() || null,
-        website: form.website.trim() || null,
-        hours,
-        socials: {
-          instagram: form.instagram.trim() || undefined,
-          facebook: form.facebook.trim() || undefined,
-          other: form.other.trim() || undefined,
-        },
-      })
-      .select("id")
-      .single();
-
-    if (error || !inserted) {
-      setSaving(false);
-      setUploadProgress("");
-      toast.error(error?.message ?? "Failed to create studio. Please check permissions.");
-      return;
-    }
-
-    setUploadProgress("Processing images...");
     try {
-      const uploadPromises: Promise<any>[] = [];
+      const uploadPromises: Promise<{ url: string; position: number; path: string }>[] = [];
+      const timestamp = Date.now();
+      const stagingDir = `uploads/${userData.user.id}/${timestamp}`;
 
+      // 1. Upload Logo (Position 0)
       const logoExt = logo.file.name.split('.').pop();
-      const logoFileName = `${inserted.id}/logo_${Date.now()}.${logoExt}`;
+      const logoFileName = `${stagingDir}/logo.${logoExt}`;
       const logoTask = supabase.storage.from('studios').upload(logoFileName, logo.file, { cacheControl: '3600', upsert: false })
         .then(async ({ error: uploadError }) => {
           if (uploadError) throw uploadError;
           const { data: { publicUrl } } = supabase.storage.from('studios').getPublicUrl(logoFileName);
-          return { studio_id: inserted.id, url: publicUrl, position: 0 };
+          return { url: publicUrl, position: 0, path: logoFileName };
         });
       uploadPromises.push(logoTask);
 
+      // 2. Upload Gallery (Position 1+)
       const galleryTasks = gallery.map(async (photo, index) => {
         const fileExt = photo.file.name.split('.').pop();
-        const fileName = `${inserted.id}/gallery_${Date.now()}_${index}.${fileExt}`;
+        const fileName = `${stagingDir}/gallery_${index}.${fileExt}`;
         return supabase.storage.from('studios').upload(fileName, photo.file, { cacheControl: '3600', upsert: false })
           .then(async ({ error: uploadError }) => {
             if (uploadError) throw uploadError;
             const { data: { publicUrl } } = supabase.storage.from('studios').getPublicUrl(fileName);
-            return { studio_id: inserted.id, url: publicUrl, position: index + 1 };
+            return { url: publicUrl, position: index + 1, path: fileName };
           });
       });
       uploadPromises.push(...galleryTasks);
 
-      const uploadedPhotos = await Promise.all(uploadPromises);
+      // Wait for all uploads to complete before touching the database
+      const uploadedMedia = await Promise.all(uploadPromises);
 
-      setUploadProgress("Finalizing listing...");
-      const { error: pErr } = await supabase.from("studio_photos").insert(uploadedPhotos);
+      setUploadProgress("Publishing studio profile...");
+
+      // 3. Create Studio Record
+      const { data: inserted, error: dbError } = await supabase
+        .from("studios")
+        .insert({
+          owner_id: userData.user.id,
+          name: form.name.trim(),
+          description: form.description.trim() || null,
+          continent: form.continent,
+          country: form.country.trim(),
+          city: form.city.trim(),
+          address: form.address.trim() || null,
+          email: form.email.trim() || null,
+          phone: form.phone.trim() || null,
+          website: form.website.trim() || null,
+          hours,
+          socials: {
+            instagram: form.instagram.trim() || undefined,
+            facebook: form.facebook.trim() || undefined,
+            other: form.other.trim() || undefined,
+          },
+        })
+        .select("id")
+        .single();
+
+      if (dbError || !inserted) {
+        // Rollback: Delete the uploaded media if DB insertion fails
+        await supabase.storage.from('studios').remove(uploadedMedia.map(m => m.path));
+        throw new Error(dbError?.message ?? "Database insertion failed. Media rolled back.");
+      }
+
+      // 4. Link Photos to Studio Record
+      const photosToInsert = uploadedMedia.map(m => ({
+        studio_id: inserted.id,
+        url: m.url,
+        position: m.position
+      }));
+
+      const { error: pErr } = await supabase.from("studio_photos").insert(photosToInsert);
       
       if (pErr) throw pErr;
+
+      setSaving(false);
+      setUploadProgress("");
+      localStorage.removeItem(DRAFT_KEY);
+      toast.success("Studio successfully published!");
+      navigate({ to: "/studios/$id", params: { id: inserted.id } });
 
     } catch (err: any) {
       setSaving(false);
       setUploadProgress("");
-      toast.error("Studio created, but image uploads failed: " + err.message);
-      navigate({ to: "/studios/$id", params: { id: inserted.id } });
-      return;
+      toast.error("Submission failed: " + err.message);
     }
-
-    setSaving(false);
-    setUploadProgress("");
-    localStorage.removeItem(DRAFT_KEY);
-    toast.success("Studio successfully published!");
-    navigate({ to: "/studios/$id", params: { id: inserted.id } });
   }
 
   if (checking) return <div className="flex h-screen items-center justify-center text-secondary tracking-widest uppercase text-sm font-bold animate-pulse">Initializing Secure Portal...</div>;
@@ -372,7 +382,7 @@ function SubmitPage() {
                         <>
                           <img src={logo.preview} className="w-full h-full object-cover" alt="Studio Logo" />
                           <div className="absolute inset-0 bg-black/60 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
-                            <label className="text-[10px] font-bold uppercase tracking-widest text-white cursor-pointer hover:text-secondary transition-colors">
+                            <label className="text-xs font-bold uppercase tracking-widest text-white cursor-pointer hover:text-secondary transition-colors">
                               Replace
                               <input type="file" accept="image/*" onChange={handleLogoSelect} className="hidden" />
                             </label>
@@ -381,7 +391,7 @@ function SubmitPage() {
                       ) : (
                         <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-white/5 transition-colors">
                           <UploadCloud className="w-6 h-6 text-foreground/50 mb-1" />
-                          <span className="text-[9px] font-bold uppercase tracking-widest text-foreground/50 text-center px-2">Upload Logo</span>
+                          <span className="text-xs font-bold uppercase tracking-widest text-foreground/50 text-center px-2">Upload Logo</span>
                           <input type="file" accept="image/*" onChange={handleLogoSelect} className="hidden" />
                         </label>
                       )}
