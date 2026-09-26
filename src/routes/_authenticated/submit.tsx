@@ -19,12 +19,29 @@ export const Route = createFileRoute("/_authenticated/submit")({
 });
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const TIME_OPTIONS = [
+  "00:00", "00:30", "01:00", "01:30", "02:00", "02:30", "03:00", "03:30",
+  "04:00", "04:30", "05:00", "05:30", "06:00", "06:30", "07:00", "07:30",
+  "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
+  "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30",
+  "16:00", "16:30", "17:00", "17:30", "18:00", "18:30", "19:00", "19:30",
+  "20:00", "20:30", "21:00", "21:30", "22:00", "22:30", "23:00", "23:30",
+  "24:00"
+];
+
 const DRAFT_KEY = "shibari-studio-draft";
 
 interface PhotoState {
   file: File;
   preview: string;
 }
+
+// Auto-formats user URLs to prevent "Invalid URL" errors
+const formatUrl = (url: string) => {
+  let u = url.trim();
+  if (u && !/^https?:\/\//i.test(u)) u = `https://${u}`;
+  return u;
+};
 
 function SubmitPage() {
   const navigate = useNavigate();
@@ -43,7 +60,6 @@ function SubmitPage() {
     email: "", phone: "", website: "", instagram: "", facebook: "", other: "",
   });
 
-  // Protect against accidental tab closure or browser back navigation during uploads
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (saving) {
@@ -105,15 +121,16 @@ function SubmitPage() {
           address: z.string().max(200).optional(),
         }).parse({ continent: form.continent, country: form.country, city: form.city, address: form.address });
       } else if (currentStep === 3) {
+        let websiteUrl = formatUrl(form.website);
         z.object({
           email: z.string().trim().email("Invalid email format.").max(255).optional().or(z.literal("")),
           phone: z.string().max(50).optional(),
-          website: z.string().url("Website must be a valid URL (e.g., https://...).").max(255).optional().or(z.literal("")),
+          website: z.string().url("Website must be a valid URL.").max(255).optional().or(z.literal("")),
           instagram: z.string().max(255).optional(),
         }).parse({
           email: form.email,
           phone: form.phone,
-          website: form.website,
+          website: websiteUrl,
           instagram: form.instagram,
         });
       }
@@ -155,14 +172,8 @@ function SubmitPage() {
   };
 
   async function onSubmit() {
-    if (!logo) {
-      toast.error("A studio logo is required.");
-      return;
-    }
-    if (gallery.length < 5) {
-      toast.error(`You have selected ${gallery.length} gallery photos. A minimum of 5 is required.`);
-      return;
-    }
+    if (!logo) return toast.error("A studio logo is required.");
+    if (gallery.length < 5) return toast.error(`Minimum of 5 gallery photos required. You have ${gallery.length}.`);
     
     setSaving(true);
     setUploadProgress("Uploading media to staging...");
@@ -175,7 +186,6 @@ function SubmitPage() {
       const timestamp = Date.now();
       const stagingDir = `uploads/${userData.user.id}/${timestamp}`;
 
-      // 1. Upload Logo (Position 0)
       const logoExt = logo.file.name.split('.').pop();
       const logoFileName = `${stagingDir}/logo.${logoExt}`;
       const logoTask = supabase.storage.from('studios').upload(logoFileName, logo.file, { cacheControl: '3600', upsert: false })
@@ -186,7 +196,6 @@ function SubmitPage() {
         });
       uploadPromises.push(logoTask);
 
-      // 2. Upload Gallery (Position 1+)
       const galleryTasks = gallery.map(async (photo, index) => {
         const fileExt = photo.file.name.split('.').pop();
         const fileName = `${stagingDir}/gallery_${index}.${fileExt}`;
@@ -199,12 +208,9 @@ function SubmitPage() {
       });
       uploadPromises.push(...galleryTasks);
 
-      // Wait for all uploads to complete before touching the database
       const uploadedMedia = await Promise.all(uploadPromises);
-
       setUploadProgress("Publishing studio profile...");
 
-      // 3. Create Studio Record
       const { data: inserted, error: dbError } = await supabase
         .from("studios")
         .insert({
@@ -217,7 +223,7 @@ function SubmitPage() {
           address: form.address.trim() || null,
           email: form.email.trim() || null,
           phone: form.phone.trim() || null,
-          website: form.website.trim() || null,
+          website: formatUrl(form.website) || null,
           hours,
           socials: {
             instagram: form.instagram.trim() || undefined,
@@ -229,12 +235,10 @@ function SubmitPage() {
         .single();
 
       if (dbError || !inserted) {
-        // Rollback: Delete the uploaded media if DB insertion fails
         await supabase.storage.from('studios').remove(uploadedMedia.map(m => m.path));
         throw new Error(dbError?.message ?? "Database insertion failed. Media rolled back.");
       }
 
-      // 4. Link Photos to Studio Record
       const photosToInsert = uploadedMedia.map(m => ({
         studio_id: inserted.id,
         url: m.url,
@@ -242,7 +246,6 @@ function SubmitPage() {
       }));
 
       const { error: pErr } = await supabase.from("studio_photos").insert(photosToInsert);
-      
       if (pErr) throw pErr;
 
       setSaving(false);
@@ -340,17 +343,9 @@ function SubmitPage() {
                 
                 <div className="space-y-4">
                   <h3 className="text-xs font-bold uppercase tracking-widest text-secondary">Weekly Schedule</h3>
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid gap-3 lg:grid-cols-2">
                     {DAYS.map((d) => (
-                      <div key={d} className="flex items-center gap-3 bg-white/30 p-2 rounded-xl border border-white/50">
-                        <label className="w-24 text-xs font-bold text-foreground/70 pl-2">{d.substring(0,3)}</label>
-                        <input
-                          placeholder="10:00 - 22:00"
-                          value={hours[d] ?? ""}
-                          onChange={(e) => setHours({ ...hours, [d]: e.target.value })}
-                          className="flex-1 bg-transparent border-0 text-sm outline-none font-medium placeholder:text-foreground/30 focus:ring-0"
-                        />
-                      </div>
+                      <TimeRangeRow key={d} day={d} value={hours[d] ?? ""} onChange={(val) => setHours({ ...hours, [d]: val })} />
                     ))}
                   </div>
                 </div>
@@ -360,7 +355,7 @@ function SubmitPage() {
                   <div className="grid gap-6 sm:grid-cols-2">
                     <Input label="Public Email" value={form.email} onChange={(v: string) => setForm({ ...form, email: v })} type="email" placeholder="hello@studio.com" />
                     <Input label="Phone Number" value={form.phone} onChange={(v: string) => setForm({ ...form, phone: v })} placeholder="+1 234 567 890" />
-                    <Input label="Website" value={form.website} onChange={(v: string) => setForm({ ...form, website: v })} type="url" placeholder="https://..." />
+                    <Input label="Website" value={form.website} onChange={(v: string) => setForm({ ...form, website: v })} type="url" placeholder="studio.com (we auto-format)" />
                     <Input label="Instagram" value={form.instagram} onChange={(v: string) => setForm({ ...form, instagram: v })} placeholder="@studio" />
                   </div>
                 </div>
@@ -465,6 +460,47 @@ function SubmitPage() {
         </div>
 
       </div>
+    </div>
+  );
+}
+
+// PREMIUM UTILITY COMPONENTS
+function TimeRangeRow({ day, value, onChange }: { day: string, value: string, onChange: (v: string) => void }) {
+  const isOpen = value !== "" && value !== "Closed";
+  const [openTime, closeTime] = isOpen ? value.split("-") : ["10:00", "22:00"];
+
+  return (
+    <div className="flex items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/10">
+      <div className="w-20 sm:w-24 flex items-center gap-2 shrink-0">
+        <input 
+          type="checkbox" 
+          checked={isOpen} 
+          onChange={(e) => onChange(e.target.checked ? `${openTime}-${closeTime}` : "Closed")} 
+          className="accent-secondary w-4 h-4 cursor-pointer" 
+        />
+        <label className="text-xs font-bold uppercase tracking-widest text-foreground/70">{day.substring(0,3)}</label>
+      </div>
+      {isOpen ? (
+        <div className="flex flex-1 items-center gap-2">
+          <select 
+            value={openTime} 
+            onChange={e => onChange(`${e.target.value}-${closeTime}`)} 
+            className="flex-1 bg-white/10 rounded-lg text-xs p-2.5 text-foreground outline-none border border-white/10 cursor-pointer appearance-none text-center"
+          >
+            {TIME_OPTIONS.map(t => <option key={`open-${t}`} value={t} className="bg-background text-foreground">{t}</option>)}
+          </select>
+          <span className="text-xs text-foreground/40 font-bold uppercase">to</span>
+          <select 
+            value={closeTime} 
+            onChange={e => onChange(`${openTime}-${e.target.value}`)} 
+            className="flex-1 bg-white/10 rounded-lg text-xs p-2.5 text-foreground outline-none border border-white/10 cursor-pointer appearance-none text-center"
+          >
+            {TIME_OPTIONS.map(t => <option key={`close-${t}`} value={t} className="bg-background text-foreground">{t}</option>)}
+          </select>
+        </div>
+      ) : (
+        <div className="flex-1 text-xs font-bold uppercase tracking-widest text-foreground/30 px-2 text-center">Closed</div>
+      )}
     </div>
   );
 }
