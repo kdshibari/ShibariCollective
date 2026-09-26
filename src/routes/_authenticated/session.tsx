@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from "recharts";
 import { Workflow, ChevronDown, Hand, HeartHandshake, MessageSquare, RotateCcw, Share2, Info } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -10,21 +9,119 @@ export const Route = createFileRoute("/_authenticated/session")({
 });
 
 const DEFAULT_RADAR = [
-  { subject: "Intensity", A: 0, fullMark: 10 },
-  { subject: "Pain", A: 0, fullMark: 10 },
-  { subject: "Restriction", A: 0, fullMark: 10 },
-  { subject: "Intimacy", A: 0, fullMark: 10 },
-  { subject: "Sensuality", A: 0, fullMark: 10 },
-  { subject: "Exposure", A: 0, fullMark: 10 },
-  { subject: "Predicament", A: 0, fullMark: 10 },
-  { subject: "Playfulness", A: 0, fullMark: 10 },
-  { subject: "Suspension", A: 0, fullMark: 10 },
+  { subject: "Intensity", A: 0 },
+  { subject: "Pain", A: 0 },
+  { subject: "Restriction", A: 0 },
+  { subject: "Intimacy", A: 0 },
+  { subject: "Sensuality", A: 0 },
+  { subject: "Exposure", A: 0 },
+  { subject: "Predicament", A: 0 },
+  { subject: "Playfulness", A: 0 },
+  { subject: "Suspension", A: 0 },
 ];
 
 const AFTERCARE_OPTIONS = [
   "Cuddling", "Water / Snacks", "Warm Blanket", "Quiet Time", 
   "Processing / Talking", "Physical Space", "Shower Together", "Verbal Reassurance"
 ];
+
+// NATIVE SVG RADAR CHART (Zero External Dependencies)
+function NativeRadarChart({ data }: { data: { subject: string, A: number }[] }) {
+  const size = 300;
+  const center = size / 2;
+  const maxRadius = 100;
+  const numAxes = data.length;
+  const angleStep = (Math.PI * 2) / numAxes;
+
+  // Calculate coordinates for a given value (0-10) at a specific axis index
+  const getPoint = (value: number, index: number, radiusScale: number = maxRadius) => {
+    const angle = index * angleStep - Math.PI / 2; // -90deg to start at 12 o'clock
+    const radius = (value / 10) * radiusScale;
+    return {
+      x: center + radius * Math.cos(angle),
+      y: center + radius * Math.sin(angle)
+    };
+  };
+
+  // Generate grid polygons (concentric rings)
+  const gridLevels = [2, 4, 6, 8, 10];
+  
+  // Generate the active data polygon
+  const dataPolygon = data.map((d, i) => {
+    const pt = getPoint(d.A, i);
+    return `${pt.x},${pt.y}`;
+  }).join(" ");
+
+  return (
+    <svg viewBox="0 0 300 300" className="w-full h-full overflow-visible">
+      {/* Background Grid */}
+      {gridLevels.map(level => (
+        <polygon 
+          key={level}
+          points={data.map((_, i) => {
+            const pt = getPoint(level, i);
+            return `${pt.x},${pt.y}`;
+          }).join(" ")}
+          fill="none"
+          stroke="rgba(255,255,255,0.1)"
+          strokeWidth="1"
+        />
+      ))}
+
+      {/* Axis Lines & Labels */}
+      {data.map((d, i) => {
+        const endPt = getPoint(10, i);
+        const labelPt = getPoint(10, i, maxRadius + 20); // Push labels outside the grid
+        
+        // Adjust text anchoring based on horizontal position
+        let textAnchor = "middle";
+        if (labelPt.x < center - 10) textAnchor = "end";
+        if (labelPt.x > center + 10) textAnchor = "start";
+
+        return (
+          <g key={i}>
+            <line x1={center} y1={center} x2={endPt.x} y2={endPt.y} stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+            <text 
+              x={labelPt.x} 
+              y={labelPt.y + 4} // slight vertical bump for centering
+              fill="rgba(255,255,255,0.5)" 
+              fontSize="9" 
+              fontWeight="bold" 
+              textAnchor={textAnchor}
+              className="uppercase tracking-[0.1em]"
+            >
+              {d.subject}
+            </text>
+          </g>
+        );
+      })}
+
+      {/* Dynamic Data Shape */}
+      <polygon 
+        points={dataPolygon}
+        fill="rgba(139, 58, 54, 0.4)" // Secondary color with opacity
+        stroke="#8B3A36" 
+        strokeWidth="2"
+        className="transition-all duration-300 ease-out"
+      />
+      
+      {/* Data Points */}
+      {data.map((d, i) => {
+        const pt = getPoint(d.A, i);
+        return (
+          <circle 
+            key={`pt-${i}`} 
+            cx={pt.x} 
+            cy={pt.y} 
+            r="3" 
+            fill="#8B3A36" 
+            className="transition-all duration-300 ease-out"
+          />
+        );
+      })}
+    </svg>
+  );
+}
 
 function SessionPlannerPage() {
   const [isRadarVisible, setIsRadarVisible] = useState(true);
@@ -35,7 +132,6 @@ function SessionPlannerPage() {
   const [selectedAftercare, setSelectedAftercare] = useState<string[]>([]);
   const [isSharedView, setIsSharedView] = useState(false);
 
-  // Decode shared parameters from URL on load
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const shareData = params.get("share");
@@ -140,14 +236,10 @@ function SessionPlannerPage() {
                 className="overflow-hidden"
               >
                 <div className="p-6 sm:p-8 pt-0 border-t border-white/5">
-                  <div className="w-full h-64 sm:h-80 mb-8 mt-4">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
-                        <PolarGrid stroke="rgba(255,255,255,0.1)" />
-                        <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }} />
-                        <Radar name="Session" dataKey="A" stroke="#8B3A36" strokeWidth={2} fill="#8B3A36" fillOpacity={0.3} />
-                      </RadarChart>
-                    </ResponsiveContainer>
+                  
+                  {/* NATIVE CUSTOM SVG CHART RENDERER */}
+                  <div className="w-full max-w-md mx-auto mb-12 mt-4 px-4">
+                    <NativeRadarChart data={radarData} />
                   </div>
 
                   <div className="grid sm:grid-cols-2 gap-x-8 gap-y-6">
