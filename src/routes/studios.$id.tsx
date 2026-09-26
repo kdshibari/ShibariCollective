@@ -10,7 +10,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/studios/$id")({
   head: ({ params }) => ({
     meta: [
-      { title: `Studio   Shibari Collective` },
+      { title: `Studio — Shibari Collective` },
       { name: "description", content: `Shibari studio details on Shibari Collective (${params.id.slice(0, 8)}).` },
       { property: "og:title", content: "Shibari studio" },
       { property: "og:description", content: "Discover this Shibari studio on Shibari Collective." },
@@ -157,6 +157,7 @@ function StudioPage() {
   if (loading) return <div className="mx-auto max-w-4xl px-4 py-32 animate-pulse text-secondary text-sm font-bold tracking-widest uppercase text-center">Loading Studio...</div>;
   if (!studio) return <div className="mx-auto max-w-4xl px-4 py-32 text-center font-serif text-3xl">Studio not found.</div>;
 
+  // The logo is position 0, the rest are position 1+
   const photos = (studio.studio_photos ?? []).sort((a, b) => a.position - b.position);
   const mapUrl = studio.address
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${studio.address}, ${studio.city},${studio.country}`)}`
@@ -251,19 +252,11 @@ function StudioPage() {
                 </div>
               </div>
             )}
-            
-            <div className="mt-16 pt-8 border-t border-white/10 flex justify-center lg:hidden">
-              <button
-                onClick={() => setShowReportModal(true)}
-                className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-foreground/40 hover:text-rose-500 transition-colors"
-              >
-                <Flag className="w-3 h-3" /> Report Space
-              </button>
-            </div>
           </div>
 
-          <aside className="space-y-6 hidden lg:block">
-            <div className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8 shadow-xl sticky top-32">
+          {/* Contact Sidebar - Now visible on mobile too */}
+          <aside className="space-y-6">
+            <div className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8 shadow-xl lg:sticky lg:top-32">
               <h3 className="font-serif text-3xl text-foreground mb-8">Connect</h3>
               <ul className="space-y-4">
                 {studio.email && <Row icon={<Mail className="h-5 w-5" />} href={`mailto:${studio.email}`}>{studio.email}</Row>}
