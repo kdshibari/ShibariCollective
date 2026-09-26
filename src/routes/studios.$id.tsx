@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { MapPin, Phone, Mail, Globe, Instagram, ArrowLeft, ChevronLeft, ChevronRight, X, Maximize2, Camera, Flag } from "lucide-react";
+import { MapPin, Phone, Mail, Globe, Instagram, ArrowLeft, ChevronLeft, ChevronRight, X, Maximize2, Camera, Flag, Star } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -84,19 +84,39 @@ interface Studio {
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
+// Formats social media links gracefully
+const formatSocialUrl = (input: string, platform: 'instagram' | 'facebook' | 'fetlife') => {
+  let val = input.trim();
+  if (val.startsWith('http')) return val;
+  if (val.startsWith('@')) val = val.substring(1);
+  if (platform === 'instagram') return `https://instagram.com/${val}`;
+  if (platform === 'facebook') return `https://facebook.com/${val}`;
+  if (platform === 'fetlife') return `https://fetlife.com/users/${val}`;
+  return `https://${val}`;
+};
+
 function StudioPage() {
   const { id } = Route.useParams();
   const [studio, setStudio] = useState<Studio | null>(null);
   const [loading, setLoading] = useState(true);
-  const [emblaRef, embla] = useEmblaCarousel({ loop: true });
+  const [emblaRef] = useEmblaCarousel({ loop: true });
   
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportComments, setReportComments] = useState("");
   const [isReporting, setIsReporting] = useState(false);
 
+  // Reviews State
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [rating, setRating] = useState(5);
+  const [reviewText, setReviewText] = useState("");
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
   useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setCurrentUser(data?.user || null));
+
+    // Fetch Studio Data
     supabase
       .from("studios")
       .select("*, studio_photos(url, position)")
@@ -105,6 +125,16 @@ function StudioPage() {
       .then(({ data }) => {
         setStudio(data as any);
         setLoading(false);
+      });
+
+    // Fetch Reviews (will safely return empty if the table doesn't exist yet on your backend)
+    supabase
+      .from("studio_reviews")
+      .select("*, profiles(display_name)")
+      .eq("studio_id", id)
+      .order("created_at", { ascending: false })
+      .then(({ data, error }) => {
+        if (!error && data) setReviews(data);
       });
   }, [id]);
 
@@ -126,11 +156,9 @@ function StudioPage() {
 
     setIsReporting(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-
       const { error } = await supabase.from('studio_reports').insert({
         studio_id: studio?.id,
-        user_id: user?.id || null,
+        user_id: currentUser?.id || null,
         comments: reportComments.trim(),
       });
 
@@ -140,7 +168,7 @@ function StudioPage() {
         data: {
           studioName: studio?.name || "Unknown Studio",
           comments: reportComments.trim(),
-          reporterEmail: user?.email || "Anonymous Visitor",
+          reporterEmail: currentUser?.email || "Anonymous Visitor",
         }
       });
 
@@ -154,11 +182,43 @@ function StudioPage() {
     }
   };
 
+  const submitReview = async () => {
+    if (!rating || !reviewText.trim()) return toast.error("Please provide a rating and comment.");
+    if (!currentUser) return toast.error("You must be signed in to leave a review.");
+
+    setIsSubmittingReview(true);
+    try {
+      const { error } = await supabase.from('studio_reviews').insert({
+         studio_id: studio?.id,
+         user_id: currentUser.id,
+         rating,
+         comment: reviewText.trim()
+      });
+
+      if (error) throw error;
+
+      toast.success("Review published.");
+      setReviews([{ 
+        id: Date.now().toString(), 
+        rating, 
+        comment: reviewText.trim(), 
+        created_at: new Date().toISOString(), 
+        profiles: { display_name: 'You' } 
+      }, ...reviews]);
+      setReviewText("");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to submit review. Reviews may be disabled.");
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
+
   if (loading) return <div className="mx-auto max-w-4xl px-4 py-32 animate-pulse text-secondary text-sm font-bold tracking-widest uppercase text-center">Loading Studio...</div>;
   if (!studio) return <div className="mx-auto max-w-4xl px-4 py-32 text-center font-serif text-3xl">Studio not found.</div>;
 
-  // The logo is position 0, the rest are position 1+
   const photos = (studio.studio_photos ?? []).sort((a, b) => a.position - b.position);
+  const avgRating = reviews.length ? (reviews.reduce((a, b) => a + b.rating, 0) / reviews.length).toFixed(1) : null;
+  
   const mapUrl = studio.address
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${studio.address}, ${studio.city},${studio.country}`)}`
     : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${studio.city},${studio.country}`)}`;
@@ -222,9 +282,16 @@ function StudioPage() {
         <div className="grid gap-12 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <header>
-              <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-secondary mb-3">
-                {studio.continent} &middot; {studio.country}
-              </p>
+              <div className="flex items-center gap-4 mb-3">
+                <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-secondary">
+                  {studio.continent} &middot; {studio.country}
+                </p>
+                {avgRating && (
+                  <div className="flex items-center gap-1.5 bg-white/10 px-2.5 py-1 rounded-full text-[10px] font-bold text-foreground">
+                    <Star className="w-3 h-3 fill-secondary text-secondary" /> {avgRating}
+                  </div>
+                )}
+              </div>
               <h1 className="font-serif text-5xl sm:text-6xl text-foreground leading-tight mb-4">{studio.name}</h1>
               <div className="flex items-center gap-2 text-foreground/60 text-sm font-medium">
                 <MapPin className="h-4 w-4 text-secondary" />
@@ -243,18 +310,93 @@ function StudioPage() {
               <div className="mt-16">
                 <h2 className="text-xs font-bold uppercase tracking-widest text-foreground/50 mb-6">Operating Hours</h2>
                 <div className="divide-y divide-white/10 rounded-[2rem] border border-white/10 bg-white/5 backdrop-blur-md p-6">
-                  {DAYS.map((d) => (
-                    <div key={d} className="flex justify-between py-4 text-sm first:pt-0 last:pb-0">
-                      <dt className="text-foreground/60 font-medium">{d}</dt>
-                      <dd className="font-bold text-foreground">{studio.hours?.[d] || "Closed"}</dd>
-                    </div>
-                  ))}
+                  {DAYS.map((d) => {
+                    const h = studio.hours?.[d];
+                    const isClosed = !h || h === "Closed";
+                    return (
+                      <div key={d} className="flex justify-between items-center py-4 text-sm first:pt-0 last:pb-0">
+                        <dt className="text-foreground/60 font-bold uppercase tracking-widest text-xs">{d}</dt>
+                        <dd className={isClosed ? "text-foreground/40 italic text-xs font-medium" : "font-bold text-foreground"}>
+                          {isClosed ? "Closed" : h}
+                        </dd>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             )}
+
+            {/* Premium Reviews & Experiences Section */}
+            <div className="mt-16 pt-12 border-t border-white/10">
+              <h2 className="font-serif text-3xl text-foreground mb-8">Experiences</h2>
+              
+              {/* Review Submission Form */}
+              <div className="mb-10 bg-white/5 border border-white/10 rounded-[2rem] p-6 sm:p-8 backdrop-blur-md">
+                {!currentUser ? (
+                  <div className="text-center">
+                    <p className="text-sm text-foreground/60 mb-4">You must be signed in to leave a review for this space.</p>
+                    <Link to="/auth" search={{ intent: "participant" }} className="inline-block bg-white text-black px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-white/90 transition-colors">
+                      Sign In to Review
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-bold uppercase tracking-widest text-foreground/60">Rate your experience</p>
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button key={star} onClick={() => setRating(star)} className="focus:outline-none transition-transform hover:scale-110">
+                            <Star className={`w-6 h-6 transition-colors ${rating >= star ? 'fill-secondary text-secondary' : 'text-white/20 hover:text-white/50'}`} />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <textarea
+                      rows={3}
+                      value={reviewText}
+                      onChange={(e) => setReviewText(e.target.value)}
+                      placeholder="Share your experience at this studio..."
+                      className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-foreground outline-none focus:border-secondary/50 transition-colors resize-none placeholder:text-foreground/30"
+                    />
+                    <div className="flex justify-end">
+                      <button 
+                        onClick={submitReview}
+                        disabled={isSubmittingReview}
+                        className="bg-secondary text-white px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest hover:opacity-90 disabled:opacity-50 transition-opacity"
+                      >
+                        {isSubmittingReview ? "Posting..." : "Publish Review"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Review List */}
+              <div className="space-y-6">
+                {reviews.length === 0 ? (
+                  <p className="text-center text-sm text-foreground/40 italic py-8">No reviews yet. Be the first to share your experience.</p>
+                ) : (
+                  reviews.map((review) => (
+                    <div key={review.id} className="border-b border-white/10 pb-6 last:border-0 last:pb-0">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <p className="font-bold text-foreground text-sm">{review.profiles?.display_name || "Anonymous Participant"}</p>
+                          <p className="text-xs text-foreground/40 mt-0.5">{new Date(review.created_at).toLocaleDateString()}</p>
+                        </div>
+                        <div className="flex gap-0.5">
+                          {[...Array(5)].map((_, i) => (
+                            <Star key={i} className={`w-3.5 h-3.5 ${i < review.rating ? 'fill-secondary text-secondary' : 'text-white/10'}`} />
+                          ))}
+                        </div>
+                      </div>
+                      <p className="text-sm text-foreground/70 leading-relaxed whitespace-pre-line">{review.comment}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Contact Sidebar - Now visible on mobile too */}
           <aside className="space-y-6">
             <div className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8 shadow-xl lg:sticky lg:top-32">
               <h3 className="font-serif text-3xl text-foreground mb-8">Connect</h3>
@@ -263,13 +405,13 @@ function StudioPage() {
                 {studio.phone && <Row icon={<Phone className="h-5 w-5" />} href={`tel:${studio.phone}`}>{studio.phone}</Row>}
                 {studio.website && <Row icon={<Globe className="h-5 w-5" />} href={studio.website}>Website</Row>}
                 {studio.socials?.instagram && (
-                  <Row icon={<Instagram className="h-5 w-5" />} href={studio.socials.instagram}>Instagram</Row>
+                  <Row icon={<Instagram className="h-5 w-5" />} href={formatSocialUrl(studio.socials.instagram, 'instagram')}>Instagram</Row>
                 )}
                 {studio.socials?.facebook && (
-                  <Row icon={<Globe className="h-5 w-5" />} href={studio.socials.facebook}>Facebook</Row>
+                  <Row icon={<Globe className="h-5 w-5" />} href={formatSocialUrl(studio.socials.facebook, 'facebook')}>Facebook</Row>
                 )}
                 {studio.socials?.fetlife && (
-                  <Row icon={<Globe className="h-5 w-5" />} href={studio.socials.fetlife}>FetLife</Row>
+                  <Row icon={<Globe className="h-5 w-5" />} href={formatSocialUrl(studio.socials.fetlife, 'fetlife')}>FetLife</Row>
                 )}
                 {studio.socials?.other && (
                   <Row icon={<Globe className="h-5 w-5" />} href={studio.socials.other}>Other</Row>
