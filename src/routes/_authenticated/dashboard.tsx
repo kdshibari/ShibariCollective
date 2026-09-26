@@ -74,9 +74,9 @@ function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground pt-24 pb-20 px-4 sm:px-6">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-5xl mx-auto space-y-16">
         
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-12">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
             <div className="h-16 w-16 rounded-full bg-white/5 border border-white/10 shadow-md backdrop-blur-md flex items-center justify-center">
               <User className="h-8 w-8 text-secondary" />
@@ -88,10 +88,14 @@ function DashboardPage() {
           </div>
         </div>
 
-        {isOwner ? (
-          <OwnerPortal userId={user?.id} />
-        ) : (
-          <ParticipantPortal userId={user?.id} userEmail={user?.email} />
+        {/* The Participant Portal is the foundation for all users */}
+        <ParticipantPortal userId={user?.id} userEmail={user?.email} isOwner={isOwner} />
+
+        {/* Only append the Owner Portal if they are verified */}
+        {isOwner && (
+          <div id="studio-management" className="pt-16 border-t border-white/10">
+            <OwnerPortal userId={user?.id} />
+          </div>
         )}
 
       </div>
@@ -100,7 +104,244 @@ function DashboardPage() {
 }
 
 // -----------------------------------------------------
-// STUDIO OWNER VIEW
+// PARTICIPANT VIEW (BASE PRIORITY)
+// -----------------------------------------------------
+function ParticipantPortal({ userId, userEmail, isOwner }: { userId: string, userEmail: string, isOwner: boolean }) {
+  const [savedStudios, setSavedStudios] = useState<any[]>([]);
+  const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const location = useLocation();
+  
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [displayName, setDisplayName] = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  useEffect(() => {
+    async function fetchData() {
+      if (!userId) return;
+      
+      const [savesRes, profileRes] = await Promise.all([
+        supabase
+          .from("saved_studios")
+          // ADDED: studio_photos(url, position) to fix the missing position sort error
+          .select(`studio_id, created_at, studios (id, name, city, country, status, studio_photos (url, position))`)
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false }),
+        supabase.from("profiles").select("*").eq("id", userId).single()
+      ]);
+
+      if (!savesRes.error && savesRes.data) {
+        const formattedStudios = savesRes.data
+          .filter(record => record.studios) 
+          .map(record => {
+            const st = record.studios as any;
+            return {
+              ...st,
+              studio_photos: (st.studio_photos || []).sort((a: any, b: any) => (a.position || 0) - (b.position || 0)),
+              saved_at: record.created_at
+            }
+          });
+        setSavedStudios(formattedStudios);
+      }
+
+      if (profileRes.data) {
+        setProfile(profileRes.data);
+        setDisplayName(profileRes.data.display_name || "");
+      }
+      
+      setLoading(false);
+    }
+    fetchData();
+  }, [userId]);
+
+  useEffect(() => {
+    setIsEditingProfile(false);
+  }, [location.key]);
+
+  const handleSaveProfile = async () => {
+    setSavingProfile(true);
+    const { error } = await supabase.from("profiles").update({ display_name: displayName }).eq("id", userId);
+    
+    if (error) {
+      toast.error("Failed to update profile.");
+    } else {
+      setProfile({ ...profile, display_name: displayName });
+      setIsEditingProfile(false);
+      toast.success("Profile successfully updated.");
+    }
+    setSavingProfile(false);
+  };
+
+  const handleUnsave = async (studioId: string) => {
+    setSavedStudios(prev => prev.filter(studio => studio.id !== studioId));
+    toast.success("Removed from saved spaces.");
+
+    await supabase
+      .from("saved_studios")
+      .delete()
+      .match({ user_id: userId, studio_id: studioId });
+  };
+
+  if (loading) return <div className="animate-pulse h-64 bg-white/5 rounded-[2rem] border border-white/10"></div>;
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="col-span-1 md:col-span-2 bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2rem] p-8 shadow-xl relative overflow-hidden flex flex-col justify-between">
+          <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
+            <User className="w-40 h-40" />
+          </div>
+          
+          <div className="relative z-10 flex justify-between items-start">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-secondary mb-2">Participant Profile</p>
+              
+              {isEditingProfile ? (
+                <div className="flex items-center gap-3 mt-2">
+                  <input 
+                    autoFocus
+                    value={displayName} 
+                    onChange={(e) => setDisplayName(e.target.value)} 
+                    placeholder="Enter display name..."
+                    className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 font-serif text-2xl outline-none focus:border-secondary transition-colors text-foreground"
+                  />
+                  <button onClick={handleSaveProfile} disabled={savingProfile} className="bg-secondary text-white p-2 rounded-lg hover:scale-105 transition-all">
+                    <Save className="w-5 h-5" />
+                  </button>
+                  <button onClick={() => setIsEditingProfile(false)} disabled={savingProfile} className="bg-white/5 text-foreground p-2 rounded-lg hover:bg-white/10 transition-all border border-white/10">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              ) : (
+                <div className="group flex items-center gap-4 mt-2">
+                  <h2 className="font-serif text-4xl text-foreground mb-1">{profile?.display_name || "Rope Explorer"}</h2>
+                  <button onClick={() => setIsEditingProfile(true)} className="opacity-0 group-hover:opacity-100 bg-white/5 p-2 rounded-full hover:bg-white/10 transition-all border border-white/10">
+                    <Edit3 className="w-4 h-4 text-secondary" />
+                  </button>
+                </div>
+              )}
+              
+              <p className="text-sm font-medium text-foreground/60">{userEmail}</p>
+            </div>
+          </div>
+          
+          <div className="mt-12 flex flex-wrap gap-8 relative z-10">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Saved Spaces</p>
+              <p className="font-serif text-3xl text-foreground mt-1">{savedStudios.length}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Member Since</p>
+              <p className="font-serif text-xl text-foreground mt-2">
+                {profile?.created_at ? new Date(profile.created_at).getFullYear() : new Date().getFullYear()}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Account Status</p>
+              <p className="font-serif text-xl text-foreground mt-2 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-secondary shadow-[0_0_10px_rgba(226,114,91,0.8)]"></span> Verified
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {isOwner ? (
+          <div className="col-span-1 bg-secondary/10 border border-secondary/20 backdrop-blur-xl rounded-[2rem] p-8 text-foreground flex flex-col justify-between shadow-xl">
+            <div>
+              <Building className="w-6 h-6 text-secondary mb-4" />
+              <h3 className="font-serif text-2xl">Studio Owner</h3>
+              <p className="text-xs font-medium text-foreground/60 mt-2 leading-relaxed">
+                Your account is verified. Manage your spaces and listings below.
+              </p>
+            </div>
+            <a href="#studio-management" className="mt-6 w-full rounded-full bg-secondary text-white py-3 text-xs font-bold uppercase tracking-widest text-center hover:scale-[1.02] transition-transform">
+              Manage Spaces
+            </a>
+          </div>
+        ) : (
+          <div className="col-span-1 bg-white/5 border border-white/10 backdrop-blur-xl rounded-[2rem] p-8 text-foreground flex flex-col justify-between shadow-xl">
+            <div>
+              <Building className="w-6 h-6 text-foreground/50 mb-4" />
+              <h3 className="font-serif text-2xl">Studio Owner?</h3>
+              <p className="text-xs font-medium text-foreground/60 mt-2 leading-relaxed">
+                Claim your profile to list your space on the global directory and manage your gallery.
+              </p>
+            </div>
+            <Link to="/submit" className="mt-6 w-full rounded-full bg-foreground text-background py-3 text-xs font-bold uppercase tracking-widest text-center hover:scale-[1.02] transition-transform">
+              Upgrade Account
+            </Link>
+          </div>
+        )}
+      </div>
+
+      <div className="pt-8 border-t border-white/10">
+        <h2 className="text-sm font-bold uppercase tracking-widest text-secondary flex items-center gap-2 mb-8">
+          <Bookmark className="h-4 w-4" /> Saved Studios
+        </h2>
+
+        {savedStudios.length === 0 ? (
+          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-12 text-center border-dashed">
+            <Bookmark className="mx-auto h-8 w-8 text-foreground/30 mb-4" />
+            <p className="text-foreground/70 font-medium">Your curated list of spaces will appear here.</p>
+            <Link to="/" className="mt-6 inline-flex items-center gap-2 rounded-full bg-foreground text-background px-6 py-3 text-xs font-bold uppercase tracking-widest shadow-xl hover:scale-105 transition-all">
+              Explore Directory <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <AnimatePresence>
+              {savedStudios.map(studio => (
+                <motion.div 
+                  key={studio.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.2 }}
+                  className="group relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] overflow-hidden shadow-lg hover:shadow-xl transition-all"
+                >
+                  <div className="aspect-[16/9] relative overflow-hidden bg-black/20">
+                    {studio.studio_photos?.[0]?.url ? (
+                      <img src={studio.studio_photos[0].url} alt={studio.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-80 group-hover:opacity-100" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-foreground/30 text-xs font-bold uppercase tracking-widest">No Logo</div>
+                    )}
+                    
+                    <button
+                      onClick={() => handleUnsave(studio.id)}
+                      className="absolute top-4 right-4 z-20 h-10 w-10 rounded-full bg-background/50 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-lg hover:bg-rose-500 hover:text-white transition-colors"
+                      aria-label="Remove saved studio"
+                    >
+                      <Bookmark className="h-5 w-5 fill-secondary text-secondary hover:fill-white hover:text-white transition-colors" />
+                    </button>
+                  </div>
+
+                  <div className="p-5">
+                    <h3 className="font-serif text-xl text-foreground truncate">{studio.name}</h3>
+                    <p className="text-xs font-bold uppercase tracking-widest text-secondary mt-1 flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5" /> {studio.city}, {studio.country}
+                    </p>
+                    <Link 
+                      to="/studios/$id" 
+                      params={{ id: studio.id }}
+                      className="mt-6 w-full flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 py-2.5 text-xs font-bold uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background transition-colors"
+                    >
+                      View Space <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+// -----------------------------------------------------
+// STUDIO OWNER VIEW (SECONDARY PRIORITY)
 // -----------------------------------------------------
 function OwnerPortal({ userId }: { userId: string }) {
   const [studios, setStudios] = useState<any[]>([]);
@@ -118,7 +359,7 @@ function OwnerPortal({ userId }: { userId: string }) {
     
     const sortedData = (data || []).map(studio => ({
       ...studio,
-      studio_photos: (studio.studio_photos || []).sort((a: any, b: any) => a.position - b.position)
+      studio_photos: (studio.studio_photos || []).sort((a: any, b: any) => (a.position || 0) - (b.position || 0))
     }));
 
     setStudios(sortedData);
@@ -162,9 +403,9 @@ function OwnerPortal({ userId }: { userId: string }) {
       {studios.length === 0 ? (
         <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 sm:p-12 text-center shadow-[0_20px_40px_-10px_rgba(78,44,35,0.1)]">
           <Building className="mx-auto h-12 w-12 text-foreground/30 mb-4" />
-          <h3 className="font-serif text-3xl text-foreground">Your Portfolio is Empty</h3>
+          <h3 className="font-serif text-3xl text-foreground">No Spaces Listed</h3>
           <p className="mt-3 text-foreground/70 font-medium max-w-md mx-auto">
-            You are a verified owner, but you haven't listed a studio yet. Curate your space to appear in the global directory.
+            You are a verified owner, but you haven't published a studio to the directory yet.
           </p>
           <Link to="/submit" className="mt-8 inline-flex items-center gap-2 rounded-full bg-foreground text-background px-8 py-3.5 text-sm font-bold uppercase tracking-widest shadow-xl hover:scale-105 transition-all">
             Create Listing <ArrowRight className="h-4 w-4" />
@@ -228,7 +469,7 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
 
   const [hours, setHours] = useState<Record<string, string>>(studio.hours || {});
   
-  const sortedPhotos = [...(studio.studio_photos || [])].sort((a: any, b: any) => a.position - b.position);
+  const sortedPhotos = [...(studio.studio_photos || [])].sort((a: any, b: any) => (a.position || 0) - (b.position || 0));
   const initialLogo = sortedPhotos.length > 0 && sortedPhotos[0].position === 0 ? sortedPhotos[0] : null;
   const initialGallery = initialLogo ? sortedPhotos.slice(1) : sortedPhotos;
 
@@ -349,7 +590,7 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
         toast.info(`Uploading ${newGallery.length} gallery photos...`);
         let maxPos = 0;
         if (existingGallery.length > 0) {
-           maxPos = Math.max(...existingGallery.map(p => p.position));
+           maxPos = Math.max(...existingGallery.map(p => (p.position || 0)));
         }
 
         const galleryTasks = newGallery.map((photo, index) => {
@@ -465,7 +706,7 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
               ) : (
                 <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-white/5 transition-colors">
                   <UploadCloud className="w-6 h-6 text-foreground/50 mb-1" />
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-foreground/50 text-center px-2">Upload Logo</span>
+                  <span className="text-xs font-bold uppercase tracking-widest text-foreground/50 text-center px-2">Upload Logo</span>
                   <input type="file" accept="image/*" onChange={handleLogoSelect} className="hidden" />
                 </label>
               )}
@@ -520,7 +761,7 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
 
             <label className="flex flex-col items-center justify-center aspect-[4/5] border border-dashed border-white/30 bg-white/5 hover:bg-white/10 rounded-2xl cursor-pointer transition-all">
               <UploadCloud className="w-6 h-6 text-secondary mb-2" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-foreground">Add Photos</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-foreground">Add Photos</span>
               <input type="file" multiple accept="image/*" onChange={handleGallerySelect} className="hidden" />
             </label>
           </div>
@@ -547,229 +788,6 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
             {deleting ? "Deleting..." : "Delete"}
           </button>
         </div>
-      </div>
-    </motion.div>
-  );
-}
-
-// -----------------------------------------------------
-// PARTICIPANT VIEW
-// -----------------------------------------------------
-function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: string }) {
-  const [savedStudios, setSavedStudios] = useState<any[]>([]);
-  const [profile, setProfile] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const location = useLocation();
-  
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [displayName, setDisplayName] = useState("");
-  const [savingProfile, setSavingProfile] = useState(false);
-
-  useEffect(() => {
-    async function fetchData() {
-      if (!userId) return;
-      
-      const [savesRes, profileRes] = await Promise.all([
-        supabase
-          .from("saved_studios")
-          .select(`studio_id, created_at, studios (id, name, city, country, status, studio_photos (url))`)
-          .eq("user_id", userId)
-          .order("created_at", { ascending: false }),
-        supabase.from("profiles").select("*").eq("id", userId).single()
-      ]);
-
-      if (!savesRes.error && savesRes.data) {
-        const formattedStudios = savesRes.data
-          .filter(record => record.studios) 
-          .map(record => {
-            const st = record.studios as any;
-            return {
-              ...st,
-              // Sort photos so logo is always [0]
-              studio_photos: (st.studio_photos || []).sort((a: any, b: any) => a.position - b.position),
-              saved_at: record.created_at
-            }
-          });
-        setSavedStudios(formattedStudios);
-      }
-
-      if (profileRes.data) {
-        setProfile(profileRes.data);
-        setDisplayName(profileRes.data.display_name || "");
-      }
-      
-      setLoading(false);
-    }
-    fetchData();
-  }, [userId]);
-
-  useEffect(() => {
-    setIsEditingProfile(false);
-  }, [location.key]);
-
-  const handleSaveProfile = async () => {
-    setSavingProfile(true);
-    const { error } = await supabase.from("profiles").update({ display_name: displayName }).eq("id", userId);
-    
-    if (error) {
-      toast.error("Failed to update profile.");
-    } else {
-      setProfile({ ...profile, display_name: displayName });
-      setIsEditingProfile(false);
-      toast.success("Profile successfully updated.");
-    }
-    setSavingProfile(false);
-  };
-
-  const handleUnsave = async (studioId: string) => {
-    setSavedStudios(prev => prev.filter(studio => studio.id !== studioId));
-    toast.success("Removed from saved spaces.");
-
-    await supabase
-      .from("saved_studios")
-      .delete()
-      .match({ user_id: userId, studio_id: studioId });
-  };
-
-  if (loading) return <div className="animate-pulse h-64 bg-white/5 rounded-[2rem] border border-white/10"></div>;
-
-  return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
-      
-      {/* PREMIUM PARTICIPANT IDENTITY CARD */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="col-span-1 md:col-span-2 bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2rem] p-8 shadow-xl relative overflow-hidden flex flex-col justify-between">
-          <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
-            <User className="w-40 h-40" />
-          </div>
-          
-          <div className="relative z-10 flex justify-between items-start">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-secondary mb-2">Participant Profile</p>
-              
-              {isEditingProfile ? (
-                <div className="flex items-center gap-3 mt-2">
-                  <input 
-                    autoFocus
-                    value={displayName} 
-                    onChange={(e) => setDisplayName(e.target.value)} 
-                    placeholder="Enter display name..."
-                    className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 font-serif text-2xl outline-none focus:border-secondary transition-colors text-foreground"
-                  />
-                  <button onClick={handleSaveProfile} disabled={savingProfile} className="bg-secondary text-white p-2 rounded-lg hover:scale-105 transition-all">
-                    <Save className="w-5 h-5" />
-                  </button>
-                  <button onClick={() => setIsEditingProfile(false)} disabled={savingProfile} className="bg-white/5 text-foreground p-2 rounded-lg hover:bg-white/10 transition-all border border-white/10">
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-              ) : (
-                <div className="group flex items-center gap-4 mt-2">
-                  <h2 className="font-serif text-4xl text-foreground mb-1">{profile?.display_name || "Rope Explorer"}</h2>
-                  <button onClick={() => setIsEditingProfile(true)} className="opacity-0 group-hover:opacity-100 bg-white/5 p-2 rounded-full hover:bg-white/10 transition-all border border-white/10">
-                    <Edit3 className="w-4 h-4 text-secondary" />
-                  </button>
-                </div>
-              )}
-              
-              <p className="text-sm font-medium text-foreground/60">{userEmail}</p>
-            </div>
-          </div>
-          
-          <div className="mt-12 flex flex-wrap gap-8 relative z-10">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Saved Spaces</p>
-              <p className="font-serif text-3xl text-foreground mt-1">{savedStudios.length}</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Member Since</p>
-              <p className="font-serif text-xl text-foreground mt-2">
-                {profile?.created_at ? new Date(profile.created_at).getFullYear() : new Date().getFullYear()}
-              </p>
-            </div>
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Account Status</p>
-              <p className="font-serif text-xl text-foreground mt-2 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-secondary shadow-[0_0_10px_rgba(226,114,91,0.8)]"></span> Verified
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="col-span-1 bg-white/5 border border-white/10 backdrop-blur-xl rounded-[2rem] p-8 text-foreground flex flex-col justify-between shadow-xl">
-          <div>
-            <Building className="w-6 h-6 text-foreground/50 mb-4" />
-            <h3 className="font-serif text-2xl">Studio Owner?</h3>
-            <p className="text-xs font-medium text-foreground/60 mt-2 leading-relaxed">
-              Claim your profile to list your space on the global directory and manage your gallery.
-            </p>
-          </div>
-          <Link to="/submit" className="mt-6 w-full rounded-full bg-foreground text-background py-3 text-xs font-bold uppercase tracking-widest text-center hover:scale-[1.02] transition-transform">
-            Upgrade Account
-          </Link>
-        </div>
-      </div>
-
-      <div className="pt-8 border-t border-white/10">
-        <h2 className="text-sm font-bold uppercase tracking-widest text-secondary flex items-center gap-2 mb-8">
-          <Bookmark className="h-4 w-4" /> Saved Studios
-        </h2>
-
-        {savedStudios.length === 0 ? (
-          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-12 text-center border-dashed">
-            <Bookmark className="mx-auto h-8 w-8 text-foreground/30 mb-4" />
-            <p className="text-foreground/70 font-medium">Your curated list of spaces will appear here.</p>
-            <Link to="/" className="mt-6 inline-flex items-center gap-2 rounded-full bg-foreground text-background px-6 py-3 text-xs font-bold uppercase tracking-widest shadow-xl hover:scale-105 transition-all">
-              Explore Directory <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <AnimatePresence>
-              {savedStudios.map(studio => (
-                <motion.div 
-                  key={studio.id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.2 }}
-                  className="group relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] overflow-hidden shadow-lg hover:shadow-xl transition-all"
-                >
-                  <div className="aspect-[16/9] relative overflow-hidden bg-black/20">
-                    {studio.studio_photos?.[0]?.url ? (
-                      <img src={studio.studio_photos[0].url} alt={studio.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-80 group-hover:opacity-100" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-foreground/30 text-xs font-bold uppercase tracking-widest">No Logo</div>
-                    )}
-                    
-                    <button
-                      onClick={() => handleUnsave(studio.id)}
-                      className="absolute top-4 right-4 z-20 h-10 w-10 rounded-full bg-background/50 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-lg hover:bg-rose-500 hover:text-white transition-colors"
-                      aria-label="Remove saved studio"
-                    >
-                      <Bookmark className="h-5 w-5 fill-secondary text-secondary hover:fill-white hover:text-white transition-colors" />
-                    </button>
-                  </div>
-
-                  <div className="p-5">
-                    <h3 className="font-serif text-xl text-foreground truncate">{studio.name}</h3>
-                    <p className="text-xs font-bold uppercase tracking-widest text-secondary mt-1 flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5" /> {studio.city}, {studio.country}
-                    </p>
-                    <Link 
-                      to="/studios/$id" 
-                      params={{ id: studio.id }}
-                      className="mt-6 w-full flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 py-2.5 text-xs font-bold uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background transition-colors"
-                    >
-                      View Space <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-        )}
       </div>
     </motion.div>
   );
