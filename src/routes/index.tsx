@@ -81,14 +81,12 @@ function DirectoryPage() {
       }
     } catch (error: any) {
       toast.error("Network error. Could not sync save state.");
-      // Revert optimistic update on failure
       const reverted = new Set(newSaved);
       if (isCurrentlySaved) reverted.add(studioId); else reverted.delete(studioId);
       setSavedStudioIds(reverted); 
     }
   };
 
-  // Dynamically generate filter pills based on available data
   const regions = useMemo(() => {
     const uniqueContinents = new Set(studios.map(s => s.continent).filter(Boolean));
     return ["All", ...Array.from(uniqueContinents).sort()];
@@ -100,7 +98,7 @@ function DirectoryPage() {
   }, [studios, activeRegion]);
 
   return (
-    <div className="min-h-screen bg-background pt-24 pb-24">
+    <div className="min-h-screen bg-background pt-16 pb-24">
       
       {/* Editorial Header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-12 text-center sm:text-left">
@@ -113,8 +111,8 @@ function DirectoryPage() {
         </p>
       </div>
 
-      {/* Sticky Glassmorphic Filter Bar */}
-      <div className="sticky top-[72px] z-40 bg-background/80 backdrop-blur-xl border-y border-white/5 py-4 mb-12">
+      {/* Sticky Glassmorphic Filter Bar - Adjusted top offset to eliminate the gap */}
+      <div className="sticky top-[65px] sm:top-[73px] z-40 bg-background/90 backdrop-blur-xl border-y border-white/10 py-4 mb-12 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex gap-3 overflow-x-auto no-scrollbar items-center">
           {regions.map(region => (
             <button
@@ -132,7 +130,7 @@ function DirectoryPage() {
         </div>
       </div>
 
-      {/* Animated Editorial Grid - Updated to strict CSS Grid for Side-by-Side mobile */}
+      {/* Animated Editorial Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-8">
@@ -183,7 +181,6 @@ function StudioCard({ studio, isSaved, onToggleSave, navigate }: { studio: any, 
       className="group relative rounded-[1.5rem] sm:rounded-[2rem] overflow-hidden bg-neutral-900 cursor-pointer aspect-[4/5] sm:aspect-[3/4] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)] hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] transition-shadow duration-500 border border-white/10 w-full"
       onClick={() => navigate({ to: "/studios/$id", params: { id: studio.id } })}
     >
-      {/* Background Image */}
       {studio.studio_photos?.[0]?.url ? (
         <img 
           src={studio.studio_photos[0].url} 
@@ -196,10 +193,8 @@ function StudioCard({ studio, isSaved, onToggleSave, navigate }: { studio: any, 
         </div>
       )}
 
-      {/* Elegant Gradient Overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80 group-hover:opacity-100 transition-opacity duration-500" />
 
-      {/* Floating Bookmark Action - Scaled slightly for mobile */}
       <button
         onClick={(e) => {
           e.preventDefault();
@@ -219,7 +214,6 @@ function StudioCard({ studio, isSaved, onToggleSave, navigate }: { studio: any, 
         </motion.div>
       </button>
 
-      {/* Typography & Data - Scaled for 2-column mobile view */}
       <div className="absolute bottom-0 left-0 w-full p-4 sm:p-8 transform translate-y-2 sm:translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
         <p className="text-[8px] sm:text-[10px] font-bold uppercase tracking-[0.2em] text-secondary mb-1.5 sm:mb-3 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-500 delay-100 truncate">
           {studio.country}
