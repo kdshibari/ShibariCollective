@@ -111,9 +111,9 @@ function DirectoryPage() {
         </p>
       </div>
 
-      {/* Redesigned Clean Filter Bar (Non-sticky to prevent layout collision) */}
+      {/* Redesigned Filter Bar with comfortable vertical padding to prevent button clipping */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-12">
-        <div className="flex gap-3 overflow-x-auto no-scrollbar items-center py-2 border-y border-white/5">
+        <div className="flex gap-3 overflow-x-auto no-scrollbar items-center py-4 border-y border-white/10">
           {regions.map(region => (
             <button
               key={region}
