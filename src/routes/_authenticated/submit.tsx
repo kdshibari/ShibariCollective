@@ -21,21 +21,6 @@ export const Route = createFileRoute("/_authenticated/submit")({
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const DRAFT_KEY = "shibari-studio-draft";
 
-const schema = z.object({
-  name: z.string().trim().min(2).max(120),
-  description: z.string().max(2000).optional(),
-  continent: z.string().min(1),
-  country: z.string().trim().min(2).max(80),
-  city: z.string().trim().min(1).max(80),
-  address: z.string().max(200).optional(),
-  email: z.string().trim().email().max(255).optional().or(z.literal("")),
-  phone: z.string().max(50).optional(),
-  website: z.string().url().max(255).optional().or(z.literal("")),
-  instagram: z.string().max(255).optional(),
-  facebook: z.string().max(255).optional(),
-  other: z.string().max(255).optional(),
-});
-
 interface PhotoState {
   file: File;
   preview: string;
@@ -49,7 +34,6 @@ function SubmitPage() {
   const [saving, setSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
 
-  // Separated Image State
   const [logo, setLogo] = useState<PhotoState | null>(null);
   const [gallery, setGallery] = useState<PhotoState[]>([]);
   
@@ -58,6 +42,18 @@ function SubmitPage() {
     name: "", description: "", continent: "", country: "", city: "", address: "",
     email: "", phone: "", website: "", instagram: "", facebook: "", other: "",
   });
+
+  // Protect against accidental tab closure or browser back navigation during uploads
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (saving) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [saving]);
 
   useEffect(() => {
     const draft = localStorage.getItem(DRAFT_KEY);
@@ -94,7 +90,48 @@ function SubmitPage() {
     }
   }
 
-  // --- LOGO HANDLERS ---
+  const validateStep = (currentStep: number) => {
+    try {
+      if (currentStep === 1) {
+        z.object({
+          name: z.string().trim().min(2, "Studio name must be at least 2 characters.").max(120),
+          description: z.string().max(2000).optional(),
+        }).parse({ name: form.name, description: form.description });
+      } else if (currentStep === 2) {
+        z.object({
+          continent: z.string().min(1, "Please select a continent."),
+          country: z.string().trim().min(2, "Country is required.").max(80),
+          city: z.string().trim().min(1, "City is required.").max(80),
+          address: z.string().max(200).optional(),
+        }).parse({ continent: form.continent, country: form.country, city: form.city, address: form.address });
+      } else if (currentStep === 3) {
+        z.object({
+          email: z.string().trim().email("Invalid email format.").max(255).optional().or(z.literal("")),
+          phone: z.string().max(50).optional(),
+          website: z.string().url("Website must be a valid URL (e.g., https://...).").max(255).optional().or(z.literal("")),
+          instagram: z.string().max(255).optional(),
+        }).parse({
+          email: form.email,
+          phone: form.phone,
+          website: form.website,
+          instagram: form.instagram,
+        });
+      }
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0]?.message);
+      }
+      return false;
+    }
+  };
+
+  const handleNextStep = () => {
+    if (validateStep(step)) {
+      setStep(step + 1);
+    }
+  };
+
   const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     const file = e.target.files[0];
@@ -102,7 +139,6 @@ function SubmitPage() {
     e.target.value = '';
   };
 
-  // --- GALLERY HANDLERS ---
   const handleGallerySelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
     const selectedFiles = Array.from(e.target.files);
@@ -118,7 +154,6 @@ function SubmitPage() {
     setGallery(prev => prev.filter((_, index) => index !== indexToRemove));
   };
 
-  // --- SUBMIT ---
   async function onSubmit() {
     if (!logo) {
       toast.error("A studio logo is required.");
@@ -129,24 +164,6 @@ function SubmitPage() {
       return;
     }
     
-    const payload = {
-      ...form,
-      email: form.email.trim() || undefined,
-      phone: form.phone.trim() || undefined,
-      website: form.website.trim() || undefined,
-      address: form.address.trim() || undefined,
-      instagram: form.instagram.trim() || undefined,
-      facebook: form.facebook.trim() || undefined,
-      other: form.other.trim() || undefined,
-      description: form.description.trim() || undefined,
-    };
-    
-    const parsed = schema.safeParse(payload);
-    if (!parsed.success) {
-      toast.error(parsed.error.errors[0]?.message ?? "Please check your form entries.");
-      return;
-    }
-
     setSaving(true);
     setUploadProgress("Initializing profile...");
     
@@ -157,20 +174,20 @@ function SubmitPage() {
       .from("studios")
       .insert({
         owner_id: userData.user.id,
-        name: parsed.data.name,
-        description: parsed.data.description || null,
-        continent: parsed.data.continent,
-        country: parsed.data.country,
-        city: parsed.data.city,
-        address: parsed.data.address || null,
-        email: parsed.data.email || null,
-        phone: parsed.data.phone || null,
-        website: parsed.data.website || null,
+        name: form.name.trim(),
+        description: form.description.trim() || null,
+        continent: form.continent,
+        country: form.country.trim(),
+        city: form.city.trim(),
+        address: form.address.trim() || null,
+        email: form.email.trim() || null,
+        phone: form.phone.trim() || null,
+        website: form.website.trim() || null,
         hours,
         socials: {
-          instagram: parsed.data.instagram || undefined,
-          facebook: parsed.data.facebook || undefined,
-          other: parsed.data.other || undefined,
+          instagram: form.instagram.trim() || undefined,
+          facebook: form.facebook.trim() || undefined,
+          other: form.other.trim() || undefined,
         },
       })
       .select("id")
@@ -187,7 +204,6 @@ function SubmitPage() {
     try {
       const uploadPromises: Promise<any>[] = [];
 
-      // 1. Upload Logo (Position 0)
       const logoExt = logo.file.name.split('.').pop();
       const logoFileName = `${inserted.id}/logo_${Date.now()}.${logoExt}`;
       const logoTask = supabase.storage.from('studios').upload(logoFileName, logo.file, { cacheControl: '3600', upsert: false })
@@ -198,7 +214,6 @@ function SubmitPage() {
         });
       uploadPromises.push(logoTask);
 
-      // 2. Upload Gallery (Position 1+)
       const galleryTasks = gallery.map(async (photo, index) => {
         const fileExt = photo.file.name.split('.').pop();
         const fileName = `${inserted.id}/gallery_${Date.now()}_${index}.${fileExt}`;
@@ -280,7 +295,7 @@ function SubmitPage() {
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 backdrop-blur-md transition-all duration-500 ${step >= s.id ? 'bg-secondary text-white border-secondary shadow-lg scale-110' : 'bg-white/40 border-white/50'}`}>
                   {s.icon}
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-widest hidden sm:block">{s.title}</span>
+                <span className="text-xs font-bold uppercase tracking-widest hidden sm:block">{s.title}</span>
               </div>
             ))}
           </div>
@@ -346,7 +361,6 @@ function SubmitPage() {
               <motion.div key="step4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
                 <h2 className="font-serif text-3xl text-foreground mb-2">Visual Identity & Gallery</h2>
                 
-                {/* Logo Section */}
                 <div>
                   <div className="flex justify-between items-end mb-4">
                     <h3 className="text-xs font-bold uppercase tracking-widest text-secondary">Studio Logo</h3>
@@ -378,7 +392,6 @@ function SubmitPage() {
                   </div>
                 </div>
 
-                {/* Gallery Section */}
                 <div className="pt-6 border-t border-white/10">
                   <div className="flex justify-between items-end mb-4">
                     <h3 className="text-xs font-bold uppercase tracking-widest text-secondary">Studio Gallery</h3>
@@ -402,7 +415,7 @@ function SubmitPage() {
 
                     <label className="flex flex-col items-center justify-center aspect-[4/5] border border-dashed border-white/30 bg-white/5 hover:bg-white/10 rounded-2xl cursor-pointer transition-all">
                       <UploadCloud className="w-6 h-6 text-secondary mb-2" />
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-foreground">Add Photos</span>
+                      <span className="text-xs font-bold uppercase tracking-widest text-foreground">Add Photos</span>
                       <input type="file" className="hidden" multiple accept="image/*" onChange={handleGallerySelect} />
                     </label>
                   </div>
@@ -412,7 +425,6 @@ function SubmitPage() {
           </AnimatePresence>
         </div>
 
-        {/* Action Bar */}
         <div className="fixed bottom-6 left-4 right-4 sm:left-auto sm:right-auto sm:w-full sm:max-w-3xl z-50">
           <div className="bg-white/80 backdrop-blur-3xl border border-white/60 shadow-[0_20px_40px_-10px_rgba(78,44,35,0.3)] rounded-full p-3 flex items-center justify-between">
             <button
@@ -424,7 +436,7 @@ function SubmitPage() {
             </button>
             {step < 4 ? (
               <button
-                onClick={() => setStep(step + 1)}
+                onClick={handleNextStep}
                 className="flex items-center gap-2 px-8 py-3 rounded-full bg-foreground text-background text-sm font-bold uppercase tracking-widest shadow-lg hover:scale-105 transition-all"
               >
                 Next Step <ChevronRight className="w-4 h-4" />
@@ -447,11 +459,10 @@ function SubmitPage() {
   );
 }
 
-// PREMIUM UTILITY COMPONENTS
 function Input({ label, value, onChange, type = "text", required, step, placeholder }: any) {
   return (
     <label className="block group">
-      <span className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-foreground/60 group-focus-within:text-secondary transition-colors">
+      <span className="mb-2 block text-xs font-bold uppercase tracking-widest text-foreground/60 group-focus-within:text-secondary transition-colors">
         {label} {required && <span className="text-secondary">*</span>}
       </span>
       <input
@@ -466,7 +477,7 @@ function Input({ label, value, onChange, type = "text", required, step, placehol
 function Textarea({ label, value, onChange, placeholder }: any) {
   return (
     <label className="block group">
-      <span className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-foreground/60 group-focus-within:text-secondary transition-colors">{label}</span>
+      <span className="mb-2 block text-xs font-bold uppercase tracking-widest text-foreground/60 group-focus-within:text-secondary transition-colors">{label}</span>
       <textarea
         rows={5} value={value} placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
@@ -479,7 +490,7 @@ function Textarea({ label, value, onChange, placeholder }: any) {
 function Select({ label, value, onChange, options, required }: any) {
   return (
     <label className="block group">
-      <span className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-foreground/60 group-focus-within:text-secondary transition-colors">
+      <span className="mb-2 block text-xs font-bold uppercase tracking-widest text-foreground/60 group-focus-within:text-secondary transition-colors">
         {label} {required && <span className="text-secondary">*</span>}
       </span>
       <select
