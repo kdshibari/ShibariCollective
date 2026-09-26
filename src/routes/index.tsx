@@ -101,7 +101,7 @@ function DirectoryPage() {
     <div className="min-h-screen bg-background pb-24">
       
       {/* Editorial Header Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-12 sm:pt-16 mb-10 text-center sm:text-left">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-12 sm:pt-16 mb-8 text-center sm:text-left">
         <p className="text-xs uppercase tracking-[0.4em] text-secondary font-bold mb-4 flex items-center justify-center sm:justify-start gap-2">
           <Globe2 className="w-4 h-4" /> Global Directory
         </p>
@@ -111,17 +111,17 @@ function DirectoryPage() {
         </p>
       </div>
 
-      {/* Redesigned Filter Bar with comfortable vertical padding to prevent button clipping */}
+      {/* Redesigned Borderless Minimalist Filter Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-12">
-        <div className="flex gap-3 overflow-x-auto no-scrollbar items-center py-4 border-y border-white/10">
+        <div className="flex gap-2 sm:gap-3 overflow-x-auto no-scrollbar items-center py-2">
           {regions.map(region => (
             <button
               key={region}
               onClick={() => setActiveRegion(region)}
-              className={`px-6 py-3 rounded-full text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-all duration-300 ${
+              className={`px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-all duration-300 ${
                 activeRegion === region 
-                  ? 'bg-foreground text-background shadow-lg scale-105' 
-                  : 'bg-white/5 border border-white/10 text-foreground/60 hover:bg-white/10 hover:text-foreground'
+                  ? 'bg-secondary text-white shadow-lg' 
+                  : 'bg-white/5 text-foreground/60 hover:bg-white/10 hover:text-foreground'
               }`}
             >
               {region}
