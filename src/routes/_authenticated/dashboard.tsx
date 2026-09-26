@@ -89,9 +89,9 @@ function DashboardPage() {
         </div>
 
         {/* The Participant Portal is the foundation for all users */}
-        <ParticipantPortal userId={user?.id} userEmail={user?.email} isOwner={isOwner} />
+        <ParticipantPortal userId={user?.id} userEmail={user?.email} />
 
-        {/* Only append the Owner Portal if they are verified */}
+        {/* Only append the Owner Portal if they are explicitly verified in the database */}
         {isOwner && (
           <div id="studio-management" className="pt-16 border-t border-white/10">
             <OwnerPortal userId={user?.id} />
@@ -106,7 +106,7 @@ function DashboardPage() {
 // -----------------------------------------------------
 // PARTICIPANT VIEW (BASE PRIORITY)
 // -----------------------------------------------------
-function ParticipantPortal({ userId, userEmail, isOwner }: { userId: string, userEmail: string, isOwner: boolean }) {
+function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: string }) {
   const [savedStudios, setSavedStudios] = useState<any[]>([]);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -123,7 +123,6 @@ function ParticipantPortal({ userId, userEmail, isOwner }: { userId: string, use
       const [savesRes, profileRes] = await Promise.all([
         supabase
           .from("saved_studios")
-          // ADDED: studio_photos(url, position) to fix the missing position sort error
           .select(`studio_id, created_at, studios (id, name, city, country, status, studio_photos (url, position))`)
           .eq("user_id", userId)
           .order("created_at", { ascending: false }),
@@ -187,95 +186,64 @@ function ParticipantPortal({ userId, userEmail, isOwner }: { userId: string, use
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="col-span-1 md:col-span-2 bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2rem] p-8 shadow-xl relative overflow-hidden flex flex-col justify-between">
-          <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
-            <User className="w-40 h-40" />
-          </div>
+      {/* PREMIUM PARTICIPANT IDENTITY CARD */}
+      <div className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2rem] p-8 md:p-12 shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-8 md:p-12 opacity-5 pointer-events-none">
+          <User className="w-40 h-40 md:w-64 md:h-64" />
+        </div>
+        
+        <div className="relative z-10">
+          <p className="text-xs font-bold uppercase tracking-widest text-secondary mb-2">Participant Profile</p>
           
-          <div className="relative z-10 flex justify-between items-start">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-secondary mb-2">Participant Profile</p>
-              
-              {isEditingProfile ? (
-                <div className="flex items-center gap-3 mt-2">
-                  <input 
-                    autoFocus
-                    value={displayName} 
-                    onChange={(e) => setDisplayName(e.target.value)} 
-                    placeholder="Enter display name..."
-                    className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 font-serif text-2xl outline-none focus:border-secondary transition-colors text-foreground"
-                  />
-                  <button onClick={handleSaveProfile} disabled={savingProfile} className="bg-secondary text-white p-2 rounded-lg hover:scale-105 transition-all">
-                    <Save className="w-5 h-5" />
-                  </button>
-                  <button onClick={() => setIsEditingProfile(false)} disabled={savingProfile} className="bg-white/5 text-foreground p-2 rounded-lg hover:bg-white/10 transition-all border border-white/10">
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-              ) : (
-                <div className="group flex items-center gap-4 mt-2">
-                  <h2 className="font-serif text-4xl text-foreground mb-1">{profile?.display_name || "Rope Explorer"}</h2>
-                  <button onClick={() => setIsEditingProfile(true)} className="opacity-0 group-hover:opacity-100 bg-white/5 p-2 rounded-full hover:bg-white/10 transition-all border border-white/10">
-                    <Edit3 className="w-4 h-4 text-secondary" />
-                  </button>
-                </div>
-              )}
-              
-              <p className="text-sm font-medium text-foreground/60">{userEmail}</p>
+          {isEditingProfile ? (
+            <div className="flex items-center gap-3 mt-2">
+              <input 
+                autoFocus
+                value={displayName} 
+                onChange={(e) => setDisplayName(e.target.value)} 
+                placeholder="Enter display name..."
+                className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 font-serif text-2xl outline-none focus:border-secondary transition-colors text-foreground max-w-xs"
+              />
+              <button onClick={handleSaveProfile} disabled={savingProfile} className="bg-secondary text-white p-2 rounded-lg hover:scale-105 transition-all shadow-lg">
+                <Save className="w-5 h-5" />
+              </button>
+              <button onClick={() => setIsEditingProfile(false)} disabled={savingProfile} className="bg-white/5 text-foreground p-2 rounded-lg hover:bg-white/10 transition-all border border-white/10">
+                <X className="w-5 h-5" />
+              </button>
             </div>
-          </div>
+          ) : (
+            <div className="group flex items-center gap-4 mt-2 max-w-max">
+              <h2 className="font-serif text-4xl md:text-5xl text-foreground mb-1">{profile?.display_name || "Rope Explorer"}</h2>
+              <button onClick={() => setIsEditingProfile(true)} className="opacity-0 group-hover:opacity-100 bg-white/5 p-2 rounded-full hover:bg-white/10 transition-all border border-white/10">
+                <Edit3 className="w-4 h-4 text-secondary" />
+              </button>
+            </div>
+          )}
           
-          <div className="mt-12 flex flex-wrap gap-8 relative z-10">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Saved Spaces</p>
-              <p className="font-serif text-3xl text-foreground mt-1">{savedStudios.length}</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Member Since</p>
-              <p className="font-serif text-xl text-foreground mt-2">
-                {profile?.created_at ? new Date(profile.created_at).getFullYear() : new Date().getFullYear()}
-              </p>
-            </div>
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Account Status</p>
-              <p className="font-serif text-xl text-foreground mt-2 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-secondary shadow-[0_0_10px_rgba(226,114,91,0.8)]"></span> Verified
-              </p>
-            </div>
+          <p className="text-sm font-medium text-foreground/60 mt-1">{userEmail}</p>
+        </div>
+        
+        <div className="mt-12 flex flex-wrap gap-8 md:gap-16 relative z-10 pt-8 border-t border-white/10">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Saved Spaces</p>
+            <p className="font-serif text-3xl md:text-4xl text-foreground mt-2">{savedStudios.length}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Member Since</p>
+            <p className="font-serif text-3xl md:text-4xl text-foreground mt-2">
+              {profile?.created_at ? new Date(profile.created_at).getFullYear() : new Date().getFullYear()}
+            </p>
+          </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Account Status</p>
+            <p className="font-serif text-3xl md:text-4xl text-foreground mt-2 flex items-center gap-3">
+              <span className="w-3 h-3 rounded-full bg-secondary shadow-[0_0_15px_rgba(226,114,91,0.8)]"></span> Verified
+            </p>
           </div>
         </div>
-
-        {isOwner ? (
-          <div className="col-span-1 bg-secondary/10 border border-secondary/20 backdrop-blur-xl rounded-[2rem] p-8 text-foreground flex flex-col justify-between shadow-xl">
-            <div>
-              <Building className="w-6 h-6 text-secondary mb-4" />
-              <h3 className="font-serif text-2xl">Studio Owner</h3>
-              <p className="text-xs font-medium text-foreground/60 mt-2 leading-relaxed">
-                Your account is verified. Manage your spaces and listings below.
-              </p>
-            </div>
-            <a href="#studio-management" className="mt-6 w-full rounded-full bg-secondary text-white py-3 text-xs font-bold uppercase tracking-widest text-center hover:scale-[1.02] transition-transform">
-              Manage Spaces
-            </a>
-          </div>
-        ) : (
-          <div className="col-span-1 bg-white/5 border border-white/10 backdrop-blur-xl rounded-[2rem] p-8 text-foreground flex flex-col justify-between shadow-xl">
-            <div>
-              <Building className="w-6 h-6 text-foreground/50 mb-4" />
-              <h3 className="font-serif text-2xl">Studio Owner?</h3>
-              <p className="text-xs font-medium text-foreground/60 mt-2 leading-relaxed">
-                Claim your profile to list your space on the global directory and manage your gallery.
-              </p>
-            </div>
-            <Link to="/submit" className="mt-6 w-full rounded-full bg-foreground text-background py-3 text-xs font-bold uppercase tracking-widest text-center hover:scale-[1.02] transition-transform">
-              Upgrade Account
-            </Link>
-          </div>
-        )}
       </div>
 
-      <div className="pt-8 border-t border-white/10">
+      <div className="pt-8">
         <h2 className="text-sm font-bold uppercase tracking-widest text-secondary flex items-center gap-2 mb-8">
           <Bookmark className="h-4 w-4" /> Saved Studios
         </h2>
@@ -706,7 +674,7 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
               ) : (
                 <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-white/5 transition-colors">
                   <UploadCloud className="w-6 h-6 text-foreground/50 mb-1" />
-                  <span className="text-xs font-bold uppercase tracking-widest text-foreground/50 text-center px-2">Upload Logo</span>
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-foreground/50 text-center px-2">Upload Logo</span>
                   <input type="file" accept="image/*" onChange={handleLogoSelect} className="hidden" />
                 </label>
               )}
@@ -761,7 +729,7 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
 
             <label className="flex flex-col items-center justify-center aspect-[4/5] border border-dashed border-white/30 bg-white/5 hover:bg-white/10 rounded-2xl cursor-pointer transition-all">
               <UploadCloud className="w-6 h-6 text-secondary mb-2" />
-              <span className="text-xs font-bold uppercase tracking-widest text-foreground">Add Photos</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-foreground">Add Photos</span>
               <input type="file" multiple accept="image/*" onChange={handleGallerySelect} className="hidden" />
             </label>
           </div>
