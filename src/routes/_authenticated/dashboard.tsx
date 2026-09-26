@@ -468,7 +468,7 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
               ) : (
                 <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-white/5 transition-colors">
                   <UploadCloud className="w-6 h-6 text-foreground/50 mb-1" />
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-foreground/50 text-center px-2">Upload Logo</span>
+                  <span className="text-xs font-bold uppercase tracking-widest text-foreground/50 text-center px-2">Upload Logo</span>
                   <input type="file" accept="image/*" onChange={handleLogoSelect} className="hidden" />
                 </label>
               )}
@@ -523,7 +523,7 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
 
             <label className="flex flex-col items-center justify-center aspect-[4/5] border border-dashed border-white/30 bg-white/5 hover:bg-white/10 rounded-2xl cursor-pointer transition-all">
               <UploadCloud className="w-6 h-6 text-secondary mb-2" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-foreground">Add Photos</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-foreground">Add Photos</span>
               <input type="file" multiple accept="image/*" onChange={handleGallerySelect} className="hidden" />
             </label>
           </div>
@@ -783,7 +783,7 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
 function Input({ label, value, onChange, type = "text", required, step, placeholder }: any) {
   return (
     <label className="block group">
-      <span className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-foreground/60 group-focus-within:text-secondary transition-colors">
+      <span className="mb-2 block text-xs font-bold uppercase tracking-widest text-foreground/60 group-focus-within:text-secondary transition-colors">
         {label} {required && <span className="text-secondary">*</span>}
       </span>
       <input
@@ -798,7 +798,7 @@ function Input({ label, value, onChange, type = "text", required, step, placehol
 function Textarea({ label, value, onChange, placeholder }: any) {
   return (
     <label className="block group">
-      <span className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-foreground/60 group-focus-within:text-secondary transition-colors">{label}</span>
+      <span className="mb-2 block text-xs font-bold uppercase tracking-widest text-foreground/60 group-focus-within:text-secondary transition-colors">{label}</span>
       <textarea
         rows={5} value={value} placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
@@ -811,7 +811,7 @@ function Textarea({ label, value, onChange, placeholder }: any) {
 function Select({ label, value, onChange, options, required }: any) {
   return (
     <label className="block group">
-      <span className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-foreground/60 group-focus-within:text-secondary transition-colors">
+      <span className="mb-2 block text-xs font-bold uppercase tracking-widest text-foreground/60 group-focus-within:text-secondary transition-colors">
         {label} {required && <span className="text-secondary">*</span>}
       </span>
       <select
