@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { grantStudioOwnerRole } from "@/integrations/supabase/server";
 import { CONTINENTS } from "@/lib/geo";
 import { Info, ChevronRight, ChevronLeft, MapPin, Camera, Clock, CheckCircle2, UploadCloud, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -36,7 +35,6 @@ interface PhotoState {
   preview: string;
 }
 
-// Auto-formats user URLs to prevent "Invalid URL" errors
 const formatUrl = (url: string) => {
   let u = url.trim();
   if (u && !/^https?:\/\//i.test(u)) u = `https://${u}`;
@@ -97,8 +95,15 @@ function SubmitPage() {
 
   async function becomeStudioOwner() {
     try {
-      await grantStudioOwnerRole();
-      await supabase.auth.refreshSession();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No active session found.");
+
+      const { error } = await supabase
+        .from("user_roles")
+        .upsert({ user_id: user.id, role: "studio_owner" }, { onConflict: 'user_id,role' });
+
+      if (error) throw error;
+
       setRoles([...roles, "studio_owner"]);
       toast.success("You are now a verified Studio Owner.");
     } catch (error: any) {
@@ -464,7 +469,6 @@ function SubmitPage() {
   );
 }
 
-// PREMIUM UTILITY COMPONENTS
 function TimeRangeRow({ day, value, onChange }: { day: string, value: string, onChange: (v: string) => void }) {
   const isOpen = value !== "" && value !== "Closed";
   const [openTime, closeTime] = isOpen ? value.split("-") : ["10:00", "22:00"];
