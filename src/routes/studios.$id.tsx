@@ -2,7 +2,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { MapPin, Phone, Mail, Globe, Instagram, ArrowLeft, ChevronLeft, ChevronRight, X, Maximize2, Camera, Flag, Star } from "lucide-react";
+import { 
+  MapPin, Phone, Mail, Globe, Instagram, Facebook, 
+  ArrowLeft, ChevronLeft, ChevronRight, X, Maximize2, 
+  Camera, Flag, Star 
+} from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -84,7 +88,6 @@ interface Studio {
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
-// Formats social media links gracefully
 const formatSocialUrl = (input: string, platform: 'instagram' | 'facebook' | 'fetlife') => {
   let val = input.trim();
   if (val.startsWith('http')) return val;
@@ -94,6 +97,24 @@ const formatSocialUrl = (input: string, platform: 'instagram' | 'facebook' | 'fe
   if (platform === 'fetlife') return `https://fetlife.com/users/${val}`;
   return `https://${val}`;
 };
+
+function FetLifeIcon({ className }: { className?: string }) {
+  return (
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round" 
+      className={className}
+    >
+      <path d="M16 4h-5a4 4 0 0 0-4 4v12" />
+      <path d="M6 12h8" />
+    </svg>
+  );
+}
 
 function StudioPage() {
   const { id } = Route.useParams();
@@ -106,7 +127,6 @@ function StudioPage() {
   const [reportComments, setReportComments] = useState("");
   const [isReporting, setIsReporting] = useState(false);
 
-  // Reviews State
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [reviews, setReviews] = useState<any[]>([]);
   const [rating, setRating] = useState(5);
@@ -116,7 +136,6 @@ function StudioPage() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setCurrentUser(data?.user || null));
 
-    // Fetch Studio Data
     supabase
       .from("studios")
       .select("*, studio_photos(url, position)")
@@ -127,7 +146,6 @@ function StudioPage() {
         setLoading(false);
       });
 
-    // Fetch Reviews (will safely return empty if the table doesn't exist yet on your backend)
     supabase
       .from("studio_reviews")
       .select("*, profiles(display_name)")
@@ -326,11 +344,9 @@ function StudioPage() {
               </div>
             )}
 
-            {/* Premium Reviews & Experiences Section */}
             <div className="mt-16 pt-12 border-t border-white/10">
               <h2 className="font-serif text-3xl text-foreground mb-8">Experiences</h2>
               
-              {/* Review Submission Form */}
               <div className="mb-10 bg-white/5 border border-white/10 rounded-[2rem] p-6 sm:p-8 backdrop-blur-md">
                 {!currentUser ? (
                   <div className="text-center">
@@ -371,7 +387,6 @@ function StudioPage() {
                 )}
               </div>
 
-              {/* Review List */}
               <div className="space-y-6">
                 {reviews.length === 0 ? (
                   <p className="text-center text-sm text-foreground/40 italic py-8">No reviews yet. Be the first to share your experience.</p>
@@ -408,10 +423,10 @@ function StudioPage() {
                   <Row icon={<Instagram className="h-5 w-5" />} href={formatSocialUrl(studio.socials.instagram, 'instagram')}>Instagram</Row>
                 )}
                 {studio.socials?.facebook && (
-                  <Row icon={<Globe className="h-5 w-5" />} href={formatSocialUrl(studio.socials.facebook, 'facebook')}>Facebook</Row>
+                  <Row icon={<Facebook className="h-5 w-5" />} href={formatSocialUrl(studio.socials.facebook, 'facebook')}>Facebook</Row>
                 )}
                 {studio.socials?.fetlife && (
-                  <Row icon={<Globe className="h-5 w-5" />} href={formatSocialUrl(studio.socials.fetlife, 'fetlife')}>FetLife</Row>
+                  <Row icon={<FetLifeIcon className="h-5 w-5" />} href={formatSocialUrl(studio.socials.fetlife, 'fetlife')}>FetLife</Row>
                 )}
                 {studio.socials?.other && (
                   <Row icon={<Globe className="h-5 w-5" />} href={studio.socials.other}>Other</Row>
