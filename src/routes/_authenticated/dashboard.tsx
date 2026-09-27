@@ -9,6 +9,42 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
 });
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 20 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { type: "spring", stiffness: 300, damping: 24 }
+  },
+  exit: { opacity: 0, scale: 0.95, transition: { duration: 0.2 } }
+};
+
+function DashboardSkeleton() {
+  return (
+    <div className="min-h-screen bg-background pt-24 pb-20 px-4 sm:px-6">
+      <div className="max-w-5xl mx-auto space-y-12">
+        <div className="flex items-center gap-5">
+          <div className="h-16 w-16 rounded-full bg-white/5 animate-pulse border border-white/10" />
+          <div className="space-y-3">
+            <div className="h-8 w-48 bg-white/10 rounded-lg animate-pulse" />
+            <div className="h-4 w-32 bg-white/5 rounded-md animate-pulse" />
+          </div>
+        </div>
+        <div className="h-40 w-full bg-white/5 rounded-[2rem] animate-pulse border border-white/10" />
+        <div className="h-[28rem] md:h-80 w-full bg-white/5 rounded-[2rem] animate-pulse border border-white/10" />
+      </div>
+    </div>
+  );
+}
+
 function DashboardPage() {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
@@ -28,31 +64,25 @@ function DashboardPage() {
     loadProfile();
   }, [navigate]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center animate-pulse text-secondary text-sm font-bold tracking-widest uppercase">
-        Loading Profile...
-      </div>
-    );
-  }
+  if (loading) return <DashboardSkeleton />;
 
   return (
     <div className="min-h-screen bg-background text-foreground pt-24 pb-20 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto space-y-12">
         
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div className="h-16 w-16 rounded-full bg-white/5 border border-white/10 shadow-md backdrop-blur-md flex items-center justify-center">
-              <User className="h-8 w-8 text-secondary" />
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <div className="h-16 w-16 rounded-full bg-secondary/10 flex items-center justify-center shadow-inner border border-secondary/20">
+              <Fingerprint className="w-8 h-8 text-secondary" strokeWidth={1.5} />
             </div>
             <div>
               <h1 className="font-serif text-4xl text-foreground">Welcome Back</h1>
               <p className="text-sm font-medium text-foreground/60">{user?.email}</p>
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="bg-secondary/10 border border-secondary/20 rounded-[2rem] p-8 md:p-10 relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-secondary/10 border border-secondary/20 rounded-[2rem] p-8 md:p-10 relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl">
           <div className="absolute right-0 top-0 p-8 opacity-5 pointer-events-none">
             <Workflow className="w-40 h-40 text-secondary" />
           </div>
@@ -67,11 +97,12 @@ function DashboardPage() {
           </div>
           <Link 
             to="/session" 
-            className="relative z-10 w-full md:w-auto shrink-0 rounded-full bg-secondary text-white px-8 py-4 text-xs font-bold uppercase tracking-widest text-center shadow-[0_0_20px_rgba(139,58,54,0.3)] hover:scale-[1.02] transition-transform"
+            preload="intent"
+            className="relative z-10 w-full md:w-auto shrink-0 rounded-full bg-secondary text-white px-8 py-4 text-xs font-bold uppercase tracking-widest text-center shadow-[0_0_20px_rgba(139,58,54,0.3)] hover:scale-105 active:scale-95 transition-all"
           >
             Open Planner
           </Link>
-        </div>
+        </motion.div>
 
         <ParticipantPortal userId={user?.id} userEmail={user?.email} />
 
@@ -155,14 +186,27 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
       .match({ user_id: userId, studio_id: studioId });
   };
 
-  if (loading) return <div className="animate-pulse h-64 bg-white/5 rounded-[2rem] border border-white/10"></div>;
+  if (loading) {
+    return (
+      <div className="space-y-12">
+        <div className="h-[28rem] md:h-80 w-full bg-white/5 rounded-[2rem] animate-pulse border border-white/10" />
+        <div className="space-y-8">
+          <div className="h-6 w-40 bg-white/5 rounded-md animate-pulse" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-64 w-full bg-white/5 rounded-[2rem] animate-pulse border border-white/10" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="space-y-12">
       
       <div className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2rem] p-8 md:p-12 shadow-xl relative overflow-hidden flex flex-col justify-between">
         
-        {/* Abstract Native SVG Artwork - Absolutely positioned and centered on the right edge */}
         <div className="hidden sm:block absolute right-[-5%] top-1/2 -translate-y-1/2 w-80 h-80 md:w-[32rem] md:h-[32rem] opacity-40 text-jute pointer-events-none mix-blend-plus-lighter">
           <AbstractRopeArtwork className="w-full h-full drop-shadow-[0_0_30px_rgba(181,155,125,0.2)]" />
         </div>
@@ -186,17 +230,17 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
                       placeholder="Enter display name..."
                       className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 font-serif text-2xl outline-none focus:border-secondary transition-colors text-foreground max-w-xs"
                     />
-                    <button onClick={handleSaveProfile} disabled={savingProfile} className="bg-secondary text-white p-2 rounded-lg hover:scale-105 transition-all shadow-lg">
+                    <button onClick={handleSaveProfile} disabled={savingProfile} className="bg-secondary text-white p-2 rounded-lg hover:scale-105 active:scale-95 transition-all shadow-lg">
                       <Save className="w-5 h-5" />
                     </button>
-                    <button onClick={() => setIsEditingProfile(false)} disabled={savingProfile} className="bg-white/5 text-foreground p-2 rounded-lg hover:bg-white/10 transition-all border border-white/10">
+                    <button onClick={() => setIsEditingProfile(false)} disabled={savingProfile} className="bg-white/5 text-foreground p-2 rounded-lg hover:bg-white/10 active:scale-95 transition-all border border-white/10">
                       <X className="w-5 h-5" />
                     </button>
                   </div>
                 ) : (
                   <div className="group flex items-center gap-4 max-w-max">
                     <h2 className="font-serif text-4xl md:text-5xl text-foreground mb-1">{profile?.display_name || "Rope Explorer"}</h2>
-                    <button onClick={() => setIsEditingProfile(true)} className="opacity-0 group-hover:opacity-100 bg-white/5 p-2 rounded-full hover:bg-white/10 transition-all border border-white/10">
+                    <button onClick={() => setIsEditingProfile(true)} className="opacity-0 group-hover:opacity-100 bg-white/5 p-2 rounded-full hover:bg-white/10 active:scale-95 transition-all border border-white/10">
                       <Edit3 className="w-4 h-4 text-secondary" />
                     </button>
                   </div>
@@ -208,7 +252,6 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
           </div>
         </div>
         
-        {/* Shorter dividing line */}
         <div className="w-32 h-px bg-white/10 mt-10 mb-8 relative z-10" />
 
         <div className="flex flex-wrap gap-8 md:gap-16 relative z-10">
@@ -237,24 +280,28 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
         </h2>
 
         {savedStudios.length === 0 ? (
-          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-12 text-center border-dashed">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-12 text-center border-dashed">
             <Bookmark className="mx-auto h-8 w-8 text-foreground/30 mb-4" />
-            <p className="text-foreground/70 font-medium">Your curated list of spaces will appear here.</p>
-            <Link to="/" className="mt-6 inline-flex items-center gap-2 rounded-full bg-foreground text-background px-6 py-3 text-xs font-bold uppercase tracking-widest shadow-xl hover:scale-105 transition-all">
+            <h3 className="font-serif text-2xl text-foreground mb-2">Your personal directory is waiting</h3>
+            <p className="text-foreground/60 text-sm max-w-md mx-auto leading-relaxed">
+              Curate your collection of trusted spaces to reference later. Explore the global directory to begin building your roster.
+            </p>
+            <Link 
+              to="/" 
+              preload="intent"
+              className="mt-8 inline-flex items-center gap-2 rounded-full bg-foreground text-background px-8 py-3.5 text-xs font-bold uppercase tracking-widest shadow-xl hover:scale-105 active:scale-95 transition-all"
+            >
               Explore Directory <ArrowRight className="h-4 w-4" />
             </Link>
-          </div>
+          </motion.div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <AnimatePresence>
+          <motion.div variants={containerVariants} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <AnimatePresence mode="popLayout">
               {savedStudios.map(studio => (
                 <motion.div 
                   key={studio.id}
+                  variants={cardVariants}
                   layout
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.2 }}
                   className="group relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] overflow-hidden shadow-lg hover:shadow-xl transition-all"
                 >
                   <div className="aspect-[16/9] relative overflow-hidden bg-black/20">
@@ -265,8 +312,12 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
                     )}
                     
                     <button
-                      onClick={() => handleUnsave(studio.id)}
-                      className="absolute top-4 right-4 z-20 h-10 w-10 rounded-full bg-background/50 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-lg hover:bg-rose-500 hover:text-white transition-colors"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleUnsave(studio.id);
+                      }}
+                      className="absolute top-4 right-4 z-20 h-10 w-10 rounded-full bg-background/50 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-lg hover:bg-rose-500 hover:text-white active:scale-95 transition-all"
                       aria-label="Remove saved studio"
                     >
                       <Bookmark className="h-5 w-5 fill-secondary text-secondary hover:fill-white hover:text-white transition-colors" />
@@ -281,7 +332,8 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
                     <Link 
                       to="/studios/$id" 
                       params={{ id: studio.id }}
-                      className="mt-6 w-full flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 py-2.5 text-xs font-bold uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background transition-colors"
+                      preload="intent"
+                      className="mt-6 w-full flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 py-2.5 text-xs font-bold uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background active:scale-95 transition-all"
                     >
                       View Space <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
@@ -289,14 +341,13 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
                 </motion.div>
               ))}
             </AnimatePresence>
-          </div>
+          </motion.div>
         )}
       </div>
     </motion.div>
   );
 }
 
-// NATIVE ARTWORK COMPONENT
 function AbstractRopeArtwork({ className }: { className?: string }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" className={className}>
