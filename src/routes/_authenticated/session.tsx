@@ -199,7 +199,7 @@ function SessionPlannerPage() {
           </p>
           <h1 className="font-serif text-5xl sm:text-6xl text-foreground">Session Planner</h1>
           <p className="mt-4 text-foreground/60 max-w-xl text-sm leading-relaxed mx-auto sm:mx-0">
-            Establish boundaries, intentions, and desires before tying. Share this configuration securely with your partner.
+            Establish boundaries, intentions, and desires before tying. Share this configuration securely with your partner. This is a tool for communiaction, but it does not replace consent, and further negotiations. 
           </p>
         </div>
 
