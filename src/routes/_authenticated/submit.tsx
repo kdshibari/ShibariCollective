@@ -4,13 +4,13 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { CONTINENTS } from "@/lib/geo";
-import { Info, ChevronRight, ChevronLeft, MapPin, Camera, Clock, CheckCircle2, UploadCloud, X } from "lucide-react";
+import { Info, ChevronRight, ChevronLeft, MapPin, Camera, Clock, CheckCircle2, UploadCloud, X, Building2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export const Route = createFileRoute("/_authenticated/submit")({
   head: () => ({
     meta: [
-      { title: "Submit your studio — Shibari Collective" },
+      { title: "Submit your studio | Shibari Collective" },
       { name: "description", content: "Submit your Shibari studio to be featured in the worldwide directory." },
     ],
   }),
@@ -41,21 +41,39 @@ const formatUrl = (url: string) => {
   return u;
 };
 
+// Framer Motion variants for directional sliding
+const slideVariants = {
+  enter: (direction: number) => ({
+    x: direction > 0 ? 30 : -30,
+    opacity: 0
+  }),
+  center: {
+    zIndex: 1,
+    x: 0,
+    opacity: 1
+  },
+  exit: (direction: number) => ({
+    zIndex: 0,
+    x: direction < 0 ? 30 : -30,
+    opacity: 0
+  })
+};
+
 function SubmitPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
+  const [direction, setDirection] = useState(0);
   const [roles, setRoles] = useState<string[]>([]);
   const [checking, setChecking] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
-
+  
   const [logo, setLogo] = useState<PhotoState | null>(null);
   const [gallery, setGallery] = useState<PhotoState[]>([]);
-  
   const [hours, setHours] = useState<Record<string, string>>({});
   const [form, setForm] = useState({
     name: "", description: "", continent: "", country: "", city: "", address: "",
-    email: "", phone: "", website: "", instagram: "", facebook: "", other: "",
+    email: "", phone: "", website: "", instagram: "", facebook: "", other: "", fetlife: "",
   });
 
   useEffect(() => {
@@ -103,7 +121,6 @@ function SubmitPage() {
         .upsert({ user_id: user.id, role: "studio_owner" }, { onConflict: 'user_id,role' });
 
       if (error) throw error;
-
       setRoles([...roles, "studio_owner"]);
       toast.success("You are now a verified Studio Owner.");
     } catch (error: any) {
@@ -150,8 +167,14 @@ function SubmitPage() {
 
   const handleNextStep = () => {
     if (validateStep(step)) {
+      setDirection(1);
       setStep(step + 1);
     }
+  };
+
+  const handlePrevStep = () => {
+    setDirection(-1);
+    setStep(step - 1);
   };
 
   const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -214,6 +237,7 @@ function SubmitPage() {
       uploadPromises.push(...galleryTasks);
 
       const uploadedMedia = await Promise.all(uploadPromises);
+
       setUploadProgress("Publishing studio profile...");
 
       const { data: inserted, error: dbError } = await supabase
@@ -234,6 +258,7 @@ function SubmitPage() {
             instagram: form.instagram.trim() || undefined,
             facebook: form.facebook.trim() || undefined,
             other: form.other.trim() || undefined,
+            fetlife: form.fetlife.trim() || undefined,
           },
         })
         .select("id")
@@ -266,24 +291,34 @@ function SubmitPage() {
     }
   }
 
-  if (checking) return <div className="flex h-screen items-center justify-center text-secondary tracking-widest uppercase text-sm font-bold animate-pulse">Initializing Secure Portal...</div>;
+  if (checking) {
+    return (
+      <div className="flex h-screen items-center justify-center px-4">
+        <div className="w-full max-w-lg space-y-6">
+          <div className="h-16 w-16 bg-white/5 rounded-full animate-pulse mx-auto" />
+          <div className="h-8 w-64 bg-white/5 rounded mx-auto animate-pulse" />
+          <div className="h-32 w-full bg-white/5 rounded-2xl animate-pulse border border-white/10" />
+        </div>
+      </div>
+    );
+  }
 
   if (!roles.includes("studio_owner") && !roles.includes("admin")) {
     return (
       <div className="flex min-h-[80vh] items-center justify-center px-4">
-        <div className="bg-white/30 backdrop-blur-2xl border border-white/50 rounded-[2.5rem] p-10 max-w-lg text-center shadow-[0_30px_60px_-15px_rgba(78,44,35,0.2)]">
-          <CheckCircle2 className="mx-auto h-16 w-16 text-secondary mb-6" />
+        <div className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-10 max-w-lg text-center shadow-[0_30px_60px_-15px_rgba(78,44,35,0.2)]">
+          <Building2 className="mx-auto h-16 w-16 text-secondary mb-6 opacity-80" />
           <h1 className="font-serif text-4xl text-foreground">Claim Your Space</h1>
-          <p className="mt-4 text-foreground/70 font-medium">
-            To maintain the integrity of the collective, only verified owners can list a studio. Verification is instant and free.
+          <p className="mt-4 text-foreground/70 font-medium leading-relaxed">
+            To maintain the integrity of the collective, only verified owners can list a studio. Verification is instant and entirely free.
           </p>
           <button
             onClick={becomeStudioOwner}
-            className="mt-8 w-full rounded-full bg-secondary px-6 py-4 text-sm font-bold uppercase tracking-widest text-secondary-foreground shadow-lg hover:scale-[1.02] transition-transform"
+            className="mt-8 w-full rounded-full bg-secondary px-6 py-4 text-sm font-bold uppercase tracking-widest text-secondary-foreground shadow-[0_0_20px_rgba(139,58,54,0.3)] hover:scale-[1.02] active:scale-95 transition-all"
           >
-            I own or represent a studio
+            I represent a studio
           </button>
-          <Link to="/" className="mt-6 inline-block text-sm font-bold uppercase tracking-widest text-foreground/50 hover:text-foreground transition-colors">Return Home</Link>
+          <Link to="/" preload="intent" className="mt-8 inline-block text-xs font-bold uppercase tracking-widest text-foreground/50 hover:text-foreground active:scale-95 transition-all">Return to Directory</Link>
         </div>
       </div>
     );
@@ -305,25 +340,25 @@ function SubmitPage() {
           <h1 className="font-serif text-5xl sm:text-6xl text-foreground">Curate Your Space</h1>
           
           <div className="mt-12 flex justify-between relative">
-            <div className="absolute top-1/2 left-0 w-full h-1 bg-white/30 -z-10 rounded-full" />
-            <div className="absolute top-1/2 left-0 h-1 bg-secondary -z-10 rounded-full transition-all duration-500" style={{ width: `${((step - 1) / 3) * 100}%` }} />
+            <div className="absolute top-1/2 left-0 w-full h-1 bg-white/10 -z-10 rounded-full" />
+            <div className="absolute top-1/2 left-0 h-1 bg-secondary -z-10 rounded-full transition-all duration-700 ease-out" style={{ width: `${((step - 1) / 3) * 100}%` }} />
             
             {steps.map((s) => (
-              <div key={s.id} className={`flex flex-col items-center gap-2 transition-all duration-500 ${step >= s.id ? 'text-secondary' : 'text-foreground/40'}`}>
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 backdrop-blur-md transition-all duration-500 ${step >= s.id ? 'bg-secondary text-white border-secondary shadow-lg scale-110' : 'bg-white/40 border-white/50'}`}>
+              <div key={s.id} className={`flex flex-col items-center gap-2 transition-all duration-500 ${step >= s.id ? 'text-secondary' : 'text-foreground/30'}`}>
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 backdrop-blur-md transition-all duration-500 ${step >= s.id ? 'bg-secondary text-white border-secondary shadow-[0_0_15px_rgba(139,58,54,0.4)] scale-110' : 'bg-white/5 border-white/10'}`}>
                   {s.icon}
                 </div>
-                <span className="text-xs font-bold uppercase tracking-widest hidden sm:block">{s.title}</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest hidden sm:block">{s.title}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="bg-white/40 backdrop-blur-3xl border border-white/60 rounded-[2.5rem] p-6 sm:p-10 shadow-[0_30px_60px_-15px_rgba(78,44,35,0.15)] min-h-[500px]">
-          <AnimatePresence mode="wait">
+        <div className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-6 sm:p-10 shadow-2xl min-h-[500px] overflow-hidden relative">
+          <AnimatePresence mode="wait" custom={direction}>
             
             {step === 1 && (
-              <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+              <motion.div key="step1" custom={direction} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.3, ease: "easeInOut" }} className="space-y-6">
                 <h2 className="font-serif text-3xl text-foreground mb-8">Let's start with the basics</h2>
                 <Input label="Official Studio Name" value={form.name} onChange={(v: string) => setForm({ ...form, name: v })} placeholder="e.g. The Rope Den" required />
                 <Textarea label="Studio Description (Optional but recommended)" value={form.description} onChange={(v: string) => setForm({ ...form, description: v })} placeholder="Describe the atmosphere, equipment, and ethos of your space..." />
@@ -331,7 +366,7 @@ function SubmitPage() {
             )}
 
             {step === 2 && (
-              <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+              <motion.div key="step2" custom={direction} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.3, ease: "easeInOut" }} className="space-y-6">
                 <h2 className="font-serif text-3xl text-foreground mb-8">Where are you located?</h2>
                 <div className="grid gap-6 sm:grid-cols-2">
                   <Select label="Continent" value={form.continent} onChange={(v: string) => setForm({ ...form, continent: v })} options={CONTINENTS as unknown as string[]} required />
@@ -343,11 +378,11 @@ function SubmitPage() {
             )}
 
             {step === 3 && (
-              <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
+              <motion.div key="step3" custom={direction} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.3, ease: "easeInOut" }} className="space-y-8">
                 <h2 className="font-serif text-3xl text-foreground mb-8">Operating Hours & Contact</h2>
                 
                 <div className="space-y-4">
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-secondary">Weekly Schedule</h3>
+                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-secondary">Weekly Schedule</h3>
                   <div className="grid gap-3 lg:grid-cols-2">
                     {DAYS.map((d) => (
                       <TimeRangeRow key={d} day={d} value={hours[d] ?? ""} onChange={(val) => setHours({ ...hours, [d]: val })} />
@@ -355,26 +390,27 @@ function SubmitPage() {
                   </div>
                 </div>
 
-                <div className="space-y-4 pt-6 border-t border-white/40">
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-secondary">Digital Presence</h3>
+                <div className="space-y-4 pt-6 border-t border-white/10">
+                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-secondary">Digital Presence</h3>
                   <div className="grid gap-6 sm:grid-cols-2">
                     <Input label="Public Email" value={form.email} onChange={(v: string) => setForm({ ...form, email: v })} type="email" placeholder="hello@studio.com" />
                     <Input label="Phone Number" value={form.phone} onChange={(v: string) => setForm({ ...form, phone: v })} placeholder="+1 234 567 890" />
-                    <Input label="Website" value={form.website} onChange={(v: string) => setForm({ ...form, website: v })} type="url" placeholder="studio.com (we auto-format)" />
+                    <Input label="Website" value={form.website} onChange={(v: string) => setForm({ ...form, website: v })} placeholder="studio.com" />
                     <Input label="Instagram" value={form.instagram} onChange={(v: string) => setForm({ ...form, instagram: v })} placeholder="@studio" />
+                    <Input label="FetLife" value={form.fetlife} onChange={(v: string) => setForm({ ...form, fetlife: v })} placeholder="fetlife.com/users/..." />
                   </div>
                 </div>
               </motion.div>
             )}
 
             {step === 4 && (
-              <motion.div key="step4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
+              <motion.div key="step4" custom={direction} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.3, ease: "easeInOut" }} className="space-y-8">
                 <h2 className="font-serif text-3xl text-foreground mb-2">Visual Identity & Gallery</h2>
                 
                 <div>
                   <div className="flex justify-between items-end mb-4">
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-secondary">Studio Logo</h3>
-                    <p className="text-xs font-bold uppercase tracking-widest text-secondary">Required</p>
+                    <h3 className="text-[10px] font-bold uppercase tracking-widest text-secondary">Studio Logo</h3>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-secondary">Required</p>
                   </div>
                   <div className="flex items-center gap-6">
                     <div className="relative w-32 h-32 rounded-full overflow-hidden border border-white/10 shadow-xl bg-black/20 shrink-0">
@@ -382,7 +418,7 @@ function SubmitPage() {
                         <>
                           <img src={logo.preview} className="w-full h-full object-cover" alt="Studio Logo" />
                           <div className="absolute inset-0 bg-black/60 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
-                            <label className="text-xs font-bold uppercase tracking-widest text-white cursor-pointer hover:text-secondary transition-colors">
+                            <label className="text-[10px] font-bold uppercase tracking-widest text-white cursor-pointer hover:text-secondary transition-colors">
                               Replace
                               <input type="file" accept="image/*" onChange={handleLogoSelect} className="hidden" />
                             </label>
@@ -391,7 +427,7 @@ function SubmitPage() {
                       ) : (
                         <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-white/5 transition-colors">
                           <UploadCloud className="w-6 h-6 text-foreground/50 mb-1" />
-                          <span className="text-xs font-bold uppercase tracking-widest text-foreground/50 text-center px-2">Upload Logo</span>
+                          <span className="text-[9px] font-bold uppercase tracking-widest text-foreground/50 text-center px-2">Upload Logo</span>
                           <input type="file" accept="image/*" onChange={handleLogoSelect} className="hidden" />
                         </label>
                       )}
@@ -404,8 +440,8 @@ function SubmitPage() {
 
                 <div className="pt-6 border-t border-white/10">
                   <div className="flex justify-between items-end mb-4">
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-secondary">Studio Gallery</h3>
-                    <p className="text-xs font-bold uppercase tracking-widest text-secondary">{gallery.length} / 5 Min</p>
+                    <h3 className="text-[10px] font-bold uppercase tracking-widest text-secondary">Studio Gallery</h3>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-secondary">{gallery.length} / 5 Min</p>
                   </div>
                   <p className="text-sm text-foreground/60 font-medium max-w-sm mb-6">
                     Upload directly from your device. Minimum 5 photos required to showcase your space.
@@ -414,40 +450,42 @@ function SubmitPage() {
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                     {gallery.map((photo, index) => (
                       <div key={index} className="relative aspect-[4/5] group overflow-hidden rounded-2xl shadow-sm border border-white/10">
-                        <img src={photo.preview} alt={`Preview ${index}`} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                        <img src={photo.preview} alt={`Preview ${index}`} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                         <div className="absolute inset-0 bg-background/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
-                          <button type="button" onClick={() => removeGalleryPhoto(index)} className="bg-rose-500/90 text-white p-3 rounded-full hover:bg-rose-500 hover:scale-110 transition-all shadow-xl">
+                          <button type="button" onClick={() => removeGalleryPhoto(index)} className="bg-rose-500/90 text-white p-3 rounded-full hover:bg-rose-500 hover:scale-110 active:scale-95 transition-all shadow-xl">
                             <X className="w-5 h-5" />
                           </button>
                         </div>
                       </div>
                     ))}
-
-                    <label className="flex flex-col items-center justify-center aspect-[4/5] border border-dashed border-white/30 bg-white/5 hover:bg-white/10 rounded-2xl cursor-pointer transition-all">
+                    <label className="flex flex-col items-center justify-center aspect-[4/5] border border-dashed border-white/20 bg-white/5 hover:bg-white/10 active:scale-[0.98] rounded-2xl cursor-pointer transition-all">
                       <UploadCloud className="w-6 h-6 text-secondary mb-2" />
-                      <span className="text-xs font-bold uppercase tracking-widest text-foreground">Add Photos</span>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/70">Add Photos</span>
                       <input type="file" className="hidden" multiple accept="image/*" onChange={handleGallerySelect} />
                     </label>
                   </div>
                 </div>
               </motion.div>
             )}
+
           </AnimatePresence>
         </div>
 
+        {/* Floating Navigation Controls */}
         <div className="fixed bottom-6 left-4 right-4 sm:left-auto sm:right-auto sm:w-full sm:max-w-3xl z-50">
-          <div className="bg-white/80 backdrop-blur-3xl border border-white/60 shadow-[0_20px_40px_-10px_rgba(78,44,35,0.3)] rounded-full p-3 flex items-center justify-between">
+          <div className="bg-white/10 backdrop-blur-3xl border border-white/20 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.5)] rounded-full p-3 flex items-center justify-between">
             <button
-              onClick={() => setStep(step - 1)}
+              onClick={handlePrevStep}
               disabled={step === 1 || saving}
-              className="flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold uppercase tracking-widest text-foreground/60 hover:bg-white/50 disabled:opacity-30 transition-all"
+              className="flex items-center gap-2 px-6 py-3 rounded-full text-xs font-bold uppercase tracking-widest text-foreground/60 hover:bg-white/10 hover:text-foreground active:scale-95 disabled:opacity-30 transition-all"
             >
               <ChevronLeft className="w-4 h-4" /> Back
             </button>
+            
             {step < 4 ? (
               <button
                 onClick={handleNextStep}
-                className="flex items-center gap-2 px-8 py-3 rounded-full bg-foreground text-background text-sm font-bold uppercase tracking-widest shadow-lg hover:scale-105 transition-all"
+                className="flex items-center gap-2 px-8 py-3 rounded-full bg-foreground text-background text-xs font-bold uppercase tracking-widest shadow-lg hover:scale-105 active:scale-95 transition-all"
               >
                 Next Step <ChevronRight className="w-4 h-4" />
               </button>
@@ -455,7 +493,7 @@ function SubmitPage() {
               <button
                 onClick={onSubmit}
                 disabled={saving}
-                className="flex items-center justify-center gap-2 px-8 py-3 rounded-full bg-secondary text-white text-sm font-bold uppercase tracking-widest shadow-lg hover:scale-105 disabled:opacity-50 transition-all min-w-[200px]"
+                className="flex items-center justify-center gap-2 px-8 py-3 rounded-full bg-secondary text-white text-xs font-bold uppercase tracking-widest shadow-[0_0_20px_rgba(139,58,54,0.4)] hover:scale-105 active:scale-95 disabled:opacity-50 transition-all min-w-[200px]"
               >
                 {saving ? uploadProgress || "Publishing..." : "Publish Studio"} 
                 {!saving && <CheckCircle2 className="w-4 h-4" />}
@@ -474,7 +512,7 @@ function TimeRangeRow({ day, value, onChange }: { day: string, value: string, on
   const [openTime, closeTime] = isOpen ? value.split("-") : ["10:00", "22:00"];
 
   return (
-    <div className="flex items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/10">
+    <div className="flex items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/10 transition-colors focus-within:border-secondary/50">
       <div className="w-20 sm:w-24 flex items-center gap-2 shrink-0">
         <input 
           type="checkbox" 
@@ -489,15 +527,15 @@ function TimeRangeRow({ day, value, onChange }: { day: string, value: string, on
           <select 
             value={openTime} 
             onChange={e => onChange(`${e.target.value}-${closeTime}`)} 
-            className="flex-1 bg-white/10 rounded-lg text-xs p-2.5 text-foreground outline-none border border-white/10 cursor-pointer appearance-none text-center"
+            className="flex-1 bg-white/10 rounded-lg text-xs p-2.5 text-foreground outline-none border border-transparent cursor-pointer appearance-none text-center focus:border-secondary transition-colors"
           >
             {TIME_OPTIONS.map(t => <option key={`open-${t}`} value={t} className="bg-background text-foreground">{t}</option>)}
           </select>
-          <span className="text-xs text-foreground/40 font-bold uppercase">to</span>
+          <span className="text-[10px] text-foreground/40 font-bold uppercase">to</span>
           <select 
             value={closeTime} 
             onChange={e => onChange(`${openTime}-${e.target.value}`)} 
-            className="flex-1 bg-white/10 rounded-lg text-xs p-2.5 text-foreground outline-none border border-white/10 cursor-pointer appearance-none text-center"
+            className="flex-1 bg-white/10 rounded-lg text-xs p-2.5 text-foreground outline-none border border-transparent cursor-pointer appearance-none text-center focus:border-secondary transition-colors"
           >
             {TIME_OPTIONS.map(t => <option key={`close-${t}`} value={t} className="bg-background text-foreground">{t}</option>)}
           </select>
@@ -512,13 +550,13 @@ function TimeRangeRow({ day, value, onChange }: { day: string, value: string, on
 function Input({ label, value, onChange, type = "text", required, step, placeholder }: any) {
   return (
     <label className="block group">
-      <span className="mb-2 block text-xs font-bold uppercase tracking-widest text-foreground/60 group-focus-within:text-secondary transition-colors">
+      <span className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-foreground/60 group-focus-within:text-secondary transition-colors">
         {label} {required && <span className="text-secondary">*</span>}
       </span>
       <input
-        type={type} required={required} step={step} value={value} placeholder={placeholder}
+        type={type} required={required} step={step} value={value || ""} placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md px-5 py-4 text-sm font-medium text-foreground outline-none focus:border-secondary/50 focus:bg-white/10 transition-all shadow-inner placeholder:text-foreground/30"
+        className="w-full rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md px-5 py-4 text-sm font-medium text-foreground outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all shadow-inner placeholder:text-foreground/30"
       />
     </label>
   );
@@ -527,11 +565,11 @@ function Input({ label, value, onChange, type = "text", required, step, placehol
 function Textarea({ label, value, onChange, placeholder }: any) {
   return (
     <label className="block group">
-      <span className="mb-2 block text-xs font-bold uppercase tracking-widest text-foreground/60 group-focus-within:text-secondary transition-colors">{label}</span>
+      <span className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-foreground/60 group-focus-within:text-secondary transition-colors">{label}</span>
       <textarea
-        rows={5} value={value} placeholder={placeholder}
+        rows={5} value={value || ""} placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md px-5 py-4 text-sm font-medium text-foreground outline-none focus:border-secondary/50 focus:bg-white/10 transition-all shadow-inner placeholder:text-foreground/30 resize-none"
+        className="w-full rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md px-5 py-4 text-sm font-medium text-foreground outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all shadow-inner placeholder:text-foreground/30 resize-none"
       />
     </label>
   );
@@ -540,13 +578,13 @@ function Textarea({ label, value, onChange, placeholder }: any) {
 function Select({ label, value, onChange, options, required }: any) {
   return (
     <label className="block group">
-      <span className="mb-2 block text-xs font-bold uppercase tracking-widest text-foreground/60 group-focus-within:text-secondary transition-colors">
+      <span className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-foreground/60 group-focus-within:text-secondary transition-colors">
         {label} {required && <span className="text-secondary">*</span>}
       </span>
       <select
-        required={required} value={value}
+        required={required} value={value || ""}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md px-5 py-4 text-sm font-medium text-foreground outline-none focus:border-secondary/50 focus:bg-white/10 transition-all shadow-inner appearance-none cursor-pointer"
+        className="w-full rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md px-5 py-4 text-sm font-medium text-foreground outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all shadow-inner appearance-none cursor-pointer"
         style={{ backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238B3A36' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1.25rem center', backgroundSize: '1em' }}
       >
         <option value="" disabled className="bg-background text-foreground">Select...</option>
