@@ -14,7 +14,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/studios/$id")({
   head: ({ params }) => ({
     meta: [
-      { title: `Studio — Shibari Collective` },
+      { title: `Studio | Shibari Collective` },
       { name: "description", content: `Shibari studio details on Shibari Collective (${params.id.slice(0, 8)}).` },
       { property: "og:title", content: "Shibari studio" },
       { property: "og:description", content: "Discover this Shibari studio on Shibari Collective." },
@@ -50,7 +50,7 @@ const sendReportEmail = createServerFn({ method: "POST" })
       await transporter.sendMail({
         from: `"Shibari Collective Alerts" <${GMAIL_USER}>`,
         to: "theshibaricollective@gmail.com",
-        subject: `🚨 Studio Report: ${data.studioName}`,
+        subject: `⚠️ Studio Report: ${data.studioName}`,
         html: `
           <div style="font-family: sans-serif; color: #181514; padding: 20px;">
             <h2 style="color: #8B3A36;">New Studio Report</h2>
@@ -63,6 +63,7 @@ const sendReportEmail = createServerFn({ method: "POST" })
           </div>
         `,
       });
+
       return { success: true };
     } catch (error) {
       console.error("Failed to send report email:", error);
@@ -112,17 +113,40 @@ function FetLifeIcon({ className }: { className?: string }) {
   );
 }
 
+function StudioSkeleton() {
+  return (
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 pb-32 md:pb-16 animate-pulse">
+      <div className="w-24 h-4 bg-white/5 rounded mb-8" />
+      <div className="h-[40vh] md:h-[60vh] w-full bg-white/5 rounded-[2rem] mb-12 border border-white/10" />
+      <div className="grid gap-12 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-6">
+          <div className="w-32 h-4 bg-white/5 rounded" />
+          <div className="w-3/4 h-16 bg-white/10 rounded" />
+          <div className="w-1/2 h-6 bg-white/5 rounded" />
+          <div className="space-y-3 mt-12">
+            <div className="w-full h-4 bg-white/5 rounded" />
+            <div className="w-full h-4 bg-white/5 rounded" />
+            <div className="w-5/6 h-4 bg-white/5 rounded" />
+          </div>
+        </div>
+        <aside>
+          <div className="h-96 w-full bg-white/5 rounded-[2.5rem] border border-white/10" />
+        </aside>
+      </div>
+    </div>
+  );
+}
+
 function StudioPage() {
   const { id } = Route.useParams();
   const [studio, setStudio] = useState<Studio | null>(null);
   const [loading, setLoading] = useState(true);
   const [emblaRef] = useEmblaCarousel({ loop: true });
-  
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportComments, setReportComments] = useState("");
   const [isReporting, setIsReporting] = useState(false);
-
+  
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [reviews, setReviews] = useState<any[]>([]);
   const [rating, setRating] = useState(5);
@@ -202,15 +226,14 @@ function StudioPage() {
 
     setIsSubmittingReview(true);
     try {
-      const { error } = await supabase.from('studio_reviews').insert({
-         studio_id: studio?.id,
-         user_id: currentUser.id,
-         rating,
-         comment: reviewText.trim()
+      const { error } = await supabase.from('studio_reviews').insert({ 
+        studio_id: studio?.id, 
+        user_id: currentUser.id, 
+        rating, 
+        comment: reviewText.trim()
       });
 
       if (error) throw error;
-
       toast.success("Review published.");
       setReviews([{ 
         id: Date.now().toString(), 
@@ -227,7 +250,7 @@ function StudioPage() {
     }
   };
 
-  if (loading) return <div className="mx-auto max-w-4xl px-4 py-32 animate-pulse text-secondary text-sm font-bold tracking-widest uppercase text-center">Loading Studio...</div>;
+  if (loading) return <StudioSkeleton />;
   if (!studio) return <div className="mx-auto max-w-4xl px-4 py-32 text-center font-serif text-3xl">Studio not found.</div>;
 
   const photos = (studio.studio_photos ?? []).sort((a, b) => a.position - b.position);
@@ -241,18 +264,18 @@ function StudioPage() {
 
   return (
     <>
-      <article className="mx-auto max-w-7xl px-4 py-8 sm:px-6 pb-32 md:pb-16 relative">
-        <Link to="/" className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-foreground/50 hover:text-foreground transition-colors mb-8">
+      <motion.article initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mx-auto max-w-7xl px-4 py-8 sm:px-6 pb-32 md:pb-16 relative">
+        <Link to="/" preload="intent" className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-foreground/50 hover:text-foreground transition-colors mb-8">
           <ArrowLeft className="h-4 w-4" /> Directory
         </Link>
 
         {photos.length > 0 && (
           <div className="mb-12">
-            <div className="relative md:hidden rounded-[2rem] overflow-hidden">
+            <div className="relative md:hidden rounded-[2rem] overflow-hidden border border-white/10">
               <div ref={emblaRef} className="overflow-hidden">
                 <div className="flex">
                   {photos.map((p, i) => (
-                    <div key={i} className="min-w-0 shrink-0 basis-full relative" onClick={() => setLightboxIndex(i)}>
+                    <div key={i} className="min-w-0 shrink-0 basis-full relative active:scale-[0.98] transition-transform" onClick={() => setLightboxIndex(i)}>
                       <img src={p.url} alt={`${studio.name} ${i + 1}`} className="aspect-[4/5] w-full object-cover" />
                       <div className="absolute bottom-4 right-4 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full text-white text-[10px] font-bold tracking-widest flex items-center gap-2">
                         <Maximize2 className="w-3 h-3" /> {i + 1} / {photos.length}
@@ -264,30 +287,31 @@ function StudioPage() {
             </div>
 
             <div className="hidden md:grid grid-cols-2 gap-4 h-[60vh] rounded-[2rem] overflow-hidden relative">
-              <div className="relative group cursor-pointer h-full bg-neutral-900 overflow-hidden" onClick={() => setLightboxIndex(0)}>
+              <div className="relative group cursor-pointer h-full bg-neutral-900 overflow-hidden active:scale-[0.99] transition-transform" onClick={() => setLightboxIndex(0)}>
                 <img src={photos[0].url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
               
               <div className="grid grid-rows-2 gap-4 h-full">
                 {photos[1] ? (
-                  <div className="relative group cursor-pointer h-full bg-neutral-900 overflow-hidden rounded-[1rem]" onClick={() => setLightboxIndex(1)}>
+                  <div className="relative group cursor-pointer h-full bg-neutral-900 overflow-hidden rounded-[1rem] active:scale-[0.99] transition-transform" onClick={() => setLightboxIndex(1)}>
                     <img src={photos[1].url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                     <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
-                ) : <div className="bg-white/5 rounded-[1rem]" />}
+                ) : <div className="bg-white/5 rounded-[1rem] border border-white/10" />}
+                
                 {photos[2] ? (
-                  <div className="relative group cursor-pointer h-full bg-neutral-900 overflow-hidden rounded-[1rem]" onClick={() => setLightboxIndex(2)}>
+                  <div className="relative group cursor-pointer h-full bg-neutral-900 overflow-hidden rounded-[1rem] active:scale-[0.99] transition-transform" onClick={() => setLightboxIndex(2)}>
                     <img src={photos[2].url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                     <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                     
                     {photos.length > 3 && (
-                      <div className="absolute bottom-4 right-4 bg-background/90 backdrop-blur-md px-5 py-2.5 rounded-full shadow-xl flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-foreground hover:scale-105 transition-transform">
+                      <div className="absolute bottom-4 right-4 bg-background/90 backdrop-blur-md px-5 py-2.5 rounded-full shadow-xl flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-foreground hover:scale-105 active:scale-95 transition-all">
                         <Camera className="w-4 h-4" /> View All {photos.length}
                       </div>
                     )}
                   </div>
-                ) : <div className="bg-white/5 rounded-[1rem]" />}
+                ) : <div className="bg-white/5 rounded-[1rem] border border-white/10" />}
               </div>
             </div>
           </div>
@@ -346,8 +370,8 @@ function StudioPage() {
               <div className="mb-10 bg-white/5 border border-white/10 rounded-[2rem] p-6 sm:p-8 backdrop-blur-md">
                 {!currentUser ? (
                   <div className="text-center">
-                    <p className="text-sm text-foreground/60 mb-4">You must be signed in to leave a review for this space.</p>
-                    <Link to="/auth" search={{ intent: "participant" }} className="inline-block bg-white text-black px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-white/90 transition-colors">
+                    <p className="text-sm text-foreground/60 mb-4">Your perspective matters. Sign in to contribute to the collective knowledge base.</p>
+                    <Link to="/auth" search={{ intent: "participant" }} preload="intent" className="inline-block bg-white text-black px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-white/90 active:scale-95 transition-all shadow-lg">
                       Sign In to Review
                     </Link>
                   </div>
@@ -357,7 +381,7 @@ function StudioPage() {
                       <p className="text-xs font-bold uppercase tracking-widest text-foreground/60">Rate your experience</p>
                       <div className="flex gap-1">
                         {[1, 2, 3, 4, 5].map((star) => (
-                          <button key={star} onClick={() => setRating(star)} className="focus:outline-none transition-transform hover:scale-110">
+                          <button key={star} onClick={() => setRating(star)} className="focus:outline-none transition-transform hover:scale-110 active:scale-90">
                             <Star className={`w-6 h-6 transition-colors ${rating >= star ? 'fill-secondary text-secondary' : 'text-white/20 hover:text-white/50'}`} />
                           </button>
                         ))}
@@ -374,7 +398,7 @@ function StudioPage() {
                       <button 
                         onClick={submitReview}
                         disabled={isSubmittingReview}
-                        className="bg-secondary text-white px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest hover:opacity-90 disabled:opacity-50 transition-opacity"
+                        className="bg-secondary text-white px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest hover:opacity-90 active:scale-95 disabled:opacity-50 transition-all shadow-lg"
                       >
                         {isSubmittingReview ? "Posting..." : "Publish Review"}
                       </button>
@@ -385,7 +409,9 @@ function StudioPage() {
 
               <div className="space-y-6">
                 {reviews.length === 0 ? (
-                  <p className="text-center text-sm text-foreground/40 italic py-8">No reviews yet. Be the first to share your experience.</p>
+                  <div className="text-center py-12 px-4 rounded-[2rem] bg-white/5 border border-white/10 border-dashed">
+                    <p className="text-sm text-foreground/60">No experiences have been shared yet.</p>
+                  </div>
                 ) : (
                   reviews.map((review) => (
                     <div key={review.id} className="border-b border-white/10 pb-6 last:border-0 last:pb-0">
@@ -434,14 +460,14 @@ function StudioPage() {
                   href={mapUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="w-full flex justify-center items-center gap-2 rounded-full bg-foreground text-background px-4 py-4 text-xs font-bold uppercase tracking-widest shadow-lg hover:scale-105 transition-all"
+                  className="w-full flex justify-center items-center gap-2 rounded-full bg-foreground text-background px-4 py-4 text-xs font-bold uppercase tracking-widest shadow-lg hover:scale-105 active:scale-95 transition-all"
                 >
                   <MapPin className="w-4 h-4" /> Open in Maps
                 </a>
                 
                 <button
                   onClick={() => setShowReportModal(true)}
-                  className="w-full flex justify-center items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-foreground/40 hover:text-rose-500 transition-colors pt-4"
+                  className="w-full flex justify-center items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-foreground/40 hover:text-rose-500 active:scale-95 transition-all pt-4"
                 >
                   <Flag className="w-3 h-3" /> Report Space
                 </button>
@@ -449,7 +475,7 @@ function StudioPage() {
             </div>
           </aside>
         </div>
-      </article>
+      </motion.article>
 
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-2xl border-t border-white/10 p-4 sm:p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
         <div className="flex gap-3 max-w-md mx-auto">
@@ -489,7 +515,7 @@ function StudioPage() {
               </span>
               <button 
                 onClick={() => setLightboxIndex(null)}
-                className="p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors backdrop-blur-md"
+                className="p-3 bg-white/10 hover:bg-white/20 active:scale-90 rounded-full transition-all backdrop-blur-md"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -510,13 +536,13 @@ function StudioPage() {
                 <>
                   <button 
                     onClick={() => setLightboxIndex((lightboxIndex - 1 + photos.length) % photos.length)}
-                    className="absolute left-4 sm:left-10 p-4 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-colors"
+                    className="absolute left-4 sm:left-10 p-4 bg-white/10 hover:bg-white/20 active:scale-90 text-white rounded-full backdrop-blur-md transition-all"
                   >
                     <ChevronLeft className="w-6 h-6" />
                   </button>
                   <button 
                     onClick={() => setLightboxIndex((lightboxIndex + 1) % photos.length)}
-                    className="absolute right-4 sm:right-10 p-4 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-colors"
+                    className="absolute right-4 sm:right-10 p-4 bg-white/10 hover:bg-white/20 active:scale-90 text-white rounded-full backdrop-blur-md transition-all"
                   >
                     <ChevronRight className="w-6 h-6" />
                   </button>
@@ -543,7 +569,7 @@ function StudioPage() {
             >
               <button 
                 onClick={() => setShowReportModal(false)} 
-                className="absolute top-6 right-6 p-2 bg-white/5 rounded-full hover:bg-white/10 transition-colors text-foreground"
+                className="absolute top-6 right-6 p-2 bg-white/5 rounded-full hover:bg-white/10 active:scale-90 transition-all text-foreground"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -572,11 +598,10 @@ function StudioPage() {
                     className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm font-medium text-foreground outline-none focus:border-rose-500/50 transition-all placeholder:text-foreground/30 resize-none shadow-inner"
                   />
                 </label>
-
                 <button 
                   type="submit" 
                   disabled={isReporting}
-                  className="w-full flex items-center justify-center gap-2 bg-rose-500 text-white py-4 rounded-full font-bold uppercase tracking-widest shadow-xl hover:bg-rose-600 disabled:opacity-50 transition-all"
+                  className="w-full flex items-center justify-center gap-2 bg-rose-500 text-white py-4 rounded-full font-bold uppercase tracking-widest shadow-xl hover:bg-rose-600 active:scale-95 disabled:opacity-50 transition-all"
                 >
                   {isReporting ? "Submitting..." : "Submit Report"}
                 </button>
@@ -593,7 +618,7 @@ function Row({ icon, href, children }: { icon: React.ReactNode; href: string; ch
   return (
     <li>
       <a href={href} target="_blank" rel="noreferrer" className="flex items-center gap-4 text-foreground/80 hover:text-secondary group transition-colors py-2">
-        <div className="bg-white/5 border border-white/10 p-2.5 rounded-full group-hover:scale-110 transition-transform">
+        <div className="bg-white/5 border border-white/10 p-2.5 rounded-full group-hover:scale-110 active:scale-95 transition-all">
           {icon}
         </div>
         <span className="truncate font-medium">{children}</span>
