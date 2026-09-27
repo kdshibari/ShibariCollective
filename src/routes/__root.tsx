@@ -77,7 +77,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Shibari Collective — Studios & Practitioners Worldwide" },
+      { title: "Shibari Collective | Studios & Practitioners Worldwide" },
       {
         name: "description",
         content:
@@ -143,8 +143,9 @@ function Header() {
     <>
       <header className="border-b border-white/10 bg-background/70 backdrop-blur-2xl sticky top-0 z-50 transition-all">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
+          
           <Link to="/" className="flex items-center gap-3 group z-50">
-            <span className="inline-block h-2 w-8 rounded-full bg-secondary group-hover:w-12 transition-all duration-500 ease-out" />
+            <MicroLogo className="h-8 w-8 text-secondary transition-transform duration-700 ease-out group-hover:rotate-90" />
             <span className="font-serif text-xl tracking-tight text-foreground">
               Shibari Collective
             </span>
@@ -256,8 +257,8 @@ function Footer() {
     <footer className="mt-24 border-t border-border/60 bg-primary/95 text-primary-foreground">
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-3">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="inline-block h-2 w-8 rounded-full bg-secondary" />
+          <div className="flex items-center gap-3">
+            <MicroLogo className="h-6 w-6 text-secondary" />
             <span className="font-serif text-xl">Shibari Collective</span>
           </div>
           <p className="mt-3 text-sm opacity-80">
@@ -285,7 +286,7 @@ function Footer() {
       
       <div className="border-t border-primary-foreground/10">
         <p className="mx-auto max-w-7xl px-4 py-4 text-xs opacity-70 sm:px-6">
-          Made by Shibari Collective — {new Date().getFullYear()}
+          Made by Shibari Collective © {new Date().getFullYear()}
         </p>
       </div>
     </footer>
@@ -317,5 +318,20 @@ function RootComponent() {
       </div>
       <Toaster richColors position="top-center" />
     </QueryClientProvider>
+  );
+}
+
+function MicroLogo({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className={className}>
+      <g transform="translate(50, 50)" fill="none" stroke="currentColor" strokeWidth="6">
+        <circle cx="16" cy="0" r="22" transform="rotate(0)" />
+        <circle cx="16" cy="0" r="22" transform="rotate(60)" />
+        <circle cx="16" cy="0" r="22" transform="rotate(120)" />
+        <circle cx="16" cy="0" r="22" transform="rotate(180)" />
+        <circle cx="16" cy="0" r="22" transform="rotate(240)" />
+        <circle cx="16" cy="0" r="22" transform="rotate(300)" />
+      </g>
+    </svg>
   );
 }
