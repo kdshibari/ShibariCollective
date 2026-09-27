@@ -62,7 +62,7 @@ function DashboardPage() {
               <h3 className="font-serif text-3xl text-foreground">Session Planner</h3>
             </div>
             <p className="text-sm text-foreground/70 leading-relaxed">
-              Establish boundaries, map intensity preferences, and share aftercare needs with your partner before tying. This secure communication tool is exclusive to registered participants.
+              Establish boundaries, map intensity preferences, and share aftercare needs with your partner before tying. This secure communication tool is exclusive to registered users.
             </p>
           </div>
           <Link 
@@ -166,7 +166,7 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8">
           
           <div className="flex-1">
-            <p className="text-xs font-bold uppercase tracking-widest text-secondary mb-6">Participant Profile</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-secondary mb-6">User Profile</p>
             
             <div className="flex items-center gap-6">
               <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-full bg-white/5 flex items-center justify-center border border-white/10 shadow-inner shrink-0">
@@ -205,8 +205,8 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
           </div>
 
           {/* Abstract Native SVG Artwork */}
-          <div className="hidden sm:block w-40 h-40 md:w-56 md:h-56 opacity-80 text-jute shrink-0 relative transition-transform duration-1000 hover:scale-105">
-            <AbstractRopeArtwork className="w-full h-full drop-shadow-2xl" />
+          <div className="hidden sm:flex items-center justify-center w-48 h-48 md:w-72 md:h-72 opacity-80 text-jute shrink-0 relative transition-transform duration-1000 hover:scale-105">
+            <AbstractRopeArtwork className="w-full h-full drop-shadow-[0_0_30px_rgba(181,155,125,0.15)]" />
           </div>
 
         </div>
@@ -303,7 +303,7 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
 function AbstractRopeArtwork({ className }: { className?: string }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" className={className}>
-      <g transform="translate(250, 200)" fill="none" stroke="currentColor" strokeWidth="4">
+      <g transform="translate(250, 250)" fill="none" stroke="currentColor" strokeWidth="4">
         <circle cx="0" cy="-100" r="32" transform="rotate(0)" />
         <circle cx="0" cy="-100" r="30" transform="rotate(15)" />
         <circle cx="0" cy="-100" r="32" transform="rotate(30)" />
