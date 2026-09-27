@@ -162,7 +162,7 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
       
       <div className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2rem] p-8 md:p-12 shadow-xl relative overflow-hidden flex flex-col justify-between">
         <div className="relative z-10">
-          <p className="text-xs font-bold uppercase tracking-widest text-secondary mb-6">Participant Profile</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-secondary mb-6">User Profile</p>
           
           <div className="flex items-center gap-6">
             <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-full bg-white/5 flex items-center justify-center border border-white/10 shadow-inner shrink-0">
