@@ -62,7 +62,7 @@ function DashboardPage() {
               <h3 className="font-serif text-3xl text-foreground">Session Planner</h3>
             </div>
             <p className="text-sm text-foreground/70 leading-relaxed">
-              Establish boundaries, map intensity preferences, and share aftercare needs with your partner before tying. This secure communication tool is exclusive to registered users.
+              Establish boundaries, map intensity preferences, and share aftercare needs with your partner before tying. This secure communication tool is exclusive to registered participants.
             </p>
           </div>
           <Link 
@@ -162,11 +162,14 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
       
       <div className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2rem] p-8 md:p-12 shadow-xl relative overflow-hidden flex flex-col justify-between">
         
-        {/* Profile Details & Right-Aligned Artwork Container */}
+        {/* Abstract Native SVG Artwork - Absolutely positioned and centered on the right edge */}
+        <div className="hidden sm:block absolute right-[-5%] top-1/2 -translate-y-1/2 w-80 h-80 md:w-[32rem] md:h-[32rem] opacity-40 text-jute pointer-events-none mix-blend-plus-lighter">
+          <AbstractRopeArtwork className="w-full h-full drop-shadow-[0_0_30px_rgba(181,155,125,0.2)]" />
+        </div>
+
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8">
-          
           <div className="flex-1">
-            <p className="text-xs font-bold uppercase tracking-widest text-secondary mb-6">User Profile</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-secondary mb-6">Participant Profile</p>
             
             <div className="flex items-center gap-6">
               <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-full bg-white/5 flex items-center justify-center border border-white/10 shadow-inner shrink-0">
@@ -203,12 +206,6 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
               </div>
             </div>
           </div>
-
-          {/* Abstract Native SVG Artwork */}
-          <div className="hidden sm:flex items-center justify-center w-48 h-48 md:w-72 md:h-72 opacity-80 text-jute shrink-0 relative transition-transform duration-1000 hover:scale-105">
-            <AbstractRopeArtwork className="w-full h-full drop-shadow-[0_0_30px_rgba(181,155,125,0.15)]" />
-          </div>
-
         </div>
         
         {/* Shorter dividing line */}
