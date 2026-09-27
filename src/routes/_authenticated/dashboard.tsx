@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Bookmark, ArrowRight, Edit3, MapPin, X, Save, Workflow, Fingerprint } from "lucide-react";
+import { Bookmark, ArrowRight, User, Edit3, MapPin, X, Save, Workflow, Fingerprint } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
@@ -36,16 +36,14 @@ function DashboardPage() {
     );
   }
 
-  const initial = user?.email ? user.email.charAt(0).toUpperCase() : "R";
-
   return (
     <div className="min-h-screen bg-background text-foreground pt-24 pb-20 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto space-y-12">
         
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div className="flex items-center gap-5">
-            <div className="h-16 w-16 rounded-full bg-secondary flex items-center justify-center shadow-[0_0_20px_rgba(139,58,54,0.4)] border border-secondary/50">
-              <span className="font-serif text-3xl text-white">{initial}</span>
+            <div className="h-16 w-16 rounded-full bg-secondary/10 flex items-center justify-center shadow-inner border border-secondary/20">
+              <Fingerprint className="w-8 h-8 text-secondary" strokeWidth={1.5} />
             </div>
             <div>
               <h1 className="font-serif text-4xl text-foreground">Welcome Back</h1>
@@ -159,32 +157,16 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
 
   if (loading) return <div className="animate-pulse h-64 bg-white/5 rounded-[2rem] border border-white/10"></div>;
 
-  const userInitial = profile?.display_name 
-    ? profile.display_name.charAt(0).toUpperCase() 
-    : (userEmail ? userEmail.charAt(0).toUpperCase() : "R");
-
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
       
       <div className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2rem] p-8 md:p-12 shadow-xl relative overflow-hidden flex flex-col justify-between">
-        
-        {/* Abstract Identity Watermark with Alpha Masking */}
-        <div 
-          className="absolute -top-10 -right-10 p-8 md:p-12 opacity-[0.03] pointer-events-none"
-          style={{
-            WebkitMaskImage: 'linear-gradient(to bottom, black 30%, transparent 90%)',
-            maskImage: 'linear-gradient(to bottom, black 30%, transparent 90%)'
-          }}
-        >
-          <Fingerprint className="w-64 h-64 md:w-96 md:h-96" strokeWidth={0.5} />
-        </div>
-        
         <div className="relative z-10">
           <p className="text-xs font-bold uppercase tracking-widest text-secondary mb-6">Participant Profile</p>
           
           <div className="flex items-center gap-6">
             <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-full bg-white/5 flex items-center justify-center border border-white/10 shadow-inner shrink-0">
-              <span className="font-serif text-4xl sm:text-5xl text-foreground/80">{userInitial}</span>
+              <Fingerprint className="w-10 h-10 sm:w-12 sm:h-12 text-secondary" strokeWidth={1} />
             </div>
 
             <div className="flex-1">
@@ -218,7 +200,10 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
           </div>
         </div>
         
-        <div className="mt-12 flex flex-wrap gap-8 md:gap-16 relative z-10 pt-8 border-t border-white/10">
+        {/* Shorter dividing line */}
+        <div className="w-32 h-px bg-white/10 mt-10 mb-8 relative z-10" />
+
+        <div className="flex flex-wrap gap-8 md:gap-16 relative z-10">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Saved Spaces</p>
             <p className="font-serif text-3xl md:text-4xl text-foreground mt-2">{savedStudios.length}</p>
