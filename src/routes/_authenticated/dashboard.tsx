@@ -21,7 +21,8 @@ const TIME_OPTIONS = [
   "24:00"
 ];
 
-const formatUrl = (url: string) => {
+const formatUrl = (url?: string | null) => {
+  if (!url) return "";
   let u = url.trim();
   if (u && !/^https?:\/\//i.test(u)) u = `https://${u}`;
   return u;
@@ -202,7 +203,7 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
       
-      <div className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2rem] p-8 md:p-12 shadow-xl relative overflow-hidden">
+      <div className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2rem] p-8 md:p-12 shadow-xl relative overflow-hidden flex flex-col justify-between">
         <div className="absolute top-0 right-0 p-8 md:p-12 opacity-5 pointer-events-none">
           <User className="w-40 h-40 md:w-64 md:h-64" />
         </div>
@@ -522,21 +523,21 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
       const { error: updateError } = await supabase
         .from("studios")
         .update({
-          name: form.name,
-          description: form.description,
+          name: form.name?.trim() || "",
+          description: form.description?.trim() || null,
           continent: form.continent,
-          country: form.country,
-          city: form.city,
-          address: form.address || null,
-          email: form.email || null,
-          phone: form.phone || null,
+          country: form.country?.trim() || "",
+          city: form.city?.trim() || "",
+          address: form.address?.trim() || null,
+          email: form.email?.trim() || null,
+          phone: form.phone?.trim() || null,
           website: formatUrl(form.website) || null,
           hours: hours,
           socials: { 
             ...studio.socials, 
-            instagram: form.instagram || undefined, 
-            facebook: form.facebook || undefined, 
-            fetlife: form.fetlife || undefined 
+            instagram: form.instagram?.trim() || undefined, 
+            facebook: form.facebook?.trim() || undefined, 
+            fetlife: form.fetlife?.trim() || undefined 
           }
         })
         .eq("id", studio.id);
@@ -640,8 +641,9 @@ function StudioEditor({ studio, onClose, onSuccess }: { studio: any, onClose: ()
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input label="Email" value={form.email} onChange={(v: string) => setForm({...form, email: v})} type="email" />
-            <Input label="Phone" value={form.phone} onChange={(v: string) => setForm({...form, phone: v})} />
-            <Input label="Website" value={form.website} onChange={(v: string) => setForm({...form, website: v})} type="url" placeholder="studio.com (we auto-format)" />
+            <Input label="Phone" value={form.phone} onChange={(v: string) => setForm({...form, phone: v})} type="tel" />
+            {/* type="url" removed to prevent strict browser validation from wiping the field */}
+            <Input label="Website" value={form.website} onChange={(v: string) => setForm({...form, website: v})} placeholder="studio.com (we auto-format)" />
             <Input label="Instagram" value={form.instagram} onChange={(v: string) => setForm({...form, instagram: v})} placeholder="@studio" />
             <Input label="Facebook" value={form.facebook} onChange={(v: string) => setForm({...form, facebook: v})} placeholder="Facebook Link" />
             <Input label="Fetlife" value={form.fetlife} onChange={(v: string) => setForm({...form, fetlife: v})} placeholder="Fetlife Link" />
@@ -811,7 +813,7 @@ function Input({ label, value, onChange, type = "text", required, step, placehol
         {label} {required && <span className="text-secondary">*</span>}
       </span>
       <input
-        type={type} required={required} step={step} value={value} placeholder={placeholder}
+        type={type} required={required} step={step} value={value || ""} placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
         className="w-full rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md px-5 py-4 text-sm font-medium text-foreground outline-none focus:border-secondary/50 focus:bg-white/10 transition-all shadow-inner placeholder:text-foreground/30"
       />
@@ -824,7 +826,7 @@ function Textarea({ label, value, onChange, placeholder }: any) {
     <label className="block group">
       <span className="mb-2 block text-xs font-bold uppercase tracking-widest text-foreground/60 group-focus-within:text-secondary transition-colors">{label}</span>
       <textarea
-        rows={5} value={value} placeholder={placeholder}
+        rows={5} value={value || ""} placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
         className="w-full rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md px-5 py-4 text-sm font-medium text-foreground outline-none focus:border-secondary/50 focus:bg-white/10 transition-all shadow-inner placeholder:text-foreground/30 resize-none"
       />
@@ -839,7 +841,7 @@ function Select({ label, value, onChange, options, required }: any) {
         {label} {required && <span className="text-secondary">*</span>}
       </span>
       <select
-        required={required} value={value}
+        required={required} value={value || ""}
         onChange={(e) => onChange(e.target.value)}
         className="w-full rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md px-5 py-4 text-sm font-medium text-foreground outline-none focus:border-secondary/50 focus:bg-white/10 transition-all shadow-inner appearance-none cursor-pointer"
         style={{ backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238B3A36' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1.25rem center', backgroundSize: '1em' }}
