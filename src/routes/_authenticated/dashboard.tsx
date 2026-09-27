@@ -302,26 +302,55 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
 // NATIVE ARTWORK COMPONENT
 function AbstractRopeArtwork({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 200 200" fill="none" className={className} xmlns="http://www.w3.org/2000/svg">
-      <g stroke="currentColor" strokeWidth="1" strokeOpacity="0.3">
-        {/* Horizontal Flowing Waves */}
-        <path d="M-20,100 C60,180 140,20 220,100" />
-        <path d="M-20,110 C60,190 140,30 220,110" />
-        <path d="M-20,120 C60,200 140,40 220,120" />
-        <path d="M-20,90 C60,170 140,10 220,90" />
-        <path d="M-20,80 C60,160 140,0 220,80" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+    <defs>
+        <linearGradient id="chrome" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ffffff" />
+            <stop offset="40%" stop-color="#aaaaaa" />
+            <stop offset="50%" stop-color="#222222" />
+            <stop offset="60%" stop-color="#999999" />
+            <stop offset="100%" stop-color="#e3dcd1" />
+        </linearGradient>
+    </defs>
+    <rect width="100%" height="100%" fill="#000000" />
+    <g transform="translate(250, 200)" fill="none" stroke="#e3dcd1" stroke-width="4">
+        <circle cx="0" cy="-100" r="32" transform="rotate(0)" />
+        <circle cx="0" cy="-100" r="30" transform="rotate(15)" />
+        <circle cx="0" cy="-100" r="32" transform="rotate(30)" />
+        <circle cx="0" cy="-100" r="30" transform="rotate(45)" />
+        <circle cx="0" cy="-100" r="32" transform="rotate(60)" />
+        <circle cx="0" cy="-100" r="30" transform="rotate(75)" />
+        <circle cx="0" cy="-100" r="32" transform="rotate(90)" />
+        <circle cx="0" cy="-100" r="30" transform="rotate(105)" />
+        <circle cx="0" cy="-100" r="32" transform="rotate(120)" />
+        <circle cx="0" cy="-100" r="30" transform="rotate(135)" />
+        <circle cx="0" cy="-100" r="32" transform="rotate(150)" />
+        <circle cx="0" cy="-100" r="30" transform="rotate(165)" />
+        <circle cx="0" cy="-100" r="32" transform="rotate(180)" />
+        <circle cx="0" cy="-100" r="30" transform="rotate(195)" />
+        <circle cx="0" cy="-100" r="32" transform="rotate(210)" />
+        <circle cx="0" cy="-100" r="30" transform="rotate(225)" />
+        <circle cx="0" cy="-100" r="32" transform="rotate(240)" />
+        <circle cx="0" cy="-100" r="30" transform="rotate(255)" />
+        <circle cx="0" cy="-100" r="32" transform="rotate(270)" />
+        <circle cx="0" cy="-100" r="30" transform="rotate(285)" />
+        <circle cx="0" cy="-100" r="32" transform="rotate(300)" />
+        <circle cx="0" cy="-100" r="30" transform="rotate(315)" />
+        <circle cx="0" cy="-100" r="32" transform="rotate(330)" />
+        <circle cx="0" cy="-100" r="30" transform="rotate(345)" />
 
-        {/* Vertical Flowing Waves */}
-        <path d="M100,-20 C180,60 20,140 100,220" />
-        <path d="M110,-20 C190,60 30,140 110,220" />
-        <path d="M120,-20 C200,60 40,140 120,220" />
-        <path d="M90,-20 C170,60 10,140 90,220" />
-        <path d="M80,-20 C160,60 0,140 80,220" />
-        
-        {/* Structural Binding Rings */}
-        <circle cx="100" cy="100" r="80" strokeWidth="0.5" strokeDasharray="4 4" />
-        <circle cx="100" cy="100" r="90" strokeWidth="0.5" />
-        <circle cx="100" cy="100" r="40" strokeWidth="0.5" strokeOpacity="0.1" />
+        <circle cx="30" cy="0" r="22" transform="rotate(0)" />
+        <circle cx="30" cy="0" r="22" transform="rotate(30)" />
+        <circle cx="30" cy="0" r="22" transform="rotate(60)" />
+        <circle cx="30" cy="0" r="22" transform="rotate(90)" />
+        <circle cx="30" cy="0" r="22" transform="rotate(120)" />
+        <circle cx="30" cy="0" r="22" transform="rotate(150)" />
+        <circle cx="30" cy="0" r="22" transform="rotate(180)" />
+        <circle cx="30" cy="0" r="22" transform="rotate(210)" />
+        <circle cx="30" cy="0" r="22" transform="rotate(240)" />
+        <circle cx="30" cy="0" r="22" transform="rotate(270)" />
+        <circle cx="30" cy="0" r="22" transform="rotate(300)" />
+        <circle cx="30" cy="0" r="22" transform="rotate(330)" />
       </g>
     </svg>
   );
