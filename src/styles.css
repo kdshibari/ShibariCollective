@@ -105,3 +105,11 @@
 @utility btn-primary-hover {
   background-color: color-mix(in srgb, #E2725B 80%, #4E2C23);
 }
+.fingerprint {
+    width: 48px;
+    height: 48px;
+}
+
+.line {
+    width: 50%;
+}
