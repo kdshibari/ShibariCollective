@@ -99,7 +99,7 @@ function DashboardPage() {
               <h3 className="font-serif text-3xl text-foreground">Session Planner</h3>
             </div>
             <p className="text-sm text-foreground/70 leading-relaxed">
-              Establish boundaries, map intensity preferences, and share aftercare needs with your partner before tying. This secure communication tool is exclusive to registered participants.
+              Establish boundaries, map intensity preferences, and share aftercare needs with your partner before tying. This secure communication tool is exclusive to registered users.
             </p>
           </div>
           <Link 
@@ -110,7 +110,7 @@ function DashboardPage() {
           </Link>
         </div>
 
-        <ParticipantPortal userId={user?.id} userEmail={user?.email} />
+        <userPortal userId={user?.id} userEmail={user?.email} />
 
         {isOwner && (
           <div id="studio-management" className="pt-16 border-t border-white/10">
@@ -123,7 +123,7 @@ function DashboardPage() {
   );
 }
 
-function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: string }) {
+function userPortal({ userId, userEmail }: { userId: string, userEmail: string }) {
   const [savedStudios, setSavedStudios] = useState<any[]>([]);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -209,7 +209,7 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
         </div>
         
         <div className="relative z-10">
-          <p className="text-xs font-bold uppercase tracking-widest text-secondary mb-2">Participant Profile</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-secondary mb-2">User Profile</p>
           
           {isEditingProfile ? (
             <div className="flex items-center gap-3 mt-2">
