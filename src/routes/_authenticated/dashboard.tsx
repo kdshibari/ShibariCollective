@@ -205,7 +205,7 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
           </div>
 
           {/* Abstract Native SVG Artwork */}
-          <div className="hidden sm:block w-32 h-32 md:w-48 md:h-48 opacity-60 text-secondary shrink-0 relative transition-transform duration-1000 hover:scale-105">
+          <div className="hidden sm:block w-40 h-40 md:w-56 md:h-56 opacity-80 text-jute shrink-0 relative transition-transform duration-1000 hover:scale-105">
             <AbstractRopeArtwork className="w-full h-full drop-shadow-2xl" />
           </div>
 
@@ -302,18 +302,8 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
 // NATIVE ARTWORK COMPONENT
 function AbstractRopeArtwork({ className }: { className?: string }) {
   return (
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
-    <defs>
-        <linearGradient id="chrome" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#ffffff" />
-            <stop offset="40%" stop-color="#aaaaaa" />
-            <stop offset="50%" stop-color="#222222" />
-            <stop offset="60%" stop-color="#999999" />
-            <stop offset="100%" stop-color="#e3dcd1" />
-        </linearGradient>
-    </defs>
-    <rect width="100%" height="100%" fill="#000000" />
-    <g transform="translate(250, 200)" fill="none" stroke="#e3dcd1" stroke-width="4">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" className={className}>
+      <g transform="translate(250, 200)" fill="none" stroke="currentColor" strokeWidth="4">
         <circle cx="0" cy="-100" r="32" transform="rotate(0)" />
         <circle cx="0" cy="-100" r="30" transform="rotate(15)" />
         <circle cx="0" cy="-100" r="32" transform="rotate(30)" />
