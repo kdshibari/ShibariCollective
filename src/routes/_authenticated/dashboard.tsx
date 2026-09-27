@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Bookmark, ArrowRight, User, Edit3, MapPin, X, Save, Workflow } from "lucide-react";
+import { Bookmark, ArrowRight, Edit3, MapPin, X, Save, Workflow, Fingerprint } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
@@ -36,14 +36,16 @@ function DashboardPage() {
     );
   }
 
+  const initial = user?.email ? user.email.charAt(0).toUpperCase() : "R";
+
   return (
     <div className="min-h-screen bg-background text-foreground pt-24 pb-20 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto space-y-12">
         
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div className="h-16 w-16 rounded-full bg-white/5 border border-white/10 shadow-md backdrop-blur-md flex items-center justify-center">
-              <User className="h-8 w-8 text-secondary" />
+          <div className="flex items-center gap-5">
+            <div className="h-16 w-16 rounded-full bg-secondary flex items-center justify-center shadow-[0_0_20px_rgba(139,58,54,0.4)] border border-secondary/50">
+              <span className="font-serif text-3xl text-white">{initial}</span>
             </div>
             <div>
               <h1 className="font-serif text-4xl text-foreground">Welcome Back</h1>
@@ -157,43 +159,63 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
 
   if (loading) return <div className="animate-pulse h-64 bg-white/5 rounded-[2rem] border border-white/10"></div>;
 
+  const userInitial = profile?.display_name 
+    ? profile.display_name.charAt(0).toUpperCase() 
+    : (userEmail ? userEmail.charAt(0).toUpperCase() : "R");
+
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
       
       <div className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2rem] p-8 md:p-12 shadow-xl relative overflow-hidden flex flex-col justify-between">
-        <div className="absolute top-0 right-0 p-8 md:p-12 opacity-5 pointer-events-none">
-          <User className="w-40 h-40 md:w-64 md:h-64" />
+        
+        {/* Abstract Identity Watermark with Alpha Masking */}
+        <div 
+          className="absolute -top-10 -right-10 p-8 md:p-12 opacity-[0.03] pointer-events-none"
+          style={{
+            WebkitMaskImage: 'linear-gradient(to bottom, black 30%, transparent 90%)',
+            maskImage: 'linear-gradient(to bottom, black 30%, transparent 90%)'
+          }}
+        >
+          <Fingerprint className="w-64 h-64 md:w-96 md:h-96" strokeWidth={0.5} />
         </div>
         
         <div className="relative z-10">
-          <p className="text-xs font-bold uppercase tracking-widest text-secondary mb-2">User Profile</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-secondary mb-6">Participant Profile</p>
           
-          {isEditingProfile ? (
-            <div className="flex items-center gap-3 mt-2">
-              <input 
-                autoFocus
-                value={displayName} 
-                onChange={(e) => setDisplayName(e.target.value)} 
-                placeholder="Enter display name..."
-                className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 font-serif text-2xl outline-none focus:border-secondary transition-colors text-foreground max-w-xs"
-              />
-              <button onClick={handleSaveProfile} disabled={savingProfile} className="bg-secondary text-white p-2 rounded-lg hover:scale-105 transition-all shadow-lg">
-                <Save className="w-5 h-5" />
-              </button>
-              <button onClick={() => setIsEditingProfile(false)} disabled={savingProfile} className="bg-white/5 text-foreground p-2 rounded-lg hover:bg-white/10 transition-all border border-white/10">
-                <X className="w-5 h-5" />
-              </button>
+          <div className="flex items-center gap-6">
+            <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-full bg-white/5 flex items-center justify-center border border-white/10 shadow-inner shrink-0">
+              <span className="font-serif text-4xl sm:text-5xl text-foreground/80">{userInitial}</span>
             </div>
-          ) : (
-            <div className="group flex items-center gap-4 mt-2 max-w-max">
-              <h2 className="font-serif text-4xl md:text-5xl text-foreground mb-1">{profile?.display_name || "Rope Explorer"}</h2>
-              <button onClick={() => setIsEditingProfile(true)} className="opacity-0 group-hover:opacity-100 bg-white/5 p-2 rounded-full hover:bg-white/10 transition-all border border-white/10">
-                <Edit3 className="w-4 h-4 text-secondary" />
-              </button>
+
+            <div className="flex-1">
+              {isEditingProfile ? (
+                <div className="flex items-center gap-3">
+                  <input 
+                    autoFocus
+                    value={displayName} 
+                    onChange={(e) => setDisplayName(e.target.value)} 
+                    placeholder="Enter display name..."
+                    className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 font-serif text-2xl outline-none focus:border-secondary transition-colors text-foreground max-w-xs"
+                  />
+                  <button onClick={handleSaveProfile} disabled={savingProfile} className="bg-secondary text-white p-2 rounded-lg hover:scale-105 transition-all shadow-lg">
+                    <Save className="w-5 h-5" />
+                  </button>
+                  <button onClick={() => setIsEditingProfile(false)} disabled={savingProfile} className="bg-white/5 text-foreground p-2 rounded-lg hover:bg-white/10 transition-all border border-white/10">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              ) : (
+                <div className="group flex items-center gap-4 max-w-max">
+                  <h2 className="font-serif text-4xl md:text-5xl text-foreground mb-1">{profile?.display_name || "Rope Explorer"}</h2>
+                  <button onClick={() => setIsEditingProfile(true)} className="opacity-0 group-hover:opacity-100 bg-white/5 p-2 rounded-full hover:bg-white/10 transition-all border border-white/10">
+                    <Edit3 className="w-4 h-4 text-secondary" />
+                  </button>
+                </div>
+              )}
+              
+              <p className="text-sm font-medium text-foreground/60 mt-2">{userEmail}</p>
             </div>
-          )}
-          
-          <p className="text-sm font-medium text-foreground/60 mt-1">{userEmail}</p>
+          </div>
         </div>
         
         <div className="mt-12 flex flex-wrap gap-8 md:gap-16 relative z-10 pt-8 border-t border-white/10">
