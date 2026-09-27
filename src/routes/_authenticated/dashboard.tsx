@@ -41,9 +41,9 @@ function DashboardPage() {
       <div className="max-w-5xl mx-auto space-y-12">
         
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-          <div className="flex items-center gap-5">
-            <div className="h-16 w-16 rounded-full bg-secondary/10 flex items-center justify-center shadow-inner border border-secondary/20">
-              <Fingerprint className="w-8 h-8 text-secondary" strokeWidth={1.5} />
+          <div className="flex items-center gap-4">
+            <div className="h-16 w-16 rounded-full bg-white/5 border border-white/10 shadow-md backdrop-blur-md flex items-center justify-center">
+              <User className="h-8 w-8 text-secondary" />
             </div>
             <div>
               <h1 className="font-serif text-4xl text-foreground">Welcome Back</h1>
@@ -161,43 +161,54 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
       
       <div className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2rem] p-8 md:p-12 shadow-xl relative overflow-hidden flex flex-col justify-between">
-        <div className="relative z-10">
-          <p className="text-xs font-bold uppercase tracking-widest text-secondary mb-6">User Profile</p>
+        
+        {/* Profile Details & Right-Aligned Artwork Container */}
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8">
           
-          <div className="flex items-center gap-6">
-            <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-full bg-white/5 flex items-center justify-center border border-white/10 shadow-inner shrink-0">
-              <Fingerprint className="w-10 h-10 sm:w-12 sm:h-12 text-secondary" strokeWidth={1} />
-            </div>
+          <div className="flex-1">
+            <p className="text-xs font-bold uppercase tracking-widest text-secondary mb-6">Participant Profile</p>
+            
+            <div className="flex items-center gap-6">
+              <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-full bg-white/5 flex items-center justify-center border border-white/10 shadow-inner shrink-0">
+                <Fingerprint className="w-10 h-10 sm:w-12 sm:h-12 text-secondary" strokeWidth={1} />
+              </div>
 
-            <div className="flex-1">
-              {isEditingProfile ? (
-                <div className="flex items-center gap-3">
-                  <input 
-                    autoFocus
-                    value={displayName} 
-                    onChange={(e) => setDisplayName(e.target.value)} 
-                    placeholder="Enter display name..."
-                    className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 font-serif text-2xl outline-none focus:border-secondary transition-colors text-foreground max-w-xs"
-                  />
-                  <button onClick={handleSaveProfile} disabled={savingProfile} className="bg-secondary text-white p-2 rounded-lg hover:scale-105 transition-all shadow-lg">
-                    <Save className="w-5 h-5" />
-                  </button>
-                  <button onClick={() => setIsEditingProfile(false)} disabled={savingProfile} className="bg-white/5 text-foreground p-2 rounded-lg hover:bg-white/10 transition-all border border-white/10">
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-              ) : (
-                <div className="group flex items-center gap-4 max-w-max">
-                  <h2 className="font-serif text-4xl md:text-5xl text-foreground mb-1">{profile?.display_name || "Rope Explorer"}</h2>
-                  <button onClick={() => setIsEditingProfile(true)} className="opacity-0 group-hover:opacity-100 bg-white/5 p-2 rounded-full hover:bg-white/10 transition-all border border-white/10">
-                    <Edit3 className="w-4 h-4 text-secondary" />
-                  </button>
-                </div>
-              )}
-              
-              <p className="text-sm font-medium text-foreground/60 mt-2">{userEmail}</p>
+              <div className="flex-1">
+                {isEditingProfile ? (
+                  <div className="flex items-center gap-3">
+                    <input 
+                      autoFocus
+                      value={displayName} 
+                      onChange={(e) => setDisplayName(e.target.value)} 
+                      placeholder="Enter display name..."
+                      className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 font-serif text-2xl outline-none focus:border-secondary transition-colors text-foreground max-w-xs"
+                    />
+                    <button onClick={handleSaveProfile} disabled={savingProfile} className="bg-secondary text-white p-2 rounded-lg hover:scale-105 transition-all shadow-lg">
+                      <Save className="w-5 h-5" />
+                    </button>
+                    <button onClick={() => setIsEditingProfile(false)} disabled={savingProfile} className="bg-white/5 text-foreground p-2 rounded-lg hover:bg-white/10 transition-all border border-white/10">
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="group flex items-center gap-4 max-w-max">
+                    <h2 className="font-serif text-4xl md:text-5xl text-foreground mb-1">{profile?.display_name || "Rope Explorer"}</h2>
+                    <button onClick={() => setIsEditingProfile(true)} className="opacity-0 group-hover:opacity-100 bg-white/5 p-2 rounded-full hover:bg-white/10 transition-all border border-white/10">
+                      <Edit3 className="w-4 h-4 text-secondary" />
+                    </button>
+                  </div>
+                )}
+                
+                <p className="text-sm font-medium text-foreground/60 mt-2">{userEmail}</p>
+              </div>
             </div>
           </div>
+
+          {/* Abstract Native SVG Artwork */}
+          <div className="hidden sm:block w-32 h-32 md:w-48 md:h-48 opacity-60 text-secondary shrink-0 relative transition-transform duration-1000 hover:scale-105">
+            <AbstractRopeArtwork className="w-full h-full drop-shadow-2xl" />
+          </div>
+
         </div>
         
         {/* Shorter dividing line */}
@@ -285,5 +296,33 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
         )}
       </div>
     </motion.div>
+  );
+}
+
+// NATIVE ARTWORK COMPONENT
+function AbstractRopeArtwork({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 200 200" fill="none" className={className} xmlns="http://www.w3.org/2000/svg">
+      <g stroke="currentColor" strokeWidth="1" strokeOpacity="0.3">
+        {/* Horizontal Flowing Waves */}
+        <path d="M-20,100 C60,180 140,20 220,100" />
+        <path d="M-20,110 C60,190 140,30 220,110" />
+        <path d="M-20,120 C60,200 140,40 220,120" />
+        <path d="M-20,90 C60,170 140,10 220,90" />
+        <path d="M-20,80 C60,160 140,0 220,80" />
+
+        {/* Vertical Flowing Waves */}
+        <path d="M100,-20 C180,60 20,140 100,220" />
+        <path d="M110,-20 C190,60 30,140 110,220" />
+        <path d="M120,-20 C200,60 40,140 120,220" />
+        <path d="M90,-20 C170,60 10,140 90,220" />
+        <path d="M80,-20 C160,60 0,140 80,220" />
+        
+        {/* Structural Binding Rings */}
+        <circle cx="100" cy="100" r="80" strokeWidth="0.5" strokeDasharray="4 4" />
+        <circle cx="100" cy="100" r="90" strokeWidth="0.5" />
+        <circle cx="100" cy="100" r="40" strokeWidth="0.5" strokeOpacity="0.1" />
+      </g>
+    </svg>
   );
 }
