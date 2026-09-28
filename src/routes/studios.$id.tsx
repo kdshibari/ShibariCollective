@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { 
   MapPin, Phone, Mail, Globe, Instagram, Facebook, 
   ArrowLeft, ChevronLeft, ChevronRight, X, Maximize2, 
-  Camera, Flag, Star 
+  Camera, Flag, Star, CheckCircle2
 } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -239,6 +239,7 @@ function StudioPage() {
         rating, 
         comment: reviewText.trim(), 
         created_at: new Date().toISOString(), 
+        user_id: currentUser.id,
         profiles: { display_name: 'You' } 
       }, ...reviews]);
       setReviewText("");
@@ -373,6 +374,12 @@ function StudioPage() {
                     <Link to="/auth" search={{ intent: "User" }} preload="intent" className="inline-block bg-white text-black px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-white/90 active:scale-95 transition-all shadow-lg">
                       Sign In to Review
                     </Link>
+                  </div>
+                ) : reviews.some(r => r.user_id === currentUser.id) ? (
+                  <div className="text-center py-4">
+                    <CheckCircle2 className="w-8 h-8 text-secondary mx-auto mb-3 opacity-80" />
+                    <p className="text-sm font-bold uppercase tracking-widest text-secondary mb-1">Experience Shared</p>
+                    <p className="text-xs text-foreground/50">Thank you for contributing your perspective to The Shibari Collective.</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
