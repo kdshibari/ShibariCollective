@@ -71,8 +71,8 @@ function DirectoryPage() {
 
   const toggleSave = async (studioId: string) => {
     if (!user) {
-      toast.info("Create a free Participant profile to save studios.");
-      navigate({ to: "/auth", search: { intent: "participant" } });
+      toast.info("Create a free User profile to save studios.");
+      navigate({ to: "/auth", search: { intent: "User" } });
       return;
     }
 
