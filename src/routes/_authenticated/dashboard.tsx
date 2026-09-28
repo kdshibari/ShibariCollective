@@ -92,7 +92,7 @@ function DashboardPage() {
               <h3 className="font-serif text-3xl text-foreground">Session Planner</h3>
             </div>
             <p className="text-sm text-foreground/70 leading-relaxed">
-              Establish boundaries, map intensity preferences, and share aftercare needs with your partner before tying. This secure communication tool is exclusive to registered participants.
+              Establish boundaries, map intensity preferences, and share aftercare needs with your partner before tying. This secure communication tool is exclusive to registered users.
             </p>
           </div>
           <Link 
@@ -104,14 +104,14 @@ function DashboardPage() {
           </Link>
         </motion.div>
 
-        <ParticipantPortal userId={user?.id} userEmail={user?.email} />
+        <UserPortal userId={user?.id} userEmail={user?.email} />
 
       </div>
     </div>
   );
 }
 
-function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: string }) {
+function UserPortal({ userId, userEmail }: { userId: string, userEmail: string }) {
   const [savedStudios, setSavedStudios] = useState<any[]>([]);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -213,7 +213,7 @@ function ParticipantPortal({ userId, userEmail }: { userId: string, userEmail: s
 
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8">
           <div className="flex-1">
-            <p className="text-xs font-bold uppercase tracking-widest text-secondary mb-6">Participant Profile</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-secondary mb-6">User Profile</p>
             
             <div className="flex items-center gap-6">
               <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-full bg-white/5 flex items-center justify-center border border-white/10 shadow-inner shrink-0">
