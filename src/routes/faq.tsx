@@ -5,8 +5,8 @@ import { motion } from "framer-motion";
 export const Route = createFileRoute("/faq")({
   head: () => ({
     meta: [
-      { title: "FAQ, Shibari Collective" },
-      { name: "description", content: "Frequently asked questions about the Shibari Collective directory, membership, and safety policies." },
+      { title: "FAQ, The Shibari Collective" },
+      { name: "description", content: "Frequently asked questions about The Shibari Collective directory, membership, and safety policies." },
     ],
   }),
   component: FAQPage,
@@ -17,15 +17,15 @@ const faqs = [
     category: "The Platform",
     items: [
       {
-        q: "What is the Shibari Collective?",
-        a: "It is a global directory designed to connect Shibari practitioners with dedicated rope studios and private spaces around the world."
+        q: "What is The Shibari Collective?",
+        a: "It is a global directory designed to connect users with dedicated rope studios and private spaces around the world."
       },
       {
         q: "Are there membership fees?",
-        a: "Creating a Participant profile is completely free, and studio owner verification is also instant and free."
+        a: "Creating a User profile is completely free, and studio owner verification is also instant and free."
       },
       {
-        q: "What features do participants receive?",
+        q: "What features do users receive?",
         a: "Verified users can browse the global directory, save favorite studios to a curated dashboard, and manage their personal profiles."
       }
     ]
@@ -35,7 +35,7 @@ const faqs = [
     items: [
       {
         q: "Who can list a space?",
-        a: "Any studio management or their respecitve owners can list a space on the platform."
+        a: "Any studio management or their respective owners can list a space on the platform."
       },
       {
         q: "What is required for a studio listing?",
@@ -51,7 +51,7 @@ const faqs = [
     category: "Trust and Safety",
     items: [
       {
-        q: "Does the platform vet practitioners or studios?",
+        q: "Does the platform vet users or studios?",
         a: "The Shibari Collective is strictly provided for communication and entertainment purposes, and it does not replace active consent or serve as safety advice."
       },
       {
