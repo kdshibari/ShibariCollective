@@ -14,10 +14,10 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/studios/$id")({
   head: ({ params }) => ({
     meta: [
-      { title: `Studio | Shibari Collective` },
-      { name: "description", content: `Shibari studio details on Shibari Collective (${params.id.slice(0, 8)}).` },
+      { title: `Studio | The Shibari Collective` },
+      { name: "description", content: `Shibari studio details on The Shibari Collective (${params.id.slice(0, 8)}).` },
       { property: "og:title", content: "Shibari studio" },
-      { property: "og:description", content: "Discover this Shibari studio on Shibari Collective." },
+      { property: "og:description", content: "Discover this Shibari studio on The Shibari Collective." },
     ],
   }),
   component: StudioPage,
@@ -26,11 +26,10 @@ export const Route = createFileRoute("/studios/$id")({
 const sendReportEmail = createServerFn({ method: "POST" })
   .validator((data: { studioName: string; comments: string; reporterEmail: string }) => data)
   .handler(async ({ data }) => {
-    const GMAIL_USER = process.env.GMAIL_USER;
-    const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
+    const RESEND_API_KEY = process.env.RESEND_API_KEY;
     
-    if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
-      console.warn("Gmail credentials missing. Database logged, but email skipped.");
+    if (!RESEND_API_KEY) {
+      console.warn("Resend credentials missing. Database logged, but email skipped.");
       return { success: false };
     }
 
@@ -38,17 +37,17 @@ const sendReportEmail = createServerFn({ method: "POST" })
       const nodemailer = await import("nodemailer");
       
       const transporter = nodemailer.createTransport({
-        host: "smtp.gmail.com",
+        host: "smtp.resend.com",
         port: 465,
         secure: true,
         auth: {
-          user: GMAIL_USER,
-          pass: GMAIL_APP_PASSWORD,
+          user: "resend",
+          pass: RESEND_API_KEY,
         },
       });
 
       await transporter.sendMail({
-        from: `"Shibari Collective Alerts" <${GMAIL_USER}>`,
+        from: `"The Shibari Collective Alerts" <onboarding@resend.dev>`,
         to: "theshibaricollective@gmail.com",
         subject: `⚠️ Studio Report: ${data.studioName}`,
         html: `
@@ -371,7 +370,7 @@ function StudioPage() {
                 {!currentUser ? (
                   <div className="text-center">
                     <p className="text-sm text-foreground/60 mb-4">Your perspective matters. Sign in to contribute to the collective knowledge base.</p>
-                    <Link to="/auth" search={{ intent: "participant" }} preload="intent" className="inline-block bg-white text-black px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-white/90 active:scale-95 transition-all shadow-lg">
+                    <Link to="/auth" search={{ intent: "User" }} preload="intent" className="inline-block bg-white text-black px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-white/90 active:scale-95 transition-all shadow-lg">
                       Sign In to Review
                     </Link>
                   </div>
@@ -417,7 +416,7 @@ function StudioPage() {
                     <div key={review.id} className="border-b border-white/10 pb-6 last:border-0 last:pb-0">
                       <div className="flex justify-between items-start mb-3">
                         <div>
-                          <p className="font-bold text-foreground text-sm">{review.profiles?.display_name || "Anonymous Participant"}</p>
+                          <p className="font-bold text-foreground text-sm">{review.profiles?.display_name || "Anonymous User"}</p>
                           <p className="text-xs text-foreground/40 mt-0.5">{new Date(review.created_at).toLocaleDateString()}</p>
                         </div>
                         <div className="flex gap-0.5">
