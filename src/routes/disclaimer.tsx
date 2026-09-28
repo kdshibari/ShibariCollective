@@ -4,8 +4,8 @@ import { motion } from "framer-motion";
 export const Route = createFileRoute("/disclaimer")({
   head: () => ({
     meta: [
-      { title: "Disclaimer & Terms — Shibari Collective" },
-      { name: "description", content: "Terms of use, safety guidelines, and disclaimer for the Shibari Collective platform." },
+      { title: "Disclaimer & Terms | The Shibari Collective" },
+      { name: "description", content: "Terms of use, safety guidelines, and disclaimer for The Shibari Collective platform." },
     ],
   }),
   component: DisclaimerPage,
@@ -23,7 +23,7 @@ function DisclaimerPage() {
             Disclaimer & Terms
           </h1>
           <p className="text-foreground/60 max-w-xl text-sm sm:text-base leading-relaxed mx-auto sm:mx-0">
-            By accessing or using Shibari Collective, you explicitly agree to the following terms.
+            By accessing or using The Shibari Collective, you explicitly agree to the following terms.
           </p>
         </div>
 
@@ -38,16 +38,14 @@ function DisclaimerPage() {
               This website is provided strictly for communication and entertainment purposes. It does not constitute medical, psychological, or relationship advice.
             </p>
           </div>
-
           <div className="w-12 h-px bg-white/10" />
-
+          
           <div>
             <h2 className="font-serif text-2xl text-foreground mb-3">Assumption of Risk</h2>
             <p className="text-sm text-foreground/70 leading-relaxed">
               Engaging in intimate dynamics involves inherent physical and psychological risks. You acknowledge these risks and agree that you are solely responsible for your own safety and wellbeing.
             </p>
           </div>
-
           <div className="w-12 h-px bg-white/10" />
 
           <div>
@@ -56,16 +54,14 @@ function DisclaimerPage() {
               This website does not guarantee or replace active consent. You are exclusively responsible for obtaining and maintaining enthusiastic consent at all times. You are also solely responsible for ensuring all activities comply with your local laws.
             </p>
           </div>
-
           <div className="w-12 h-px bg-white/10" />
 
           <div>
             <h2 className="font-serif text-2xl text-foreground mb-3">Limitation of Liability</h2>
             <p className="text-sm text-foreground/70 leading-relaxed">
-              To the maximum extent permitted by law, the creator and developers of Shibari Collective shall not be held liable for any direct, indirect, incidental, or consequential damages arising from your use of this website. This absolute release of liability includes all claims related to personal injury, emotional distress, or relationship disputes.
+              To the maximum extent permitted by law, the creator and developers of The Shibari Collective shall not be held liable for any direct, indirect, incidental, or consequential damages arising from your use of this website. This absolute release of liability includes all claims related to personal injury, emotional distress, or relationship disputes.
             </p>
           </div>
-
           <div className="w-12 h-px bg-white/10" />
 
           <div>
