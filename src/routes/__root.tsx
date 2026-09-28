@@ -77,15 +77,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Shibari Collective | Studios & Practitioners Worldwide" },
+      { title: "The Shibari Collective | Studios & Practitioners Worldwide" },
       {
         name: "description",
         content:
-          "Discover Shibari studios around the world. A curated directory connecting practitioners with trusted spaces for rope practice.",
+          "Discover Shibari studios around the world. A curated directory connecting users with trusted spaces for rope practice.",
       },
-      { name: "author", content: "Shibari Collective" },
-      { property: "og:title", content: "Shibari Collective" },
-      { property: "og:description", content: "Connecting Shibari practitioners with studios worldwide." },
+      { name: "author", content: "The Shibari Collective" },
+      { property: "og:title", content: "The Shibari Collective" },
+      { property: "og:description", content: "Connecting users with studios worldwide." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -147,7 +147,7 @@ function Header() {
           <Link to="/" className="flex items-center gap-3 group z-50">
             <MicroLogo className="h-8 w-8 text-secondary transition-transform duration-700 ease-out group-hover:rotate-90" />
             <span className="font-serif text-xl tracking-tight text-foreground">
-              Shibari Collective
+              The Shibari Collective
             </span>
           </Link>
 
@@ -259,10 +259,10 @@ function Footer() {
         <div>
           <div className="flex items-center gap-3">
             <MicroLogo className="h-6 w-6 text-secondary" />
-            <span className="font-serif text-xl">Shibari Collective</span>
+            <span className="font-serif text-xl">The Shibari Collective</span>
           </div>
           <p className="mt-3 text-sm opacity-80">
-            A worldwide directory connecting practitioners with trusted Shibari studios.
+            A worldwide directory connecting users with trusted Shibari studios.
           </p>
         </div>
         <div>
@@ -286,7 +286,7 @@ function Footer() {
       
       <div className="border-t border-primary-foreground/10">
         <p className="mx-auto max-w-7xl px-4 py-4 text-xs opacity-70 sm:px-6">
-          Made by Shibari Collective © {new Date().getFullYear()}
+          Made by The Shibari Collective © {new Date().getFullYear()}
         </p>
       </div>
     </footer>
