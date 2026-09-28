@@ -41,7 +41,6 @@ const formatUrl = (url: string) => {
   return u;
 };
 
-// Framer Motion variants for directional sliding
 const slideVariants = {
   enter: (direction: number) => ({
     x: direction > 0 ? 30 : -30,
@@ -67,6 +66,7 @@ function SubmitPage() {
   const [checking, setChecking] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
+  const [hasExistingStudio, setHasExistingStudio] = useState(false);
   
   const [logo, setLogo] = useState<PhotoState | null>(null);
   const [gallery, setGallery] = useState<PhotoState[]>([]);
@@ -99,17 +99,27 @@ function SubmitPage() {
     
     supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) return;
-      const { data: rs } = await supabase.from("user_roles").select("role").eq("user_id", data.user.id);
-      setRoles((rs ?? []).map((r) => r.role));
+      
+      const [rolesRes, studioRes] = await Promise.all([
+        supabase.from("user_roles").select("role").eq("user_id", data.user.id),
+        supabase.from("studios").select("id").eq("owner_id", data.user.id).limit(1)
+      ]);
+
+      setRoles((rolesRes.data ?? []).map((r) => r.role));
+      
+      if (studioRes.data && studioRes.data.length > 0) {
+        setHasExistingStudio(true);
+      }
+
       setChecking(false);
     });
   }, []);
 
   useEffect(() => {
-    if (!checking) {
+    if (!checking && !hasExistingStudio) {
       localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, hours }));
     }
-  }, [form, hours, checking]);
+  }, [form, hours, checking, hasExistingStudio]);
 
   async function becomeStudioOwner() {
     try {
@@ -210,6 +220,12 @@ function SubmitPage() {
     if (!userData.user) return;
 
     try {
+      // Double check constraint just in case they bypassed the UI
+      const { data: existing } = await supabase.from("studios").select("id").eq("owner_id", userData.user.id).limit(1);
+      if (existing && existing.length > 0) {
+        throw new Error("You have already submitted a studio. Limit is 1 per account.");
+      }
+
       const uploadPromises: Promise<{ url: string; position: number; path: string }>[] = [];
       const timestamp = Date.now();
       const stagingDir = `uploads/${userData.user.id}/${timestamp}`;
@@ -298,6 +314,27 @@ function SubmitPage() {
           <div className="h-16 w-16 bg-white/5 rounded-full animate-pulse mx-auto" />
           <div className="h-8 w-64 bg-white/5 rounded mx-auto animate-pulse" />
           <div className="h-32 w-full bg-white/5 rounded-2xl animate-pulse border border-white/10" />
+        </div>
+      </div>
+    );
+  }
+
+  if (hasExistingStudio) {
+    return (
+      <div className="flex min-h-[80vh] items-center justify-center px-4">
+        <div className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-10 max-w-lg text-center shadow-[0_30px_60px_-15px_rgba(78,44,35,0.2)]">
+          <Building2 className="mx-auto h-16 w-16 text-secondary mb-6 opacity-80" />
+          <h1 className="font-serif text-4xl text-foreground">Limit Reached</h1>
+          <p className="mt-4 text-foreground/70 font-medium leading-relaxed">
+            Our platform currently supports one studio listing per owner account to ensure quality and prevent duplicate entries.
+          </p>
+          <Link
+            to="/dashboard"
+            className="mt-8 flex justify-center items-center rounded-full bg-secondary px-6 py-4 text-sm font-bold uppercase tracking-widest text-secondary-foreground shadow-[0_0_20px_rgba(139,58,54,0.3)] hover:scale-[1.02] active:scale-95 transition-all"
+          >
+            Manage Your Studio
+          </Link>
+          <Link to="/" preload="intent" className="mt-6 inline-block text-xs font-bold uppercase tracking-widest text-foreground/50 hover:text-foreground active:scale-95 transition-all">Return to Directory</Link>
         </div>
       </div>
     );
@@ -471,7 +508,6 @@ function SubmitPage() {
           </AnimatePresence>
         </div>
 
-        {/* Floating Navigation Controls */}
         <div className="fixed bottom-6 left-4 right-4 sm:left-auto sm:right-auto sm:w-full sm:max-w-3xl z-50">
           <div className="bg-white/10 backdrop-blur-3xl border border-white/20 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.5)] rounded-full p-3 flex items-center justify-between">
             <button
