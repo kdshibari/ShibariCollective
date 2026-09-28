@@ -37,6 +37,14 @@ const itemVariants = {
   },
 };
 
+const formatAuthError = (error: any) => {
+  if (!error) return "Authentication failed.";
+  if (typeof error.message === 'object' || error.message === "{}" || !error.message) {
+    return "Email delivery blocked. If testing, ensure you use your verified Resend email address.";
+  }
+  return error.message;
+};
+
 function AuthPage() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<AuthMode>("User");
@@ -78,7 +86,7 @@ function AuthPage() {
         });
 
         if (error) {
-          toast.error(error.message);
+          toast.error(formatAuthError(error));
           return;
         }
 
@@ -96,7 +104,7 @@ function AuthPage() {
         });
 
         if (error) {
-          toast.error(error.message);
+          toast.error(formatAuthError(error));
           return;
         }
 
@@ -106,8 +114,7 @@ function AuthPage() {
         }
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Authentication failed.";
-      toast.error(message);
+      toast.error(formatAuthError(error));
     } finally {
       setLoading(false);
     }
@@ -127,7 +134,7 @@ function AuthPage() {
       });
 
       if (error) {
-        toast.error(error.message);
+        toast.error(formatAuthError(error));
       } else {
         toast.success("Password reset link sent! Please check your inbox.");
         setIsForgotPassword(false);
@@ -147,10 +154,7 @@ function AuthPage() {
 
       <div className="relative mx-auto grid min-h-screen max-w-7xl grid-cols-1 lg:grid-cols-[1.05fr_0.95fr]">
         
-        {/* Left Column */}
         <div className="relative flex items-center justify-center px-6 py-12 sm:px-10 lg:px-12">
-          
-          {/* Left Column Image with CSS Alpha Masking */}
           <div 
             className="absolute inset-0 hidden lg:block"
             style={{ 
@@ -180,7 +184,7 @@ function AuthPage() {
             className="relative z-10 max-w-xl rounded-3xl border border-white/10 bg-background/65 p-8 shadow-2xl backdrop-blur-xl"
           >
             <motion.p variants={itemVariants} className="text-xs font-semibold uppercase tracking-[0.38em] text-secondary">
-              Shibari Collective
+              The Shibari Collective
             </motion.p>
             <motion.h1 variants={itemVariants} className="mt-6 font-serif text-4xl leading-tight sm:text-5xl">
               Find your studio. Build your practice.
@@ -204,7 +208,6 @@ function AuthPage() {
           </motion.div>
         </div>
 
-        {/* Right Column */}
         <div className="flex items-center justify-center px-6 py-12 sm:px-10 lg:px-12">
           <div className="w-full max-w-md rounded-3xl border border-border bg-card/80 p-6 shadow-[0_20px_70px_rgba(0,0,0,0.25)] backdrop-blur-xl sm:p-8">
             
