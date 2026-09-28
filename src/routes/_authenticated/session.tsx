@@ -45,7 +45,7 @@ function NativeRadarChart({ data }: { data: { subject: string, A: number }[] }) 
 
   // Generate grid polygons (concentric rings)
   const gridLevels = [2, 4, 6, 8, 10];
-  
+
   // Generate the active data polygon
   const dataPolygon = data.map((d, i) => {
     const pt = getPoint(d.A, i);
@@ -138,7 +138,8 @@ function SessionPlannerPage() {
     
     if (shareData) {
       try {
-        const decoded = JSON.parse(atob(shareData));
+        // Safely decode UTF-8 (Emoji support)
+        const decoded = JSON.parse(decodeURIComponent(atob(shareData)));
         if (decoded.radarData) setRadarData(decoded.radarData);
         if (decoded.notes) setNotes(decoded.notes);
         if (decoded.stopWord) setStopWord(decoded.stopWord);
@@ -147,7 +148,7 @@ function SessionPlannerPage() {
         setIsSharedView(true);
         toast.info("Loaded partner's session configuration.");
       } catch (e) {
-        toast.error("Invalid share link.");
+        toast.error("Invalid or expired share link.");
       }
     }
   }, []);
@@ -179,7 +180,8 @@ function SessionPlannerPage() {
 
   const handleShare = () => {
     const payload = { radarData, notes, stopWord, slowWord, selectedAftercare };
-    const encoded = btoa(JSON.stringify(payload));
+    // Safely encode UTF-8 (Emoji support)
+    const encoded = btoa(encodeURIComponent(JSON.stringify(payload)));
     const shareUrl = `${window.location.origin}/session?share=${encoded}`;
     
     navigator.clipboard.writeText(shareUrl).then(() => {
@@ -199,7 +201,7 @@ function SessionPlannerPage() {
           </p>
           <h1 className="font-serif text-5xl sm:text-6xl text-foreground">Session Planner</h1>
           <p className="mt-4 text-foreground/60 max-w-xl text-sm leading-relaxed mx-auto sm:mx-0">
-            Establish boundaries, intentions, and desires before tying. Share this configuration securely with your partner. This is a tool for communiaction, but it does not replace consent, and further negotiations. 
+            Establish boundaries, intentions, and desires before tying. Share this configuration securely with your partner.
           </p>
         </div>
 
@@ -269,6 +271,7 @@ function SessionPlannerPage() {
                       placeholder="Outline specific scenes, body areas to avoid, injuries, or desires for this session..." 
                     />
                   </div>
+
                 </div>
               </motion.div>
             )}
