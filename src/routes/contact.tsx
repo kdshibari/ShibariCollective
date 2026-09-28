@@ -7,9 +7,9 @@ import { z } from "zod";
 export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
-      { title: "Contact — Shibari Collective" },
+      { title: "Contact | The Shibari Collective" },
       { name: "description", content: "Send us a message." },
-      { property: "og:title", content: "Contact — Shibari Collective" },
+      { property: "og:title", content: "Contact | The Shibari Collective" },
       { property: "og:description", content: "Send us a message." },
     ],
   }),
@@ -29,18 +29,22 @@ function ContactPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+
     const parsed = schema.safeParse(form);
     if (!parsed.success) {
       toast.error(parsed.error.errors[0]?.message ?? "Please check the form");
       return;
     }
+
     setLoading(true);
     const { error } = await supabase.from("contact_messages").insert(parsed.data);
     setLoading(false);
+
     if (error) {
       toast.error(error.message);
       return;
     }
+
     setSent(true);
     setForm({ name: "", email: "", message: "" });
   }
@@ -103,7 +107,7 @@ function ContactPage() {
             disabled={loading}
             className="w-full rounded-md bg-secondary px-4 py-2.5 text-sm font-medium text-secondary-foreground hover:opacity-90 disabled:opacity-60"
           >
-            {loading ? "Sending…" : "Send message"}
+            {loading ? "Sending..." : "Send message"}
           </button>
         </form>
       )}
