@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Bookmark, ArrowRight, User, Edit3, MapPin, X, Save, Workflow, Fingerprint } from "lucide-react";
+import { Bookmark, ArrowRight, User, Edit3, MapPin, X, Save, Workflow, Fingerprint, Building2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
@@ -113,6 +113,7 @@ function DashboardPage() {
 
 function UserPortal({ userId, userEmail }: { userId: string, userEmail: string }) {
   const [savedStudios, setSavedStudios] = useState<any[]>([]);
+  const [ownedStudio, setOwnedStudio] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const location = useLocation();
@@ -125,13 +126,18 @@ function UserPortal({ userId, userEmail }: { userId: string, userEmail: string }
     async function fetchData() {
       if (!userId) return;
       
-      const [savesRes, profileRes] = await Promise.all([
+      const [savesRes, profileRes, ownedRes] = await Promise.all([
         supabase
           .from("saved_studios")
           .select(`studio_id, created_at, studios (id, name, city, country, status, studio_photos (url, position))`)
           .eq("user_id", userId)
           .order("created_at", { ascending: false }),
-        supabase.from("profiles").select("*").eq("id", userId).single()
+        supabase.from("profiles").select("*").eq("id", userId).single(),
+        supabase
+          .from("studios")
+          .select(`id, name, city, country, status, studio_photos (url, position)`)
+          .eq("owner_id", userId)
+          .maybeSingle()
       ]);
 
       if (!savesRes.error && savesRes.data) {
@@ -151,6 +157,14 @@ function UserPortal({ userId, userEmail }: { userId: string, userEmail: string }
       if (profileRes.data) {
         setProfile(profileRes.data);
         setDisplayName(profileRes.data.display_name || "");
+      }
+
+      if (ownedRes.data) {
+        const st = ownedRes.data as any;
+        setOwnedStudio({
+          ...st,
+          studio_photos: (st.studio_photos || []).sort((a: any, b: any) => (a.position || 0) - (b.position || 0))
+        });
       }
       
       setLoading(false);
@@ -274,7 +288,61 @@ function UserPortal({ userId, userEmail }: { userId: string, userEmail: string }
         </div>
       </div>
 
-      <div className="pt-8">
+      {ownedStudio && (
+        <div className="pt-4">
+          <h2 className="text-sm font-bold uppercase tracking-widest text-secondary flex items-center gap-2 mb-8">
+            <Building2 className="h-4 w-4" /> My Studio
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <motion.div 
+              variants={cardVariants}
+              layout
+              className="group relative bg-white/5 backdrop-blur-xl border border-secondary/30 rounded-[2rem] overflow-hidden shadow-[0_0_15px_rgba(139,58,54,0.15)] hover:shadow-[0_0_25px_rgba(139,58,54,0.25)] transition-all"
+            >
+              <div className="aspect-[16/9] relative overflow-hidden bg-black/20">
+                {ownedStudio.studio_photos?.[0]?.url ? (
+                  <img src={ownedStudio.studio_photos[0].url} alt={ownedStudio.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90 group-hover:opacity-100" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-foreground/30 text-xs font-bold uppercase tracking-widest">No Logo</div>
+                )}
+                
+                <div className="absolute top-4 left-4 z-20 bg-background/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 flex items-center shadow-lg">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-foreground flex items-center gap-1.5">
+                    <span className={`w-2 h-2 rounded-full ${ownedStudio.status === 'approved' ? 'bg-green-500' : 'bg-amber-500'}`}></span>
+                    {ownedStudio.status === 'approved' ? 'Active' : 'Pending'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-5">
+                <h3 className="font-serif text-xl text-foreground truncate">{ownedStudio.name}</h3>
+                <p className="text-xs font-bold uppercase tracking-widest text-secondary mt-1 flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5" /> {ownedStudio.city}, {ownedStudio.country}
+                </p>
+                <div className="mt-6 flex gap-2 w-full">
+                  <Link 
+                    to="/studios/$id" 
+                    params={{ id: ownedStudio.id }}
+                    preload="intent"
+                    className="flex-1 flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 py-2.5 text-xs font-bold uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background active:scale-95 transition-all"
+                  >
+                    View Space
+                  </Link>
+                  <button
+                    onClick={() => toast.info("Studio editing is currently handled by admin request. Please contact support.")}
+                    className="flex items-center justify-center gap-2 rounded-full bg-secondary px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-white shadow-lg hover:scale-105 active:scale-95 transition-all"
+                    title="Edit Studio"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      )}
+
+      <div className="pt-4">
         <h2 className="text-sm font-bold uppercase tracking-widest text-secondary flex items-center gap-2 mb-8">
           <Bookmark className="h-4 w-4" /> Saved Studios
         </h2>
