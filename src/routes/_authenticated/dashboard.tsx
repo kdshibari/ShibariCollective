@@ -207,7 +207,7 @@ function UserPortal({ userId, userEmail }: { userId: string, userEmail: string }
       
       <div className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2rem] p-8 md:p-12 shadow-xl relative overflow-hidden flex flex-col justify-between">
         
-        <div className="hidden sm:block absolute right-[-5%] top-1/2 -translate-y-1/2 w-80 h-80 md:w-[32rem] md:h-[32rem] opacity-40 text-jute pointer-events-none mix-blend-plus-lighter">
+        <div className="hidden sm:block absolute -right-16 -bottom-16 w-80 h-80 md:-right-24 md:-bottom-24 md:w-[36rem] md:h-[36rem] opacity-[0.15] text-jute pointer-events-none mix-blend-plus-lighter">
           <AbstractRopeArtwork className="w-full h-full drop-shadow-[0_0_30px_rgba(181,155,125,0.2)]" />
         </div>
 
@@ -238,10 +238,10 @@ function UserPortal({ userId, userEmail }: { userId: string, userEmail: string }
                     </button>
                   </div>
                 ) : (
-                  <div className="group flex items-center gap-4 max-w-max">
+                  <div className="flex items-center gap-4 max-w-max">
                     <h2 className="font-serif text-4xl md:text-5xl text-foreground mb-1">{profile?.display_name || "Rope Explorer"}</h2>
-                    <button onClick={() => setIsEditingProfile(true)} className="opacity-0 group-hover:opacity-100 bg-white/5 p-2 rounded-full hover:bg-white/10 active:scale-95 transition-all border border-white/10">
-                      <Edit3 className="w-4 h-4 text-secondary" />
+                    <button onClick={() => setIsEditingProfile(true)} className="bg-white/5 p-2 rounded-full hover:bg-white/10 active:scale-95 transition-all border border-white/10 text-secondary hover:text-white shadow-sm">
+                      <Edit3 className="w-4 h-4" />
                     </button>
                   </div>
                 )}
