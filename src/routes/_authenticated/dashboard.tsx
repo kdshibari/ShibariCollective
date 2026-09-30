@@ -328,13 +328,14 @@ function UserPortal({ userId, userEmail }: { userId: string, userEmail: string }
                   >
                     View Space
                   </Link>
-                  <button
-                    onClick={() => toast.info("Studio editing is currently handled by admin request. Please contact support.")}
+                  <Link
+                    to="/edit-studio"
+                    preload="intent"
                     className="flex items-center justify-center gap-2 rounded-full bg-secondary px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-white shadow-lg hover:scale-105 active:scale-95 transition-all"
                     title="Edit Studio"
                   >
                     <Edit3 className="w-3.5 h-3.5" />
-                  </button>
+                  </Link>
                 </div>
               </div>
             </motion.div>
