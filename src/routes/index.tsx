@@ -107,16 +107,12 @@ function HeroSection() {
       <div className="absolute inset-0 bg-gradient-to-b from-background/10 via-background/40 to-background pointer-events-none z-0" />
       <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 pointer-events-none mix-blend-overlay z-0" />
       
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 text-center w-full">
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}>
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-secondary/10 border border-secondary/20 text-[10px] font-bold uppercase tracking-[0.2em] text-secondary mb-8 shadow-inner backdrop-blur-md">
-            <Globe2 className="w-3.5 h-3.5" /> The Global Network
           </span>
           <h1 className="font-serif text-5xl sm:text-7xl lg:text-[6rem] text-foreground leading-[1.05] tracking-tight mb-8 drop-shadow-2xl max-w-5xl mx-auto">
             Discover Dedicated <br className="hidden md:block" /> Spaces for Shibari
           </h1>
           <p className="text-foreground/60 text-base sm:text-lg max-w-2xl mx-auto mb-12 leading-relaxed font-medium">
-            An exclusive, curated directory connecting practitioners with safe, equipped, and trusted rope studios around the world.
+            An exclusive, curated directory connecting practitioners with rope studios around the world.
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
