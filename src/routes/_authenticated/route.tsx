@@ -14,8 +14,8 @@ function AuthenticatedLayout() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
-    // Preserve both pathname and search parameters so payloads survive login
-    const targetRedirect = location.pathname + (location.search ? location.search : "");
+    // FIX: location.href safely captures the full path and query string without object concatenation errors
+    const targetRedirect = location.href;
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
@@ -34,7 +34,7 @@ function AuthenticatedLayout() {
     });
 
     return () => authListener.subscription.unsubscribe();
-  }, [navigate, location.pathname, location.search]);
+  }, [navigate, location.href]);
 
   if (isAuthenticated === null) {
     return (
