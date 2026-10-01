@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Bookmark, MapPin, Globe2, Search, Loader2, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -29,19 +29,90 @@ const cardVariants = {
 
 const PAGE_SIZE = 12;
 
+function AbstractRopeArtwork({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" className={className}>
+      <g transform="translate(250, 250)" fill="none" stroke="currentColor" strokeWidth="4">
+        <circle cx="0" cy="-100" r="32" transform="rotate(0)" />
+        <circle cx="0" cy="-100" r="30" transform="rotate(15)" />
+        <circle cx="0" cy="-100" r="32" transform="rotate(30)" />
+        <circle cx="0" cy="-100" r="30" transform="rotate(45)" />
+        <circle cx="0" cy="-100" r="32" transform="rotate(60)" />
+        <circle cx="0" cy="-100" r="30" transform="rotate(75)" />
+        <circle cx="0" cy="-100" r="32" transform="rotate(90)" />
+        <circle cx="0" cy="-100" r="30" transform="rotate(105)" />
+        <circle cx="0" cy="-100" r="32" transform="rotate(120)" />
+        <circle cx="0" cy="-100" r="30" transform="rotate(135)" />
+        <circle cx="0" cy="-100" r="32" transform="rotate(150)" />
+        <circle cx="0" cy="-100" r="30" transform="rotate(165)" />
+        <circle cx="0" cy="-100" r="32" transform="rotate(180)" />
+        <circle cx="0" cy="-100" r="30" transform="rotate(195)" />
+        <circle cx="0" cy="-100" r="32" transform="rotate(210)" />
+        <circle cx="0" cy="-100" r="30" transform="rotate(225)" />
+        <circle cx="0" cy="-100" r="32" transform="rotate(240)" />
+        <circle cx="0" cy="-100" r="30" transform="rotate(255)" />
+        <circle cx="0" cy="-100" r="32" transform="rotate(270)" />
+        <circle cx="0" cy="-100" r="30" transform="rotate(285)" />
+        <circle cx="0" cy="-100" r="32" transform="rotate(300)" />
+        <circle cx="0" cy="-100" r="30" transform="rotate(315)" />
+        <circle cx="0" cy="-100" r="32" transform="rotate(330)" />
+        <circle cx="0" cy="-100" r="30" transform="rotate(345)" />
+
+        <circle cx="30" cy="0" r="22" transform="rotate(0)" />
+        <circle cx="30" cy="0" r="22" transform="rotate(30)" />
+        <circle cx="30" cy="0" r="22" transform="rotate(60)" />
+        <circle cx="30" cy="0" r="22" transform="rotate(90)" />
+        <circle cx="30" cy="0" r="22" transform="rotate(120)" />
+        <circle cx="30" cy="0" r="22" transform="rotate(150)" />
+        <circle cx="30" cy="0" r="22" transform="rotate(180)" />
+        <circle cx="30" cy="0" r="22" transform="rotate(210)" />
+        <circle cx="30" cy="0" r="22" transform="rotate(240)" />
+        <circle cx="30" cy="0" r="22" transform="rotate(270)" />
+        <circle cx="30" cy="0" r="22" transform="rotate(300)" />
+        <circle cx="30" cy="0" r="22" transform="rotate(330)" />
+      </g>
+    </svg>
+  );
+}
+
 function HeroSection() {
   return (
-    <div className="relative overflow-hidden bg-background pt-32 pb-20 sm:pt-40 sm:pb-32 border-b border-white/5">
-      {/* Abstract Cinematic Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] sm:w-[900px] sm:h-[900px] bg-secondary/15 blur-[140px] rounded-full pointer-events-none mix-blend-screen" />
-      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 pointer-events-none mix-blend-overlay"></div>
+    <div className="relative overflow-hidden bg-background pt-32 pb-20 sm:pt-40 sm:pb-32 border-b border-white/5 flex flex-col items-center justify-center min-h-[75vh]">
       
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 text-center">
+      {/* Mesmerizing Background Elements */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] sm:w-[1400px] sm:h-[1400px] pointer-events-none z-0">
+        <motion.div 
+          animate={{ rotate: 360 }} 
+          transition={{ duration: 180, repeat: Infinity, ease: "linear" }}
+          className="w-full h-full opacity-[0.03] text-white mix-blend-plus-lighter"
+        >
+          <AbstractRopeArtwork className="w-full h-full" />
+        </motion.div>
+      </div>
+
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] sm:w-[1000px] sm:h-[1000px] pointer-events-none z-0">
+        <motion.div 
+          animate={{ rotate: -360 }} 
+          transition={{ duration: 240, repeat: Infinity, ease: "linear" }}
+          className="w-full h-full opacity-[0.04] text-secondary mix-blend-plus-lighter scale-90"
+        >
+          <AbstractRopeArtwork className="w-full h-full" />
+        </motion.div>
+      </div>
+
+      {/* Abstract Cinematic Glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] sm:w-[900px] sm:h-[900px] bg-secondary/15 blur-[120px] rounded-full pointer-events-none mix-blend-screen z-0" />
+      
+      {/* Texture Overlays to blend it all together seamlessly */}
+      <div className="absolute inset-0 bg-gradient-to-b from-background/10 via-background/40 to-background pointer-events-none z-0" />
+      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 pointer-events-none mix-blend-overlay z-0" />
+      
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 text-center w-full">
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}>
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-secondary/10 border border-secondary/20 text-[10px] font-bold uppercase tracking-[0.2em] text-secondary mb-8 shadow-inner">
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-secondary/10 border border-secondary/20 text-[10px] font-bold uppercase tracking-[0.2em] text-secondary mb-8 shadow-inner backdrop-blur-md">
             <Globe2 className="w-3.5 h-3.5" /> The Global Network
           </span>
-          <h1 className="font-serif text-5xl sm:text-7xl lg:text-[5.5rem] text-foreground leading-[1.05] tracking-tight mb-8 drop-shadow-2xl max-w-5xl mx-auto">
+          <h1 className="font-serif text-5xl sm:text-7xl lg:text-[6rem] text-foreground leading-[1.05] tracking-tight mb-8 drop-shadow-2xl max-w-5xl mx-auto">
             Discover Dedicated <br className="hidden md:block" /> Spaces for Shibari
           </h1>
           <p className="text-foreground/60 text-base sm:text-lg max-w-2xl mx-auto mb-12 leading-relaxed font-medium">
@@ -58,7 +129,7 @@ function HeroSection() {
             </Link>
             <a 
               href="#directory" 
-              className="w-full sm:w-auto px-8 py-4 rounded-full bg-white/5 border border-white/10 text-foreground text-xs font-bold uppercase tracking-widest hover:bg-white/10 active:scale-95 transition-all duration-300"
+              className="w-full sm:w-auto px-8 py-4 rounded-full bg-white/5 border border-white/10 text-foreground text-xs font-bold uppercase tracking-widest hover:bg-white/10 active:scale-95 transition-all duration-300 backdrop-blur-md"
             >
               Explore Directory
             </a>
@@ -76,7 +147,7 @@ function PlaceholderCard() {
       search={{ intent: "owner" }}
       className="group relative block rounded-[1.5rem] sm:rounded-[2rem] overflow-hidden bg-white/[0.02] border border-white/10 border-dashed aspect-[4/5] sm:aspect-[3/4] hover:border-secondary/40 hover:bg-secondary/5 hover:shadow-[0_0_40px_rgba(139,58,54,0.15)] transition-all duration-500 w-full flex flex-col items-center justify-center text-center p-6 sm:p-8"
     >
-      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/5 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-secondary/20 border border-white/5 group-hover:border-secondary/30 transition-all duration-500 shadow-inner">
+      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/5 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-secondary/20 border border-white/5 group-hover:border-secondary/30 transition-all duration-500 shadow-inner backdrop-blur-md">
         <Plus className="w-8 h-8 sm:w-10 sm:h-10 text-foreground/30 group-hover:text-secondary transition-colors duration-500" strokeWidth={1} />
       </div>
       <h3 className="font-serif text-2xl sm:text-3xl text-foreground mb-3 group-hover:text-white transition-colors">Claim This Spot</h3>
@@ -244,7 +315,6 @@ function DirectoryPage() {
     }
   };
 
-  // Determine how many placeholders we need to visually fill a 4-column row
   const placeholdersNeeded = Math.max(0, 4 - studios.length);
 
   return (
