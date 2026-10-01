@@ -12,14 +12,46 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/studios/$id")({
-  head: ({ params }) => ({
-    meta: [
-      { title: `Studio | The Shibari Collective` },
-      { name: "description", content: `Shibari studio details on The Shibari Collective (${params.id.slice(0, 8)}).` },
-      { property: "og:title", content: "Shibari studio" },
-      { property: "og:description", content: "Discover this Shibari studio on The Shibari Collective." },
-    ],
-  }),
+  loader: async ({ params }) => {
+    const { data } = await supabase
+      .from("studios")
+      .select("name, description, city, country, studio_photos(url, position)")
+      .eq("id", params.id)
+      .maybeSingle();
+    return data;
+  },
+  head: ({ loaderData }) => {
+    if (!loaderData) {
+      return {
+        meta: [
+          { title: "Studio | The Shibari Collective" }
+        ]
+      };
+    }
+
+    const title = `${loaderData.name} in ${loaderData.city} | The Shibari Collective`;
+    const description = loaderData.description 
+      ? loaderData.description.substring(0, 155) + "..." 
+      : `Discover ${loaderData.name}, a space located in ${loaderData.city}, ${loaderData.country}.`;
+    
+    const sortedPhotos = (loaderData.studio_photos || []).sort((a: any, b: any) => a.position - b.position);
+    const imageUrl = sortedPhotos[0]?.url || "https://theshibaricollective.com/og-default.jpg";
+
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:image", content: imageUrl },
+        { property: "og:type", content: "website" },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
+        { name: "twitter:image", content: imageUrl },
+      ],
+    };
+  },
   component: StudioPage,
 });
 
