@@ -114,7 +114,7 @@ function HeroSection() {
             Discover Dedicated <br className="hidden md:block" /> Spaces for Shibari
           </h1>
           <p className="text-foreground/60 text-base sm:text-lg max-w-2xl mx-auto mb-12 leading-relaxed font-medium">
-            An exclusive, curated directory connecting practitioners with safe, equipped, and trusted rope studios around the world.
+            An exclusive, curated directory that connects practitioners with rope studios worldwide.
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
