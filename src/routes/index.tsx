@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Bookmark, MapPin, Globe2, Search, Loader2 } from "lucide-react";
+import { Bookmark, MapPin, Globe2, Search, Loader2, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
@@ -29,6 +29,64 @@ const cardVariants = {
 
 const PAGE_SIZE = 12;
 
+function HeroSection() {
+  return (
+    <div className="relative overflow-hidden bg-background pt-32 pb-20 sm:pt-40 sm:pb-32 border-b border-white/5">
+      {/* Abstract Cinematic Glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] sm:w-[900px] sm:h-[900px] bg-secondary/15 blur-[140px] rounded-full pointer-events-none mix-blend-screen" />
+      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 pointer-events-none mix-blend-overlay"></div>
+      
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 text-center">
+        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}>
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-secondary/10 border border-secondary/20 text-[10px] font-bold uppercase tracking-[0.2em] text-secondary mb-8 shadow-inner">
+            <Globe2 className="w-3.5 h-3.5" /> The Global Network
+          </span>
+          <h1 className="font-serif text-5xl sm:text-7xl lg:text-[5.5rem] text-foreground leading-[1.05] tracking-tight mb-8 drop-shadow-2xl max-w-5xl mx-auto">
+            Discover Dedicated <br className="hidden md:block" /> Spaces for Shibari
+          </h1>
+          <p className="text-foreground/60 text-base sm:text-lg max-w-2xl mx-auto mb-12 leading-relaxed font-medium">
+            An exclusive, curated directory connecting practitioners with safe, equipped, and trusted rope studios around the world.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
+            <Link 
+              to="/auth" 
+              search={{ intent: "owner" }} 
+              className="w-full sm:w-auto px-8 py-4 rounded-full bg-secondary text-white text-xs font-bold uppercase tracking-widest shadow-[0_0_30px_rgba(139,58,54,0.4)] hover:shadow-[0_0_40px_rgba(139,58,54,0.6)] hover:-translate-y-1 active:scale-95 transition-all duration-300"
+            >
+              List Your Studio
+            </Link>
+            <a 
+              href="#directory" 
+              className="w-full sm:w-auto px-8 py-4 rounded-full bg-white/5 border border-white/10 text-foreground text-xs font-bold uppercase tracking-widest hover:bg-white/10 active:scale-95 transition-all duration-300"
+            >
+              Explore Directory
+            </a>
+          </div>
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
+function PlaceholderCard() {
+  return (
+    <Link
+      to="/auth"
+      search={{ intent: "owner" }}
+      className="group relative block rounded-[1.5rem] sm:rounded-[2rem] overflow-hidden bg-white/[0.02] border border-white/10 border-dashed aspect-[4/5] sm:aspect-[3/4] hover:border-secondary/40 hover:bg-secondary/5 hover:shadow-[0_0_40px_rgba(139,58,54,0.15)] transition-all duration-500 w-full flex flex-col items-center justify-center text-center p-6 sm:p-8"
+    >
+      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/5 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-secondary/20 border border-white/5 group-hover:border-secondary/30 transition-all duration-500 shadow-inner">
+        <Plus className="w-8 h-8 sm:w-10 sm:h-10 text-foreground/30 group-hover:text-secondary transition-colors duration-500" strokeWidth={1} />
+      </div>
+      <h3 className="font-serif text-2xl sm:text-3xl text-foreground mb-3 group-hover:text-white transition-colors">Claim This Spot</h3>
+      <p className="text-[10px] sm:text-xs text-foreground/50 font-medium leading-relaxed max-w-[200px] uppercase tracking-widest">
+        Join the collective directory
+      </p>
+    </Link>
+  );
+}
+
 function DirectoryPage() {
   const navigate = useNavigate();
   const [studios, setStudios] = useState<any[]>([]);
@@ -43,7 +101,6 @@ function DirectoryPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [regionsList, setRegionsList] = useState<string[]>(["All"]);
 
-  // Initial Data Fetch (and re-fetch when region or search changes)
   useEffect(() => {
     async function fetchInitialData() {
       setLoading(true);
@@ -54,7 +111,6 @@ function DirectoryPage() {
         const { data: { session } } = await supabase.auth.getSession();
         setUser(session?.user || null);
 
-        // We fetch ALL approved continents once to build the region filter bar dynamically
         if (regionsList.length === 1) {
           const { data: allContinents } = await supabase
             .from("studios")
@@ -67,7 +123,6 @@ function DirectoryPage() {
           }
         }
 
-        // Build the filtered query
         let query = supabase
           .from("studios")
           .select("*, studio_photos(url)", { count: 'exact' })
@@ -80,12 +135,10 @@ function DirectoryPage() {
         }
 
         if (searchQuery.trim() !== "") {
-          // Allow searching by name or city
           query = query.or(`name.ilike.%${searchQuery}%,city.ilike.%${searchQuery}%`);
         }
 
         const { data: studioData, count, error } = await query;
-        
         if (error) throw error;
         
         setStudios(studioData || []);
@@ -108,14 +161,12 @@ function DirectoryPage() {
       }
     }
 
-    // Debounce the search input slightly to avoid hammering the DB
     const timeoutId = setTimeout(() => {
       fetchInitialData();
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [activeRegion, searchQuery]); // Re-run when filters change
-
+  }, [activeRegion, searchQuery]);
 
   const loadMore = async () => {
     if (loadingMore || !hasMore) return;
@@ -141,7 +192,6 @@ function DirectoryPage() {
       }
 
       const { data: newStudios, count, error } = await query;
-
       if (error) throw error;
 
       if (newStudios && newStudios.length > 0) {
@@ -157,7 +207,6 @@ function DirectoryPage() {
       setLoadingMore(false);
     }
   };
-
 
   const toggleSave = async (studioId: string) => {
     if (!user) {
@@ -195,112 +244,113 @@ function DirectoryPage() {
     }
   };
 
+  // Determine how many placeholders we need to visually fill a 4-column row
+  const placeholdersNeeded = Math.max(0, 4 - studios.length);
+
   return (
     <div className="min-h-screen bg-background pb-24">
-      
-      {/* Editorial Header Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-12 sm:pt-16 mb-8 text-center sm:text-left">
-        <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-xs uppercase tracking-[0.4em] text-secondary font-bold mb-4 flex items-center justify-center sm:justify-start gap-2">
-          <Globe2 className="w-4 h-4" /> Global Directory
-        </motion.p>
-        <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="font-serif text-5xl sm:text-7xl text-foreground">Explore Spaces</motion.h1>
-        <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mt-6 text-foreground/60 max-w-xl text-sm sm:text-base leading-relaxed mx-auto sm:mx-0">
-          A curated selection of rope studios and private spaces dedicated to the art and practice of Shibari around the world.
-        </motion.p>
-      </div>
+      <HeroSection />
 
-      {/* Filter and Search Bar */}
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="max-w-7xl mx-auto px-4 sm:px-6 mb-12">
-        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-          
-          {/* Region Pills */}
-          <div className="flex gap-2 sm:gap-3 overflow-x-auto no-scrollbar w-full sm:w-auto py-2">
-            {regionsList.map(region => (
-              <button
-                key={region}
-                onClick={() => setActiveRegion(region)}
-                className={`px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest whitespace-nowrap active:scale-95 transition-all duration-300 ${
-                  activeRegion === region 
-                    ? 'bg-secondary text-white shadow-lg' 
-                    : 'bg-white/5 text-foreground/60 hover:bg-white/10 hover:text-foreground'
-                }`}
-              >
-                {region}
-              </button>
-            ))}
-          </div>
-
-          {/* Search Input */}
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/40" />
-            <input
-              type="text"
-              placeholder="Search by name or city..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-full py-2.5 pl-11 pr-4 text-sm text-foreground outline-none focus:border-secondary/50 transition-colors placeholder:text-foreground/30"
-            />
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Animated Editorial Grid */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        {loading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-8">
-            {[...Array(PAGE_SIZE)].map((_, i) => (
-              <div key={i} className="aspect-[4/5] sm:aspect-[3/4] bg-white/5 border border-white/10 animate-pulse rounded-[1.5rem] sm:rounded-[2rem] w-full" />
-            ))}
-          </div>
-        ) : (
-          <>
-            <motion.div layout variants={containerVariants} initial="hidden" animate="show" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-8">
-              <AnimatePresence mode="popLayout">
-                {studios.map(studio => (
-                  <StudioCard 
-                    key={studio.id} 
-                    studio={studio} 
-                    isSaved={savedStudioIds.has(studio.id)} 
-                    onToggleSave={() => toggleSave(studio.id)} 
-                  />
-                ))}
-              </AnimatePresence>
-            </motion.div>
-
-            {studios.length > 0 && hasMore && (
-              <div className="mt-16 flex justify-center">
+      <div id="directory" className="pt-16 sm:pt-24 scroll-mt-24">
+        {/* Filter and Search Bar */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="max-w-7xl mx-auto px-4 sm:px-6 mb-12">
+          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+            
+            {/* Region Pills */}
+            <div className="flex gap-2 sm:gap-3 overflow-x-auto no-scrollbar w-full sm:w-auto py-2">
+              {regionsList.map(region => (
                 <button
-                  onClick={loadMore}
-                  disabled={loadingMore}
-                  className="flex items-center gap-2 px-8 py-3 rounded-full bg-white/5 border border-white/10 text-xs font-bold uppercase tracking-widest text-foreground hover:bg-white/10 hover:text-white transition-all active:scale-95 disabled:opacity-50"
+                  key={region}
+                  onClick={() => setActiveRegion(region)}
+                  className={`px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest whitespace-nowrap active:scale-95 transition-all duration-300 ${
+                    activeRegion === region 
+                      ? 'bg-secondary text-white shadow-lg' 
+                      : 'bg-white/5 text-foreground/60 hover:bg-white/10 hover:text-foreground'
+                  }`}
                 >
-                  {loadingMore ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" /> Loading...
-                    </>
-                  ) : (
-                    "Load More"
-                  )}
+                  {region}
                 </button>
-              </div>
-            )}
-          </  >
-        )}
+              ))}
+            </div>
 
-        {!loading && studios.length === 0 && (
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} 
-            className="text-center py-32 border border-white/10 rounded-[2rem] bg-white/5"
-          >
-            <Globe2 className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
-            <h3 className="font-serif text-3xl text-foreground">No Spaces Found</h3>
-            <p className="text-sm text-foreground/50 mt-2 max-w-md mx-auto">
-              Try adjusting your search criteria or checking back later as our global directory grows.
-            </p>
-          </motion.div>
-        )}
+            {/* Search Input */}
+            <div className="relative w-full sm:w-72">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/40" />
+              <input
+                type="text"
+                placeholder="Search by name or city..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-full py-2.5 pl-11 pr-4 text-sm text-foreground outline-none focus:border-secondary/50 transition-colors placeholder:text-foreground/30"
+              />
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Animated Editorial Grid */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          {loading ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-8">
+              {[...Array(PAGE_SIZE)].map((_, i) => (
+                <div key={i} className="aspect-[4/5] sm:aspect-[3/4] bg-white/5 border border-white/10 animate-pulse rounded-[1.5rem] sm:rounded-[2rem] w-full" />
+              ))}
+            </div>
+          ) : (
+            <>
+              <motion.div layout variants={containerVariants} initial="hidden" animate="show" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-8">
+                <AnimatePresence mode="popLayout">
+                  {studios.map(studio => (
+                    <StudioCard 
+                      key={studio.id} 
+                      studio={studio} 
+                      isSaved={savedStudioIds.has(studio.id)} 
+                      onToggleSave={() => toggleSave(studio.id)} 
+                    />
+                  ))}
+                  
+                  {/* Fill out the grid with luxurious placeholders if it's empty/sparse */}
+                  {!searchQuery && studios.length > 0 && Array.from({ length: placeholdersNeeded }).map((_, i) => (
+                    <motion.div key={`placeholder-${i}`} variants={cardVariants} layout exit="exit">
+                      <PlaceholderCard />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </motion.div>
+
+              {studios.length > 0 && hasMore && (
+                <div className="mt-16 flex justify-center">
+                  <button
+                    onClick={loadMore}
+                    disabled={loadingMore}
+                    className="flex items-center gap-2 px-8 py-3 rounded-full bg-white/5 border border-white/10 text-xs font-bold uppercase tracking-widest text-foreground hover:bg-white/10 hover:text-white transition-all active:scale-95 disabled:opacity-50"
+                  >
+                    {loadingMore ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" /> Loading...
+                      </>
+                    ) : (
+                      "Load More"
+                    )}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+
+          {!loading && studios.length === 0 && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} 
+              className="text-center py-32 border border-white/10 rounded-[2rem] bg-white/5"
+            >
+              <Globe2 className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+              <h3 className="font-serif text-3xl text-foreground">No Spaces Found</h3>
+              <p className="text-sm text-foreground/50 mt-2 max-w-md mx-auto">
+                Try adjusting your search criteria or checking back later as our global directory grows.
+              </p>
+            </motion.div>
+          )}
+        </div>
       </div>
-
     </div>
   );
 }
