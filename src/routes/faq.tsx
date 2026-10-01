@@ -1,115 +1,106 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
+import { ArrowLeft, HelpCircle } from "lucide-react";
 
 export const Route = createFileRoute("/faq")({
-  head: () => ({
-    meta: [
-      { title: "FAQ, The Shibari Collective" },
-      { name: "description", content: "Frequently asked questions about The Shibari Collective directory, membership, and safety policies." },
-    ],
-  }),
   component: FAQPage,
 });
 
-const faqs = [
-  {
-    category: "The Platform",
-    items: [
-      {
-        q: "What is The Shibari Collective?",
-        a: "It is a global directory designed to connect users with dedicated rope studios and private spaces around the world."
-      },
-      {
-        q: "Are there membership fees?",
-        a: "Creating a User profile is completely free, and studio owner verification is also instant and free."
-      },
-      {
-        q: "What features do users receive?",
-        a: "Verified users can browse the global directory, save favorite studios to a curated dashboard, and manage their personal profiles."
-      }
-    ]
-  },
-  {
-    category: "Studio Owners",
-    items: [
-      {
-        q: "Who can list a space?",
-        a: "Any studio management or their respective owners can list a space on the platform."
-      },
-      {
-        q: "What is required for a studio listing?",
-        a: "Studios must provide a studio name, continent, country, city, and contact information, and the directory requires a minimum of five photos in JPEG, PNG, or WEBP formats under 5MB each."
-      },
-      {
-        q: "Can I keep my location private?",
-        a: "Yes, providing a street address is entirely optional for spaces that operate privately."
-      }
-    ]
-  },
-  {
-    category: "Trust and Safety",
-    items: [
-      {
-        q: "Does the platform vet users or studios?",
-        a: "The Shibari Collective is strictly provided for communication and entertainment purposes, and it does not replace active consent or serve as safety advice."
-      },
-      {
-        q: "Who is responsible for safety during sessions?",
-        a: "Users are exclusively responsible for obtaining enthusiastic consent, managing their own physical wellbeing, and ensuring all activities comply with local laws, and the platform creators hold no liability for personal injury or relationship disputes."
-      }
-    ]
-  }
-];
-
 function FAQPage() {
   return (
-    <div className="min-h-screen bg-background text-foreground pb-32 pt-16 sm:pt-24">
-      <div className="mx-auto max-w-3xl px-4 sm:px-6">
-        <div className="mb-16 text-center sm:text-left">
-          <p className="text-xs uppercase tracking-[0.4em] text-secondary font-bold mb-4">
-            Knowledge Base
-          </p>
+    <div className="min-h-screen bg-background pb-24 pt-12 sm:pt-16">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6">
+        <Link 
+          to="/" 
+          className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-foreground/50 hover:text-foreground transition-colors mb-12"
+        >
+          <ArrowLeft className="h-4 w-4" /> Return Home
+        </Link>
+
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          className="mb-12"
+        >
+          <div className="w-16 h-16 rounded-full bg-secondary/10 flex items-center justify-center mb-8 border border-secondary/20 shadow-inner">
+            <HelpCircle className="w-8 h-8 text-secondary" />
+          </div>
           <h1 className="font-serif text-5xl sm:text-6xl text-foreground mb-6">
             Frequently Asked Questions
           </h1>
-          <p className="text-foreground/60 max-w-xl text-sm sm:text-base leading-relaxed mx-auto sm:mx-0">
-            Everything you need to know about the platform, listing your space, and our community guidelines.
+          <p className="text-foreground/60 text-lg leading-relaxed max-w-2xl">
+            Our ethos is built on transparency, safety, and the elevation of rope practice worldwide. Below, you will find information regarding our curation process, platform standards, and guidelines for both practitioners and space operators.
           </p>
-        </div>
+        </motion.div>
 
-        <div className="space-y-12">
-          {faqs.map((section, index) => (
-            <motion.div 
-              key={section.category}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <h2 className="font-serif text-3xl text-foreground mb-6 pb-2 border-b border-white/10">
-                {section.category}
-              </h2>
-              <Accordion type="multiple" className="w-full space-y-4">
-                {section.items.map((item, i) => (
-                  <AccordionItem 
-                    key={i} 
-                    value={`item_${index}_${i}`} 
-                    className="border border-white/10 bg-white/5 backdrop-blur-md rounded-2xl px-6 data-[state=open]:bg-white/10 transition-colors"
-                  >
-                    <AccordionTrigger className="hover:no-underline py-6 text-left">
-                      <span className="font-medium text-base text-foreground pr-4">
-                        {item.q}
-                      </span>
-                    </AccordionTrigger>
-                    <AccordionContent className="text-sm text-foreground/70 leading-relaxed pb-6">
-                      {item.a}
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </motion.div>
-          ))}
-        </div>
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ delay: 0.1 }}
+          className="space-y-12"
+        >
+          <section className="bg-white/5 border border-white/10 backdrop-blur-md rounded-[2rem] p-8 sm:p-12">
+            <h2 className="text-xs font-bold uppercase tracking-widest text-secondary mb-8">For Practitioners & Explorers</h2>
+            
+            <div className="space-y-8">
+              <div>
+                <h3 className="font-serif text-2xl text-foreground mb-3">How are studios selected and vetted for The Shibari Collective?</h3>
+                <p className="text-foreground/70 leading-relaxed text-sm">
+                  We maintain a rigorous digital curation process. Spaces submitted to our directory are reviewed to ensure they are dedicated, professional venues rather than casual or residential living spaces. We verify their digital footprint, public guidelines, and community standing. However, please note that we do not physically inspect venues or test rigging points.
+                </p>
+              </div>
+
+              <div className="w-full h-px bg-white/10" />
+
+              <div>
+                <h3 className="font-serif text-2xl text-foreground mb-3">What should I do if I have a concerning experience at a listed studio?</h3>
+                <p className="text-foreground/70 leading-relaxed text-sm">
+                  Safety and consent are the foundational pillars of our community. If a space or its management violates ethical standards, compromises physical safety, or breaches consent, we strongly encourage you to use the Report Space flag located on their studio page. These reports are securely routed directly to our Trust and Safety team for immediate review and potential removal of the studio.
+                </p>
+              </div>
+
+              <div className="w-full h-px bg-white/10" />
+
+              <div>
+                <h3 className="font-serif text-2xl text-foreground mb-3">Do I need to be an advanced practitioner to visit these spaces?</h3>
+                <p className="text-foreground/70 leading-relaxed text-sm">
+                  The Shibari Collective features spaces that cater to a wide spectrum of experience levels, from foundational classes for beginners to open suspension labs for advanced riggers. We recommend reviewing the specific programming, prerequisites, and operating hours on each individual website before attending.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section className="bg-white/5 border border-white/10 backdrop-blur-md rounded-[2rem] p-8 sm:p-12">
+            <h2 className="text-xs font-bold uppercase tracking-widest text-secondary mb-8">For Studio Owners</h2>
+            
+            <div className="space-y-8">
+              <div>
+                <h3 className="font-serif text-2xl text-foreground mb-3">How much does it cost to list my space in the directory?</h3>
+                <p className="text-foreground/70 leading-relaxed text-sm">
+                  Listing a verified studio on The Shibari Collective is completely free. Our primary mission is to build a comprehensive, accessible, and high quality global resource for the community, not to gatekeep visibility behind a paywall.
+                </p>
+              </div>
+
+              <div className="w-full h-px bg-white/10" />
+
+              <div>
+                <h3 className="font-serif text-2xl text-foreground mb-3">What are the criteria for listing approval?</h3>
+                <p className="text-foreground/70 leading-relaxed text-sm">
+                  To maintain the integrity of our platform, spaces must be dedicated venues operating with a professional standard. This includes having a distinct physical location, an established online presence, and clear operational guidelines. We do not list private residential bedrooms or unverified temporary spaces.
+                </p>
+              </div>
+
+              <div className="w-full h-px bg-white/10" />
+
+              <div>
+                <h3 className="font-serif text-2xl text-foreground mb-3">My studio is already listed. How do I claim and manage my page?</h3>
+                <p className="text-foreground/70 leading-relaxed text-sm">
+                  If your space is already visible in our directory, you can claim it by creating an Owner account. Once registered, you will be prompted to verify your identity through your official email domain or social media channels. Upon verification, you will receive full dashboard access to update your imagery, description, and hours.
+                </p>
+              </div>
+            </div>
+          </section>
+        </motion.div>
       </div>
     </div>
   );
