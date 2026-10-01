@@ -13,60 +13,79 @@ import { useEffect, useState, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
-import { LogOut, Menu, X } from "lucide-react";
+import { LogOut, Menu, X, AlertTriangle, RotateCcw, Home } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <div className="max-w-md text-center">
-        <h1 className="font-serif text-7xl text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist.
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 relative overflow-hidden">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40rem] h-[40rem] opacity-5 pointer-events-none mix-blend-plus-lighter text-secondary">
+        <MicroLogo className="w-full h-full" />
+      </div>
+
+      <div className="relative z-10 w-full max-w-lg text-center">
+        <h1 className="font-serif text-8xl sm:text-[10rem] text-secondary/80 leading-none mb-4 drop-shadow-[0_0_30px_rgba(139,58,54,0.3)]">404</h1>
+        <h2 className="font-serif text-3xl sm:text-4xl text-foreground mb-4">Space Not Found</h2>
+        <p className="text-sm text-foreground/60 leading-relaxed mb-10 max-w-sm mx-auto">
+          The page or studio you are looking for has been moved, removed, or never existed in our directory.
         </p>
-        <div className="mt-6">
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-md bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:opacity-90"
-          >
-            Go home
-          </Link>
-        </div>
+        <Link
+          to="/"
+          className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-secondary text-white text-xs font-bold uppercase tracking-widest shadow-[0_0_20px_rgba(139,58,54,0.4)] hover:scale-105 active:scale-95 transition-all"
+        >
+          <Home className="w-4 h-4" /> Return Home
+        </Link>
       </div>
     </div>
   );
 }
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
-  console.error(error);
+  console.error("Application Exception:", error);
   const router = useRouter();
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <div className="max-w-md text-center">
-        <h1 className="font-serif text-2xl tracking-tight text-foreground">
-          This page didn't load
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 relative overflow-hidden">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40rem] h-[40rem] opacity-5 pointer-events-none mix-blend-plus-lighter text-secondary">
+        <MicroLogo className="w-full h-full animate-pulse" />
+      </div>
+
+      <div className="relative z-10 w-full max-w-lg bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-10 sm:p-14 text-center shadow-[0_30px_60px_-15px_rgba(139,58,54,0.15)]">
+        <div className="mx-auto w-16 h-16 rounded-full bg-secondary/10 flex items-center justify-center mb-8 border border-secondary/20 shadow-inner">
+          <AlertTriangle className="w-8 h-8 text-secondary" />
+        </div>
+        
+        <h1 className="font-serif text-4xl sm:text-5xl text-foreground mb-4">
+          Connection Lost
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong. Try refreshing or head back home.
+        
+        <p className="text-sm text-foreground/60 leading-relaxed mb-10 max-w-sm mx-auto">
+          We encountered an unexpected tension in the system. The operation could not be completed.
         </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
+        
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <button
             onClick={() => {
               router.invalidate();
               reset();
             }}
-            className="inline-flex items-center justify-center rounded-md bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:opacity-90"
+            className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-secondary text-white text-xs font-bold uppercase tracking-widest shadow-[0_0_20px_rgba(139,58,54,0.4)] hover:scale-105 active:scale-95 transition-all"
           >
-            Try again
+            <RotateCcw className="w-4 h-4" /> Try Again
           </button>
+          
           <a
             href="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-white/5 border border-white/10 text-foreground text-xs font-bold uppercase tracking-widest hover:bg-white/10 active:scale-95 transition-all"
           >
-            Go home
+            <Home className="w-4 h-4" /> Return Home
           </a>
+        </div>
+        
+        <div className="mt-12 pt-6 border-t border-white/10">
+          <p className="text-[10px] font-mono text-foreground/30 truncate px-4">
+            ERR: {error.message || "Unknown Application Exception"}
+          </p>
         </div>
       </div>
     </div>
@@ -133,7 +152,6 @@ function Header() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  // Close mobile menu automatically on route change
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [location.pathname]);
@@ -158,7 +176,6 @@ function Header() {
             </span>
           </Link>
 
-          {/* Desktop Navigation */}
           <nav className="hidden items-center gap-6 md:flex">
             <Link to="/" className={linkClass}>Studios</Link>
             <Link to="/contact" className={linkClass}>Contact</Link>
@@ -191,7 +208,6 @@ function Header() {
             )}
           </nav>
 
-          {/* Mobile Menu Toggle */}
           <button 
             className="md:hidden z-50 p-2 -mr-2 text-foreground"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -202,7 +218,6 @@ function Header() {
         </div>
       </header>
 
-      {/* Mobile Navigation Overlay */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
