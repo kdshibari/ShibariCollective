@@ -14,28 +14,28 @@ function AuthenticatedLayout() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
-    // 1. Safely check the initial session upon landing
+    // Preserve both pathname and search parameters so payloads survive login
+    const targetRedirect = location.pathname + (location.search ? location.search : "");
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
-        navigate({ to: "/auth", search: { redirect: location.pathname } });
+        navigate({ to: "/auth", search: { redirect: targetRedirect } });
       } else {
         setIsAuthenticated(true);
       }
     });
 
-    // 2. Listen for the Magic Link resolving in real-time
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_OUT" || !session) {
-        navigate({ to: "/auth", search: { redirect: location.pathname } });
+        navigate({ to: "/auth", search: { redirect: targetRedirect } });
       } else if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
         setIsAuthenticated(true);
       }
     });
 
     return () => authListener.subscription.unsubscribe();
-  }, [navigate, location.pathname]);
+  }, [navigate, location.pathname, location.search]);
 
-  // Premium loading state while resolving the Magic Link
   if (isAuthenticated === null) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
@@ -53,6 +53,5 @@ function AuthenticatedLayout() {
     );
   }
 
-  // Once verified, seamlessly render the Dashboard or Submit page
   return <Outlet />;
 }
