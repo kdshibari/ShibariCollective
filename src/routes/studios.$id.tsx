@@ -47,7 +47,6 @@ const sendReportEmail = createServerFn({ method: "POST" })
       });
 
       await transporter.sendMail({
-        // FIX: Using your verified custom domain instead of the Resend sandbox
         from: `"The Shibari Collective Alerts" <alerts@theshibaricollective.com>`,
         to: "theshibaricollective@gmail.com",
         subject: `⚠️ Studio Report: ${data.studioName}`,
@@ -146,6 +145,7 @@ function StudioPage() {
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportComments, setReportComments] = useState("");
   const [isReporting, setIsReporting] = useState(false);
+  const [botField, setBotField] = useState(""); // Honeypot
   
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [reviews, setReviews] = useState<any[]>([]);
@@ -187,6 +187,14 @@ function StudioPage() {
 
   const handleReportSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // 1. Honeypot Check
+    if (botField) {
+      toast.success("Report submitted securely. Our team will review this immediately.");
+      setShowReportModal(false);
+      return;
+    }
+
     if (!reportComments.trim()) {
       toast.error("Please provide a reason for your report.");
       return;
@@ -194,6 +202,17 @@ function StudioPage() {
 
     setIsReporting(true);
     try {
+      // 2. Database Rate Limit Check
+      const { data: isAllowed, error: rateLimitError } = await supabase.rpc('enforce_rate_limit', {
+        req_action: 'submit_report',
+        max_requests: 3,
+        window_seconds: 3600
+      });
+
+      if (rateLimitError || !isAllowed) {
+        throw new Error("You have submitted too many reports recently. Please try again later.");
+      }
+
       const { error } = await supabase.from('studio_reports').insert({
         studio_id: studio?.id,
         user_id: currentUser?.id || null,
@@ -226,6 +245,17 @@ function StudioPage() {
 
     setIsSubmittingReview(true);
     try {
+      // Rate Limit Check
+      const { data: isAllowed, error: rateLimitError } = await supabase.rpc('enforce_rate_limit', {
+        req_action: 'submit_review',
+        max_requests: 5,
+        window_seconds: 86400
+      });
+
+      if (rateLimitError || !isAllowed) {
+        throw new Error("You are posting reviews too quickly. Please try again tomorrow.");
+      }
+
       const { error } = await supabase.from('studio_reviews').insert({ 
         studio_id: studio?.id, 
         user_id: currentUser.id, 
@@ -591,7 +621,14 @@ function StudioPage() {
                 </p>
               </div>
 
-              <form onSubmit={handleReportSubmit} className="space-y-6">
+              <form onSubmit={handleReportSubmit} className="space-y-6 relative">
+                
+                {/* Invisible Honeypot Trap */}
+                <div className="absolute opacity-0 -z-10 h-0 w-0 overflow-hidden" aria-hidden="true">
+                  <label>If you are human, leave this blank</label>
+                  <input type="text" name="website_url" tabIndex={-1} autoComplete="off" value={botField} onChange={e => setBotField(e.target.value)} />
+                </div>
+
                 <label className="block group">
                   <span className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-foreground/60 group-focus-within:text-rose-400 transition-colors">
                     Reason for report <span className="text-rose-500">*</span>
