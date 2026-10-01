@@ -126,9 +126,8 @@ function SubmitPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No active session found.");
 
-      const { error } = await supabase
-        .from("user_roles")
-        .upsert({ user_id: user.id, role: "studio_owner" }, { onConflict: 'user_id,role' });
+      // Secure RPC call replaces the vulnerable direct insert
+      const { error } = await supabase.rpc('claim_studio_owner_role');
 
       if (error) throw error;
       setRoles([...roles, "studio_owner"]);
@@ -147,7 +146,7 @@ function SubmitPage() {
         }).parse({ name: form.name, description: form.description });
       } else if (currentStep === 2) {
         z.object({
-          continent: z.string().min(1, "Please select a continent."),
+          continent: z.string().min(1, "Please select a continent.").max(50),
           country: z.string().trim().min(2, "Country is required.").max(80),
           city: z.string().trim().min(1, "City is required.").max(80),
           address: z.string().max(200).optional(),
@@ -220,7 +219,6 @@ function SubmitPage() {
     if (!userData.user) return;
 
     try {
-      // Double check constraint just in case they bypassed the UI
       const { data: existing } = await supabase.from("studios").select("id").eq("owner_id", userData.user.id).limit(1);
       if (existing && existing.length > 0) {
         throw new Error("You have already submitted a studio. Limit is 1 per account.");
