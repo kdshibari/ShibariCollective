@@ -47,7 +47,8 @@ const sendReportEmail = createServerFn({ method: "POST" })
       });
 
       await transporter.sendMail({
-        from: `"The Shibari Collective Alerts" <onboarding@resend.dev>`,
+        // FIX: Using your verified custom domain instead of the Resend sandbox
+        from: `"The Shibari Collective Alerts" <alerts@theshibaricollective.com>`,
         to: "theshibaricollective@gmail.com",
         subject: `⚠️ Studio Report: ${data.studioName}`,
         html: `
