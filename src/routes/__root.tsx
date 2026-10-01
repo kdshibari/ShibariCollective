@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useLocation,
   HeadContent,
   Scripts,
   ScrollRestoration,
@@ -76,7 +77,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: "The Shibari Collective | Studios & Practitioners Worldwide" },
       {
         name: "description",
@@ -124,12 +125,18 @@ function RootShell({ children }: { children: ReactNode }) {
 function Header() {
   const [signedIn, setSignedIn] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSignedIn(!!data.session));
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => setSignedIn(!!session));
     return () => sub.subscription.unsubscribe();
   }, []);
+
+  // Close mobile menu automatically on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -205,8 +212,8 @@ function Header() {
             transition={{ duration: 0.3, ease: "easeInOut" }}
             className="fixed inset-0 z-[45] bg-background/95 backdrop-blur-3xl md:hidden flex flex-col items-center justify-center gap-8 px-4"
           >
-            <Link to="/" onClick={() => setMobileMenuOpen(false)} className={mobileLinkClass}>Explore Studios</Link>
-            <Link to="/contact" onClick={() => setMobileMenuOpen(false)} className={mobileLinkClass}>Contact Us</Link>
+            <Link to="/" className={mobileLinkClass}>Explore Studios</Link>
+            <Link to="/contact" className={mobileLinkClass}>Contact Us</Link>
             
             <div className="w-12 h-px bg-white/20 my-4" />
 
@@ -214,13 +221,12 @@ function Header() {
               <>
                 <Link
                   to="/dashboard"
-                  onClick={() => setMobileMenuOpen(false)}
                   className="rounded-full bg-white/10 border border-white/20 px-8 py-4 text-sm font-bold uppercase tracking-widest text-foreground hover:bg-white/20 transition-all"
                 >
                   My Dashboard
                 </Link>
                 <button
-                  onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
+                  onClick={handleLogout}
                   className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-foreground/50 hover:text-rose-500 transition-colors mt-4"
                 >
                   <LogOut className="w-4 h-4" /> Log Out
@@ -231,14 +237,12 @@ function Header() {
                 <Link 
                   to="/auth" 
                   search={{ intent: "owner" }} 
-                  onClick={() => setMobileMenuOpen(false)} 
                   className="text-sm font-bold uppercase tracking-widest text-foreground/70"
                 >
                   List Your Studio
                 </Link>
                 <Link
                   to="/auth"
-                  onClick={() => setMobileMenuOpen(false)}
                   className="rounded-full bg-secondary px-10 py-4 text-sm font-bold uppercase tracking-widest text-secondary-foreground shadow-2xl mt-4"
                 >
                   Sign In / Register
@@ -284,7 +288,7 @@ function Footer() {
         </div>
       </div>
       
-      <div className="border-t border-primary-foreground/10">
+      <div className="border-t border-primary-foreground/10 pb-[env(safe-area-inset-bottom)]">
         <p className="mx-auto max-w-7xl px-4 py-4 text-xs opacity-70 sm:px-6">
           Made by The Shibari Collective © {new Date().getFullYear()}
         </p>
@@ -309,7 +313,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="flex min-h-screen flex-col">
+      <div className="flex min-h-screen flex-col pb-[env(safe-area-inset-bottom)]">
         <Header />
         <main className="flex-1">
           <Outlet />
