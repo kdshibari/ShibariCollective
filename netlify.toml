@@ -1,8 +1,6 @@
 [build]
   command = "npm run build"
-  publish = "dist"
+  # Removing the 'publish' variable allows Nitro to automatically deploy its .netlify output folder
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+[build.environment]
+  NITRO_PRESET = "netlify"
