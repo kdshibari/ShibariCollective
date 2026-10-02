@@ -1,4 +1,5 @@
-import { createRootRouteWithContext, Outlet, ScrollRestoration, Meta, Links, Scripts } from "@tanstack/react-router";
+import { createRootRouteWithContext, Outlet, ScrollRestoration } from "@tanstack/react-router";
+import { Meta, Links, Scripts } from "@tanstack/react-start";
 import { Toaster } from "sonner";
 import { useState, useEffect } from "react";
 import { WifiOff } from "lucide-react";
