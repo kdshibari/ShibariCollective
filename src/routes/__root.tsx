@@ -3,7 +3,8 @@ import { Toaster } from "sonner";
 import { useState, useEffect } from "react";
 import { WifiOff } from "lucide-react";
 import { CookieBanner } from "@/components/CookieBanner";
-import appCss from "@/styles.css?url";
+
+import "@/styles.css";
 
 export const Route = createRootRouteWithContext<any>()({
   head: () => ({
@@ -31,7 +32,6 @@ export const Route = createRootRouteWithContext<any>()({
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Work+Sans:wght@300;400;500;600&display=swap",
       },
-      { rel: "stylesheet", href: appCss },
     ],
   }),
   component: RootComponent,
@@ -94,3 +94,4 @@ function RootComponent() {
     </html>
   );
 }
+
