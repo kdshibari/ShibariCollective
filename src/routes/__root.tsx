@@ -3,9 +3,7 @@ import { Toaster } from "sonner";
 import { useState, useEffect } from "react";
 import { WifiOff } from "lucide-react";
 import { CookieBanner } from "@/components/CookieBanner";
-
-// STANDARD IMPORT: Pointing to the correct stylesheet filename
-import "@/styles.css";
+import appCss from "@/styles.css?url";
 
 export const Route = createRootRouteWithContext<any>()({
   head: () => ({
@@ -33,6 +31,7 @@ export const Route = createRootRouteWithContext<any>()({
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Work+Sans:wght@300;400;500;600&display=swap",
       },
+      { rel: "stylesheet", href: appCss },
     ],
   }),
   component: RootComponent,
@@ -48,7 +47,6 @@ function RootComponent() {
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
     
-    // Initial check
     setIsOffline(!navigator.onLine);
     
     return () => {
