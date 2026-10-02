@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { WifiOff } from "lucide-react";
 import { CookieBanner } from "@/components/CookieBanner";
 
-// STANDARD IMPORT: Bypasses the Tailwind v4 ?url resolution bug
-import "@/index.css";
+// STANDARD IMPORT: Pointing to the correct stylesheet filename
+import "@/styles.css";
 
 export const Route = createRootRouteWithContext<any>()({
   head: () => ({
