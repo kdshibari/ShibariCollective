@@ -1,5 +1,8 @@
 import { createRootRouteWithContext, Outlet, ScrollRestoration } from "@tanstack/react-router";
 import { Toaster } from "sonner";
+import { useState, useEffect } from "react";
+import { WifiOff } from "lucide-react";
+import { CookieBanner } from "@/components/CookieBanner";
 import appCss from "@/index.css?url";
 
 export const Route = createRootRouteWithContext<any>()({
@@ -35,10 +38,38 @@ export const Route = createRootRouteWithContext<any>()({
 });
 
 function RootComponent() {
+  const [isOffline, setIsOffline] = useState(false);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    
+    // Initial check
+    setIsOffline(!navigator.onLine);
+    
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
   return (
     <>
       <ScrollRestoration />
+      
+      {isOffline && (
+        <div className="fixed top-0 left-0 right-0 z-[100] bg-rose-500/90 backdrop-blur-md text-white py-2 text-center text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg">
+          <WifiOff className="w-4 h-4" /> You are currently offline
+        </div>
+      )}
+
       <Outlet />
+      
+      <CookieBanner />
+      
       <Toaster 
         theme="dark"
         position="bottom-right"
