@@ -1,5 +1,5 @@
 import { createRootRouteWithContext, Outlet, ScrollRestoration } from "@tanstack/react-router";
-import { Meta, Links, Scripts } from "@tanstack/react-start";
+import { HeadContent, Links, Scripts } from "@tanstack/react-start";
 import { Toaster } from "sonner";
 import { useState, useEffect } from "react";
 import { WifiOff } from "lucide-react";
@@ -59,7 +59,7 @@ function RootComponent() {
   return (
     <html lang="en">
       <head>
-        <Meta />
+        <HeadContent />
         <Links />
       </head>
       <body>
