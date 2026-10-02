@@ -70,13 +70,40 @@
   * {
     border-color: var(--color-border);
   }
+
+  *:focus-visible {
+    outline: 2px solid var(--color-secondary);
+    outline-offset: 4px;
+  }
+
   html {
     font-family: var(--font-sans);
+    scroll-behavior: smooth;
+    background-color: var(--color-background);
   }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: var(--color-background); 
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
   }
 }
 
@@ -105,11 +132,12 @@
 @utility btn-primary-hover {
   background-color: color-mix(in srgb, #E2725B 80%, #4E2C23);
 }
+
 .fingerprint {
-    width: 48px;
-    height: 48px;
+  width: 48px;
+  height: 48px;
 }
 
 .line {
-    width: 50%;
+  width: 50%;
 }
