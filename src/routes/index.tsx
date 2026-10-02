@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Bookmark, MapPin, Globe2, Search, Loader2, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { ProgressiveImage } from "@/components/ProgressiveImage";
 
 export const Route = createFileRoute("/")({
   component: DirectoryPage,
@@ -114,7 +115,7 @@ function HeroSection() {
             Discover Dedicated <br className="hidden md:block" /> Spaces for Shibari
           </h1>
           <p className="text-foreground/60 text-base sm:text-lg max-w-2xl mx-auto mb-12 leading-relaxed font-medium">
-            An exclusive, curated directory that connects practitioners with rope studios worldwide.
+            An exclusive, curated directory connecting practitioners with safe, equipped, and trusted rope studios around the world.
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
@@ -424,6 +425,9 @@ function DirectoryPage() {
 }
 
 function StudioCard({ studio, isSaved, onToggleSave }: { studio: any, isSaved: boolean, onToggleSave: () => void }) {
+  // Generate a clean slug: "Nawashi Studio" -> "nawashi-studio-uuid"
+  const slug = `${studio.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${studio.id}`;
+
   return (
     <motion.div 
       variants={cardVariants}
@@ -432,15 +436,16 @@ function StudioCard({ studio, isSaved, onToggleSave }: { studio: any, isSaved: b
     >
       <Link
         to="/studios/$id" 
-        params={{ id: studio.id }}
+        params={{ id: slug }}
         preload="intent"
         className="group relative block rounded-[1.5rem] sm:rounded-[2rem] overflow-hidden bg-neutral-900 aspect-[4/5] sm:aspect-[3/4] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)] hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] transition-shadow duration-500 border border-white/10 w-full"
       >
         {studio.studio_photos?.[0]?.url ? (
-          <img 
+          <ProgressiveImage 
             src={studio.studio_photos[0].url} 
             alt={studio.name} 
-            className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" 
+            className="w-full h-full"
+            imgClassName="transition-transform duration-1000 group-hover:scale-105"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-neutral-800 text-white/30 text-xs font-bold uppercase tracking-widest text-center px-2">
