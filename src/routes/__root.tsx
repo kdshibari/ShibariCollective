@@ -3,7 +3,9 @@ import { Toaster } from "sonner";
 import { useState, useEffect } from "react";
 import { WifiOff } from "lucide-react";
 import { CookieBanner } from "@/components/CookieBanner";
-import appCss from "@/index.css?url";
+
+// STANDARD IMPORT: Bypasses the Tailwind v4 ?url resolution bug
+import "@/index.css";
 
 export const Route = createRootRouteWithContext<any>()({
   head: () => ({
@@ -24,7 +26,6 @@ export const Route = createRootRouteWithContext<any>()({
     ],
     links: [
       { rel: "preload", href: "https://grainy-gradients.vercel.app/noise.svg", as: "image" },
-      { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
