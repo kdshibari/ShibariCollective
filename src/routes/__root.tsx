@@ -1,4 +1,4 @@
-import { createRootRouteWithContext, Outlet, ScrollRestoration } from "@tanstack/react-router";
+import { createRootRouteWithContext, Outlet, ScrollRestoration, Meta, Links, Scripts } from "@tanstack/react-router";
 import { Toaster } from "sonner";
 import { useState, useEffect } from "react";
 import { WifiOff } from "lucide-react";
@@ -56,35 +56,42 @@ function RootComponent() {
   }, []);
 
   return (
-    <>
-      <ScrollRestoration />
-      
-      {isOffline && (
-        <div className="fixed top-0 left-0 right-0 z-[100] bg-rose-500/90 backdrop-blur-md text-white py-2 text-center text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg">
-          <WifiOff className="w-4 h-4" /> You are currently offline
-        </div>
-      )}
+    <html lang="en">
+      <head>
+        <Meta />
+        <Links />
+      </head>
+      <body>
+        {isOffline && (
+          <div className="fixed top-0 left-0 right-0 z-[100] bg-rose-500/90 backdrop-blur-md text-white py-2 text-center text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg">
+            <WifiOff className="w-4 h-4" /> You are currently offline
+          </div>
+        )}
 
-      <Outlet />
-      
-      <CookieBanner />
-      
-      <Toaster 
-        theme="dark"
-        position="bottom-right"
-        toastOptions={{
-          style: {
-            background: 'rgba(20, 20, 20, 0.85)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            backdropFilter: 'blur(16px)',
-            color: '#fff',
-            fontFamily: '"Work Sans", sans-serif',
-            borderRadius: '1rem',
-            padding: '16px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
-          },
-        }}
-      />
-    </>
+        <Outlet />
+        
+        <CookieBanner />
+        
+        <Toaster 
+          theme="dark"
+          position="bottom-right"
+          toastOptions={{
+            style: {
+              background: 'rgba(20, 20, 20, 0.85)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              backdropFilter: 'blur(16px)',
+              color: '#fff',
+              fontFamily: '"Work Sans", sans-serif',
+              borderRadius: '1rem',
+              padding: '16px',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+            },
+          }}
+        />
+
+        <ScrollRestoration />
+        <Scripts />
+      </body>
+    </html>
   );
 }
