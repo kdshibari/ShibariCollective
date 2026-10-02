@@ -13,10 +13,13 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/studios/$id")({
   loader: async ({ params }) => {
+    // Extract the exact 36-character UUID from the end of the URL slug
+    const uuid = params.id.slice(-36);
+    
     const { data } = await supabase
       .from("studios")
       .select("name, description, city, country, studio_photos(url, position)")
-      .eq("id", params.id)
+      .eq("id", uuid)
       .maybeSingle();
     return data;
   },
@@ -170,6 +173,8 @@ function StudioSkeleton() {
 
 function StudioPage() {
   const { id } = Route.useParams();
+  const uuid = id.slice(-36); // Extract the exact UUID for component fetching
+
   const [studio, setStudio] = useState<Studio | null>(null);
   const [loading, setLoading] = useState(true);
   const [emblaRef] = useEmblaCarousel({ loop: true });
@@ -177,7 +182,7 @@ function StudioPage() {
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportComments, setReportComments] = useState("");
   const [isReporting, setIsReporting] = useState(false);
-  const [botField, setBotField] = useState(""); // Honeypot
+  const [botField, setBotField] = useState("");
   
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [reviews, setReviews] = useState<any[]>([]);
@@ -191,7 +196,7 @@ function StudioPage() {
     supabase
       .from("studios")
       .select("*, studio_photos(url, position)")
-      .eq("id", id)
+      .eq("id", uuid)
       .maybeSingle()
       .then(({ data }) => {
         setStudio(data as any);
@@ -201,12 +206,12 @@ function StudioPage() {
     supabase
       .from("studio_reviews")
       .select("*, profiles(display_name)")
-      .eq("studio_id", id)
+      .eq("studio_id", uuid)
       .order("created_at", { ascending: false })
       .then(({ data, error }) => {
         if (!error && data) setReviews(data);
       });
-  }, [id]);
+  }, [uuid]);
 
   useEffect(() => {
     if (lightboxIndex !== null || showReportModal) {
@@ -220,7 +225,6 @@ function StudioPage() {
   const handleReportSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 1. Honeypot Check
     if (botField) {
       toast.success("Report submitted securely. Our team will review this immediately.");
       setShowReportModal(false);
@@ -234,7 +238,6 @@ function StudioPage() {
 
     setIsReporting(true);
     try {
-      // 2. Database Rate Limit Check
       const { data: isAllowed, error: rateLimitError } = await supabase.rpc('enforce_rate_limit', {
         req_action: 'submit_report',
         max_requests: 3,
@@ -277,7 +280,6 @@ function StudioPage() {
 
     setIsSubmittingReview(true);
     try {
-      // Rate Limit Check
       const { data: isAllowed, error: rateLimitError } = await supabase.rpc('enforce_rate_limit', {
         req_action: 'submit_review',
         max_requests: 5,
