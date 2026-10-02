@@ -1,5 +1,4 @@
-import { createRootRouteWithContext, Outlet, ScrollRestoration } from "@tanstack/react-router";
-import { HeadContent, Links, Scripts } from "@tanstack/react-start";
+import { createRootRouteWithContext, Outlet, ScrollRestoration, HeadContent, Scripts } from "@tanstack/react-router";
 import { Toaster } from "sonner";
 import { useState, useEffect } from "react";
 import { WifiOff } from "lucide-react";
@@ -60,7 +59,6 @@ function RootComponent() {
     <html lang="en">
       <head>
         <HeadContent />
-        <Links />
       </head>
       <body>
         {isOffline && (
