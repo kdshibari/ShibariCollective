@@ -37,26 +37,22 @@
 
 :root {
   --radius: 0.5rem;
-  /* Deep Umber Backgrounds */
   --background: #181514;
   --cream: #EAE6E1;
   --card: #221E1C;
   --popover: #221E1C;
-  /* Soft Ivory Text & Primary Elements */
   --foreground: #EAE6E1;
   --card-foreground: #EAE6E1;
   --popover-foreground: #EAE6E1;
   --primary: #EAE6E1;
   --primary-foreground: #181514;
   --jute: #B59B7D;
-  /* Muted Crimson Secondary Accents & Buttons */
   --secondary: #8B3A36;
   --secondary-foreground: #EAE6E1;
   --oxblood: #8B3A36;
   --ring: #8B3A36;
   --destructive: #8B3A36;
   --destructive-foreground: #EAE6E1;
-  /* Muted & Border Shades */
   --muted: color-mix(in srgb, #221E1C 85%, #EAE6E1);
   --muted-foreground: color-mix(in srgb, #EAE6E1 65%, #221E1C);
   --accent: color-mix(in srgb, #221E1C 85%, #8B3A36);
@@ -69,38 +65,31 @@
   * {
     border-color: var(--color-border);
   }
-
   *:focus-visible {
     outline: 2px solid var(--color-secondary);
     outline-offset: 4px;
   }
-
   html {
     font-family: var(--font-sans);
     scroll-behavior: smooth;
     background-color: var(--color-background);
   }
-
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
   }
-
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
-  
   ::-webkit-scrollbar-track {
     background: var(--color-background); 
   }
-  
   ::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 4px;
   }
-  
   ::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.2);
   }
